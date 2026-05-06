@@ -4,21 +4,29 @@ import {
 } from "react";
 
 import {
-  listenSubjects,
-} from "../services/subjectService";
+  signOut,
+} from "firebase/auth";
+
+import {
+  auth,
+} from "../firebase/config";
 
 import {
   useNavigate,
 } from "react-router-dom";
 
+import {
+  listenSubjects,
+} from "../services/subjectService";
+
 export default function StudentDashboard() {
+
+  const nav =
+    useNavigate();
 
   const [subjects,
     setSubjects] =
     useState([]);
-
-  const nav =
-    useNavigate();
 
   useEffect(() => {
 
@@ -32,13 +40,39 @@ export default function StudentDashboard() {
 
   }, []);
 
+  async function logout() {
+
+    await signOut(auth);
+
+    nav("/");
+
+  }
+
   return (
 
     <div className="page">
 
-      <h1>
-        Student Dashboard
-      </h1>
+      <div
+        style={{
+          display:"flex",
+          justifyContent:
+            "space-between",
+          alignItems:
+            "center",
+        }}
+      >
+
+        <h1>
+          Student Dashboard
+        </h1>
+
+        <button
+          onClick={logout}
+        >
+          Logout
+        </button>
+
+      </div>
 
       <div className="grid">
 

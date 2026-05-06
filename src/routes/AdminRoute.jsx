@@ -1,111 +1,102 @@
 import {
-  Navigate,
-} from "react-router-dom";
-
-import {
-  onAuthStateChanged,
-} from "firebase/auth";
-
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
-import {
-  useEffect,
-  useState,
+useEffect,
+useState,
 } from "react";
 
 import {
-  auth,
-  db,
+Navigate,
+} from "react-router-dom";
+
+import {
+auth,
+db,
 } from "../firebase/config";
 
+import {
+collection,
+query,
+where,
+getDocs,
+} from "firebase/firestore";
+
 export default function AdminRoute({
-  children,
+children,
 }) {
 
-  const [loading, setLoading] =
-    useState(true);
+const [loading,setLoading] =
+useState(true);
 
-  const [allowed, setAllowed] =
-    useState(false);
+const [isAdmin,setIsAdmin] =
+useState(false);
 
-  useEffect(() => {
+useEffect(()=>{
 
-    async function checkAdmin() {
+async function checkAdmin(){
 
-      const unsubscribe =
-        onAuthStateChanged(
-          auth,
-          async (u) => {
+if(!auth.currentUser){
 
-            if (!u) {
+setLoading(false);
 
-              setAllowed(false);
+return;
 
-              setLoading(false);
+}
 
-              return;
+const q = query(
+collection(db,"users"),
+where(
+"uid",
+"==",
+auth.currentUser.uid
+)
+);
 
-            }
+const snapshot =
+await getDocs(q);
 
-            const snapshot =
-              await getDocs(
-                collection(
-                  db,
-                  "users"
-                )
-              );
+if(!snapshot.empty){
 
-            let found = false;
+const user =
+snapshot.docs[0].data();
 
-            snapshot.forEach((d) => {
+if(
+user.role ===
+"admin"
+){
 
-              const data = d.data();
+setIsAdmin(true);
 
-              if (
-                data.email ===
-                  u.email &&
-                data.role ===
-                  "admin"
-              ) {
+}
 
-                found = true;
+}
 
-              }
-            });
+setLoading(false);
 
-            setAllowed(found);
+}
 
-            setLoading(false);
+checkAdmin();
 
-          }
-        );
+},[]);
 
-      return () => unsubscribe();
+if(loading){
 
-    }
+return(
 
-    checkAdmin();
+<div className="page">
 
-  }, []);
+<h2>
+Checking Admin...
+</h2>
 
-  if (loading) {
+</div>
 
-    return (
-      <div className="page">
-        Checking Admin...
-      </div>
-    );
-  }
+);
 
-  if (!allowed) {
+}
 
-    return (
-      <Navigate to="/" />
-    );
-  }
+return isAdmin
+?
+children
+:
+<Navigate to="/" />;
 
-  return children;
 }

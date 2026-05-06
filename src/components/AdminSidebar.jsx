@@ -36,6 +36,11 @@ path:"/admin/questions",
 },
 
 {
+title:"Bulk Import",
+path:"/admin/bulk-import",
+},
+  
+{
 title:"Exams",
 path:"/admin/exams",
 },

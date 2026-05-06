@@ -721,7 +721,7 @@ handleJSONUpload
 
 <div className="analytics-card">
 
-<<h3>
+<h3>
 OCR Import
 </h3>
 

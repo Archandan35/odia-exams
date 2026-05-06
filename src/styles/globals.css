@@ -383,3 +383,19 @@ font-size:14px;
 }
 
 }
+
+
+.filter-bar{
+margin-bottom:20px;
+display:flex;
+gap:15px;
+}
+
+.filter-bar select{
+padding:14px;
+border-radius:10px;
+border:none;
+background:white;
+color:black;
+min-width:220px;
+}

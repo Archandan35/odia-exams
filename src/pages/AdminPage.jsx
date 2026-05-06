@@ -1,5 +1,8 @@
-import Dashboard from "../admin/Dashboard";
+import Dashboard
+from "../admin/Dashboard";
 
-export default function AdminPage() {
-  return <Dashboard />;
+export default function AdminPage(){
+
+return <Dashboard/>;
+
 }

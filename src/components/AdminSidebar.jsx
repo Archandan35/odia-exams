@@ -36,7 +36,7 @@ path:"/admin/questions",
 },
 
 {
-title:"Add Exam",
+title:"Exams",
 path:"/admin/exams",
 },
 
@@ -46,8 +46,8 @@ path:"/admin/results",
 },
 
 {
-title:"Students",
-path:"/admin/students",
+title:"Profile",
+path:"/profile",
 },
 
 ];
@@ -58,12 +58,14 @@ return(
 
 <div className="logo">
 
-Odia Exam Admin
+Odia Exam
 
 </div>
 
 <div className="menu-title">
-MAIN
+
+MAIN MENU
+
 </div>
 
 <div className="menu">

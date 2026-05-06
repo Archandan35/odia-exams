@@ -354,7 +354,219 @@ toast.error(
 setLoading(false);
 
 }
+/* IMAGE OCR */
 
+async function handleImageOCR(e){
+
+const file =
+e.target.files[0];
+
+if(!file) return;
+
+try{
+
+setLoading(true);
+
+toast.loading(
+"Processing OCR..."
+);
+
+const result =
+await Tesseract.recognize(
+file,
+"eng"
+);
+
+const text =
+result.data.text;
+
+const parsed =
+parseMCQ(text);
+
+setPreviewQuestions(parsed);
+
+toast.dismiss();
+
+toast.success(
+`${parsed.length}
+Questions Detected`
+);
+
+}catch{
+
+toast.dismiss();
+
+toast.error(
+"OCR Failed"
+);
+
+}
+
+setLoading(false);
+
+}
+
+/* PDF OCR */
+
+async function handlePDFOCR(e){
+
+const file =
+e.target.files[0];
+
+if(!file) return;
+
+try{
+
+setLoading(true);
+
+toast.loading(
+"Reading PDF..."
+);
+
+const arrayBuffer =
+await file.arrayBuffer();
+
+const pdf =
+await pdfjsLib.getDocument({
+data:arrayBuffer,
+}).promise;
+
+let fullText = "";
+
+for(
+let pageNum = 1;
+pageNum <= pdf.numPages;
+pageNum++
+){
+
+const page =
+await pdf.getPage(pageNum);
+
+const content =
+await page.getTextContent();
+
+const strings =
+content.items.map(
+(item)=>item.str
+);
+
+fullText +=
+strings.join(" ");
+
+}
+
+const parsed =
+parseMCQ(fullText);
+
+setPreviewQuestions(parsed);
+
+toast.dismiss();
+
+toast.success(
+`${parsed.length}
+Questions Parsed`
+);
+
+}catch{
+
+toast.dismiss();
+
+toast.error(
+"PDF OCR Failed"
+);
+
+}
+
+setLoading(false);
+
+}
+
+/* EXPORT JSON */
+
+function exportJSON(){
+
+const blob =
+new Blob(
+
+[
+JSON.stringify(
+previewQuestions,
+null,
+2
+)
+],
+
+{
+type:
+"application/json",
+}
+
+);
+
+saveAs(
+blob,
+"questions.json"
+);
+
+}
+
+/* EXPORT CSV */
+
+function exportCSV(){
+
+const rows = [
+
+[
+"question",
+"optionA",
+"optionB",
+"optionC",
+"optionD",
+"correctAnswer",
+],
+
+];
+
+previewQuestions.forEach((q)=>{
+
+rows.push([
+
+q.question,
+
+q.options?.[0] || "",
+
+q.options?.[1] || "",
+
+q.options?.[2] || "",
+
+q.options?.[3] || "",
+
+q.correctAnswer,
+
+]);
+
+});
+
+const csv =
+rows.map(
+(r)=>r.join(",")
+).join("\n");
+
+const blob =
+new Blob(
+[csv],
+{
+type:"text/csv",
+}
+);
+
+saveAs(
+blob,
+"questions.csv"
+);
+
+}
+  
 return(
 
 <AdminLayout>
@@ -509,13 +721,25 @@ handleJSONUpload
 
 <div className="analytics-card">
 
-<h3>
+<<h3>
 OCR Import
 </h3>
 
-<p>
-Coming Next Step
-</p>
+<input
+type="file"
+accept="image/*"
+onChange={
+handleImageOCR
+}
+/>
+
+<input
+type="file"
+accept=".pdf"
+onChange={
+handlePDFOCR
+}
+/>
 
 </div>
 
@@ -528,9 +752,45 @@ previewQuestions.length > 0 && (
 
 <div className="page-header">
 
+<div
+style={{
+display:"flex",
+justifyContent:
+"space-between",
+alignItems:"center",
+}}
+>
+
 <h3>
 Preview Questions
 </h3>
+
+<div
+style={{
+display:"flex",
+gap:"10px",
+}}
+>
+
+<button
+onClick={
+exportJSON
+}
+>
+Export JSON
+</button>
+
+<button
+onClick={
+exportCSV
+}
+>
+Export CSV
+</button>
+
+</div>
+
+</div>
 
 <button
 onClick={

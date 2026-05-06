@@ -26,6 +26,8 @@ import Questions from "./admin/Questions";
 
 import Exams from "./admin/Exams";
 
+import Results from "./admin/Results";
+
 export default function App() {
 
   return (
@@ -103,6 +105,14 @@ export default function App() {
   element={
     <AdminRoute>
       <Exams />
+    </AdminRoute>
+  }
+/>
+        <Route
+  path="/admin/results"
+  element={
+    <AdminRoute>
+      <Results />
     </AdminRoute>
   }
 />

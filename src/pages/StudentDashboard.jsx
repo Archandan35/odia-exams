@@ -21,22 +21,15 @@ import {
 
 export default function StudentDashboard() {
 
-  const nav =
-    useNavigate();
+  const nav = useNavigate();
 
-  const [subjects,
-    setSubjects] =
-    useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
 
-    const unsubscribe =
-      listenSubjects(
-        setSubjects
-      );
+    const unsub = listenSubjects(setSubjects);
 
-    return () =>
-      unsubscribe();
+    return () => unsub();
 
   }, []);
 
@@ -52,23 +45,11 @@ export default function StudentDashboard() {
 
     <div className="page">
 
-      <div
-        style={{
-          display:"flex",
-          justifyContent:
-            "space-between",
-          alignItems:
-            "center",
-        }}
-      >
+      <div className="topbar">
 
-        <h1>
-          Student Dashboard
-        </h1>
+        <h1>Student Dashboard</h1>
 
-        <button
-          onClick={logout}
-        >
+        <button onClick={logout}>
           Logout
         </button>
 
@@ -83,22 +64,19 @@ export default function StudentDashboard() {
             className="subject-card"
           >
 
-            <h2>
-              {s.title}
-            </h2>
+            <h2>{s.title}</h2>
+
+            <p>{s.description}</p>
 
             <p>
-              {s.description}
-            </p>
-
-            <p>
-              Duration:
-              {s.duration} mins
+              Duration: {s.duration} mins
             </p>
 
             <button
               onClick={() =>
-                nav("/exam")
+                nav(
+                  `/exam/${encodeURIComponent(s.title)}`
+                )
               }
             >
               Start Test

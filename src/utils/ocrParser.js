@@ -1,7 +1,14 @@
 export function parseMCQ(text){
 
-const lines =
+const cleanText =
 text
+.replace(/\r/g,"\n")
+.replace(/\t/g," ")
+.replace(/\s+/g," ")
+.replace(/\n+/g,"\n");
+
+const lines =
+cleanText
 .split("\n")
 .map((l)=>l.trim())
 .filter(Boolean);
@@ -9,6 +16,28 @@ text
 const questions = [];
 
 let current = null;
+
+function pushCurrent(){
+
+if(
+current &&
+current.question &&
+current.options.length >= 2
+){
+
+while(
+current.options.length < 4
+){
+
+current.options.push("");
+
+}
+
+questions.push(current);
+
+}
+
+}
 
 for(let i=0;i<lines.length;i++){
 
@@ -20,19 +49,17 @@ if(
 /^\d+[\.\)]/.test(line)
 ){
 
-if(current){
-
-questions.push(current);
-
-}
+pushCurrent();
 
 current = {
 
 question:
-line.replace(
+line
+.replace(
 /^\d+[\.\)]/,
 ""
-).trim(),
+)
+.trim(),
 
 options:[],
 
@@ -42,6 +69,8 @@ difficulty:"easy",
 
 explanation:"",
 
+language:"mixed",
+
 };
 
 }
@@ -49,17 +78,19 @@ explanation:"",
 /* OPTIONS */
 
 else if(
-/^[A-D][\)\.\-]/i.test(line)
+/^[A-D][\)\.\-:]/i.test(line)
 ){
 
 if(current){
 
 current.options.push(
 
-line.replace(
-/^[A-D][\)\.\-]/i,
+line
+.replace(
+/^[A-D][\)\.\-:]/i,
 ""
-).trim()
+)
+.trim()
 
 );
 
@@ -97,18 +128,61 @@ map[ans] || 0;
 
 }
 
-}
+/* EXPLANATION */
+
+else if(
+/^Explanation[:\-]/i.test(line)
+){
 
 if(current){
 
-questions.push(current);
+current.explanation =
+line
+.replace(
+/^Explanation[:\-]/i,
+""
+)
+.trim();
 
 }
 
-return questions.filter(
-(q)=>
-q.question &&
-q.options.length >= 2
+}
+
+/* MULTI-LINE QUESTION */
+
+else{
+
+if(
+current &&
+current.options.length === 0
+){
+
+current.question +=
+" " + line;
+
+}
+
+}
+
+}
+
+pushCurrent();
+
+/* REMOVE DUPLICATES */
+
+const uniqueQuestions =
+questions.filter(
+(q,index,self)=>
+
+index ===
+self.findIndex(
+(t)=>
+t.question ===
+q.question
+)
+
 );
+
+return uniqueQuestions;
 
 }

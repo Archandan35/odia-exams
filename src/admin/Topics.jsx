@@ -10,7 +10,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
+
+import toast from "react-hot-toast";
 
 import { db } from "../firebase/config";
 
@@ -61,9 +66,11 @@ export default function Topics() {
             data.length > 0 &&
             !selectedSubject
           ) {
+
             setSelectedSubject(
               data[0].id
             );
+
           }
 
         }
@@ -102,23 +109,79 @@ export default function Topics() {
   async function handleAddTopic() {
 
     if (
-      !topicName ||
-      !selectedSubject
-    ) return;
+      !topicName.trim()
+    ) {
+
+      toast.error(
+        "Topic name required"
+      );
+
+      return;
+
+    }
+
+    if (!selectedSubject) {
+
+      toast.error(
+        "Select subject"
+      );
+
+      return;
+
+    }
+
+    const duplicateQuery =
+      query(
+        collection(db, "topics"),
+        where(
+          "name",
+          "==",
+          topicName.trim()
+        ),
+        where(
+          "subjectId",
+          "==",
+          selectedSubject
+        )
+      );
+
+    const duplicate =
+      await getDocs(
+        duplicateQuery
+      );
+
+    if (!duplicate.empty) {
+
+      toast.error(
+        "Topic already exists in this subject"
+      );
+
+      return;
+
+    }
 
     await addDoc(
       collection(db, "topics"),
       {
-        name: topicName,
+
+        name:
+          topicName.trim(),
+
         subjectId:
           selectedSubject,
+
         createdAt:
           Date.now(),
+
       }
     );
 
-    setTopicName("");
-    setShowPopup(false);
+    toast.success(
+      "Topic Added"
+    );
+
+    resetForm();
+
   }
 
   function editTopic(topic) {
@@ -132,38 +195,77 @@ export default function Topics() {
     );
 
     setShowPopup(true);
+
   }
 
   async function updateTopic() {
 
+    if (
+      !topicName.trim()
+    ) {
+
+      toast.error(
+        "Topic name required"
+      );
+
+      return;
+
+    }
+
     await updateDoc(
-      doc(db, "topics", editingId),
+      doc(
+        db,
+        "topics",
+        editingId
+      ),
       {
-        name: topicName,
+
+        name:
+          topicName.trim(),
+
         subjectId:
           selectedSubject,
+
       }
     );
 
-    setEditingId(null);
+    toast.success(
+      "Topic Updated"
+    );
 
-    setTopicName("");
+    resetForm();
 
-    setShowPopup(false);
   }
 
   async function handleDelete(id) {
 
     const confirmDelete =
       window.confirm(
-        "Delete this topic?"
+
+`Deleting this topic may affect:
+• SubTopics
+• Questions
+• Exams
+
+Continue?`
+
       );
 
-    if (!confirmDelete) return;
+    if (!confirmDelete)
+      return;
 
     await deleteDoc(
-      doc(db, "topics", id)
+      doc(
+        db,
+        "topics",
+        id
+      )
     );
+
+    toast.success(
+      "Topic Deleted"
+    );
+
   }
 
   const filteredTopics =
@@ -183,6 +285,17 @@ export default function Topics() {
     return subject
       ? subject.name
       : "Unknown";
+
+  }
+
+  function resetForm() {
+
+    setTopicName("");
+
+    setEditingId(null);
+
+    setShowPopup(false);
+
   }
 
   return (
@@ -200,7 +313,9 @@ export default function Topics() {
           <p>
             Total Topics:
             {" "}
-            {filteredTopics.length}
+            {
+              filteredTopics.length
+            }
           </p>
 
         </div>
@@ -413,15 +528,9 @@ export default function Topics() {
 
               <button
                 className="cancel-btn"
-                onClick={() => {
-
-                  setShowPopup(false);
-
-                  setEditingId(null);
-
-                  setTopicName("");
-
-                }}
+                onClick={
+                  resetForm
+                }
               >
                 Cancel
               </button>
@@ -434,5 +543,7 @@ export default function Topics() {
       }
 
     </AdminLayout>
+
   );
+
 }

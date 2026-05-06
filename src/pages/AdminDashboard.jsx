@@ -27,6 +27,14 @@ import {
   listenQuestions,
 } from "../services/questionService";
 
+import {
+  updateSubject,
+} from "../services/subjectService";
+
+import {
+  updateQuestion,
+} from "../services/questionService";
+
 export default function AdminDashboard() {
 
   const nav = useNavigate();

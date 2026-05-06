@@ -10,7 +10,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
+
+import toast from "react-hot-toast";
 
 import { db } from "../firebase/config";
 
@@ -173,11 +178,112 @@ export default function Exams() {
 
   async function handleAddExam(){
 
+    if(
+      !examName.trim()
+    ){
+
+      toast.error(
+        "Exam name required"
+      );
+
+      return;
+
+    }
+
+    if(
+      Number(questionCount) <= 0
+    ){
+
+      toast.error(
+        "Invalid question count"
+      );
+
+      return;
+
+    }
+
+    if(
+      Number(duration) <= 0
+    ){
+
+      toast.error(
+        "Invalid duration"
+      );
+
+      return;
+
+    }
+
+    if(
+      examType !== "mixed" &&
+      !selectedSubject
+    ){
+
+      toast.error(
+        "Select subject"
+      );
+
+      return;
+
+    }
+
+    if(
+      examType === "topic" &&
+      !selectedTopic
+    ){
+
+      toast.error(
+        "Select topic"
+      );
+
+      return;
+
+    }
+
+    if(
+      examType === "subtopic" &&
+      !selectedSubTopic
+    ){
+
+      toast.error(
+        "Select subtopic"
+      );
+
+      return;
+
+    }
+
+    const duplicateQuery =
+      query(
+        collection(db,"exams"),
+        where(
+          "name",
+          "==",
+          examName.trim()
+        )
+      );
+
+    const duplicate =
+      await getDocs(
+        duplicateQuery
+      );
+
+    if(!duplicate.empty){
+
+      toast.error(
+        "Exam already exists"
+      );
+
+      return;
+
+    }
+
     await addDoc(
       collection(db,"exams"),
       {
 
-        name:examName,
+        name:
+          examName.trim(),
 
         examType,
 
@@ -209,11 +315,27 @@ export default function Exams() {
       }
     );
 
+    toast.success(
+      "Exam Created"
+    );
+
     resetForm();
 
   }
 
   async function updateExam(){
+
+    if(
+      !examName.trim()
+    ){
+
+      toast.error(
+        "Exam name required"
+      );
+
+      return;
+
+    }
 
     await updateDoc(
       doc(
@@ -223,7 +345,8 @@ export default function Exams() {
       ),
       {
 
-        name:examName,
+        name:
+          examName.trim(),
 
         examType,
 
@@ -250,6 +373,10 @@ export default function Exams() {
         shuffleQuestions,
 
       }
+    );
+
+    toast.success(
+      "Exam Updated"
     );
 
     resetForm();
@@ -313,6 +440,10 @@ export default function Exams() {
       doc(db,"exams",id)
     );
 
+    toast.success(
+      "Exam Deleted"
+    );
+
   }
 
   function resetForm(){
@@ -332,19 +463,6 @@ export default function Exams() {
     setEditingId(null);
 
     setShowPopup(false);
-
-  }
-
-  function getName(arr,id){
-
-    const item =
-      arr.find(
-        (x)=>x.id === id
-      );
-
-    return item
-      ? item.name
-      : "-";
 
   }
 
@@ -386,12 +504,29 @@ export default function Exams() {
 
             <tr>
 
-              <th>Exam</th>
-              <th>Type</th>
-              <th>Questions</th>
-              <th>Duration</th>
-              <th>Edit</th>
-              <th>Delete</th>
+              <th>
+                Exam
+              </th>
+
+              <th>
+                Type
+              </th>
+
+              <th>
+                Questions
+              </th>
+
+              <th>
+                Duration
+              </th>
+
+              <th>
+                Edit
+              </th>
+
+              <th>
+                Delete
+              </th>
 
             </tr>
 
@@ -462,7 +597,10 @@ export default function Exams() {
 
         <div className="popup-overlay">
 
-          <div className="popup large-popup">
+          <div className="
+popup
+large-popup
+">
 
             <h3>
 
@@ -563,6 +701,10 @@ export default function Exams() {
                 }
               >
 
+                <option value="">
+                  Select Topic
+                </option>
+
                 {
                   filteredTopics.map((t)=>(
 
@@ -594,6 +736,10 @@ export default function Exams() {
                 }
               >
 
+                <option value="">
+                  Select SubTopic
+                </option>
+
                 {
                   filteredSubTopics.map((s)=>(
 
@@ -613,7 +759,9 @@ export default function Exams() {
 
             <input
               type="number"
-              placeholder="Question Count"
+              placeholder="
+Question Count
+"
               value={questionCount}
               onChange={(e)=>
                 setQuestionCount(
@@ -624,7 +772,9 @@ export default function Exams() {
 
             <input
               type="number"
-              placeholder="Duration"
+              placeholder="
+Duration
+"
               value={duration}
               onChange={(e)=>
                 setDuration(
@@ -636,7 +786,9 @@ export default function Exams() {
             <input
               type="number"
               step="0.25"
-              placeholder="Negative"
+              placeholder="
+Negative Marking
+"
               value={negativeMarking}
               onChange={(e)=>
                 setNegativeMarking(
@@ -690,8 +842,12 @@ export default function Exams() {
             }
 
             <button
-              className="cancel-btn"
-              onClick={resetForm}
+              className="
+cancel-btn
+"
+              onClick={
+                resetForm
+              }
             >
               Cancel
             </button>

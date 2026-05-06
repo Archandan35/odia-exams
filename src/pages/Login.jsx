@@ -1,136 +1,156 @@
 import {
-  useState,
+useState,
 } from "react";
 
 import {
-  signInWithEmailAndPassword,
+signInWithEmailAndPassword,
 } from "firebase/auth";
 
 import {
-  collection,
-  getDocs,
+collection,
+query,
+where,
+getDocs,
 } from "firebase/firestore";
 
 import {
-  auth,
-  db,
+auth,
+db,
 } from "../firebase/config";
 
 import {
-  useNavigate,
-  Link,
+useNavigate,
+Link,
 } from "react-router-dom";
 
-export default function Login() {
+export default function Login(){
 
-  const nav = useNavigate();
+const nav =
+useNavigate();
 
-  const [email,
-    setEmail] =
-    useState("");
+const [email,setEmail] =
+useState("");
 
-  const [password,
-    setPassword] =
-    useState("");
+const [password,
+setPassword] =
+useState("");
 
-  async function login() {
+const [loading,
+setLoading] =
+useState(false);
 
-    try {
+async function login(){
 
-      const res =
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+try{
 
-      const snapshot =
-        await getDocs(
-          collection(
-            db,
-            "users"
-          )
-        );
+setLoading(true);
 
-      let role =
-        "student";
+const res =
+await signInWithEmailAndPassword(
+auth,
+email,
+password
+);
 
-      snapshot.forEach((d) => {
+const q = query(
+collection(db,"users"),
+where(
+"uid",
+"==",
+res.user.uid
+)
+);
 
-        const data =
-          d.data();
+const snapshot =
+await getDocs(q);
 
-        if (
-          data.email ===
-          res.user.email
-        ) {
+let role =
+"student";
 
-          role =
-            data.role;
+if(!snapshot.empty){
 
-        }
-      });
+role =
+snapshot.docs[0]
+.data().role;
 
-      if (
-        role === "admin"
-      ) {
+}
 
-        nav("/admin");
+if(role === "admin"){
 
-      } else {
+nav("/admin");
 
-        nav("/dashboard");
+}else{
 
-      }
+nav("/dashboard");
 
-    } catch (e) {
+}
 
-      alert(e.message);
+}catch(e){
 
-    }
-  }
+alert(e.message);
 
-  return (
+}
 
-    <div className="center">
+setLoading(false);
 
-      <div className="card auth">
+}
 
-        <h1>
-          Odia Exam Portal
-        </h1>
+return(
 
-        <input
-          placeholder="Email"
-          onChange={(e)=>
-            setEmail(
-              e.target.value
-            )
-          }
-        />
+<div className="auth-container">
 
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e)=>
-            setPassword(
-              e.target.value
-            )
-          }
-        />
+<div className="auth-card">
 
-        <button
-          onClick={login}
-        >
-          Login
-        </button>
+<h1>
+Odia Exam Portal
+</h1>
 
-        <Link to="/register">
-          Create Account
-        </Link>
+<input
+placeholder="Email"
+value={email}
+onChange={(e)=>
+setEmail(
+e.target.value
+)
+}
+/>
 
-      </div>
+<input
+type="password"
+placeholder="Password"
+value={password}
+onChange={(e)=>
+setPassword(
+e.target.value
+)
+}
+/>
 
-    </div>
-  );
+<button
+onClick={login}
+disabled={loading}
+>
+
+{
+loading
+?
+"Logging in..."
+:
+"Login"
+}
+
+</button>
+
+<Link to="/register">
+
+Create Account
+
+</Link>
+
+</div>
+
+</div>
+
+);
+
 }

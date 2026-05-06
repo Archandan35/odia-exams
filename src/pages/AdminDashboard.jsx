@@ -62,6 +62,10 @@ export default function AdminDashboard() {
     setSubject] =
     useState("");
 
+  const [topic,
+    setTopic] =
+    useState("");
+
   const [question,
     setQuestion] =
     useState("");
@@ -96,6 +100,10 @@ export default function AdminDashboard() {
 
   const [editSubjectName,
     setEditSubjectName] =
+    useState("");
+
+  const [editTopic,
+    setEditTopic] =
     useState("");
 
   const [editOption1,
@@ -149,13 +157,14 @@ export default function AdminDashboard() {
 
   async function createSubject() {
 
-    if (!title) return;
-
     await addSubject({
+
       title,
       description,
       duration,
+
       negativeMarking:0.25,
+
     });
 
     setTitle("");
@@ -166,15 +175,10 @@ export default function AdminDashboard() {
 
   async function createQuestion() {
 
-    if (
-      !subject ||
-      !question
-    ) return;
-
     await addQuestion({
 
       subject,
-
+      topic,
       question,
 
       options:[
@@ -189,48 +193,13 @@ export default function AdminDashboard() {
     });
 
     setQuestion("");
+    setTopic("");
     setOption1("");
     setOption2("");
     setOption3("");
     setOption4("");
     setAnswer("");
 
-  }
-
-  async function editSubject(s) {
-
-    const newTitle =
-      prompt(
-        "Edit Title",
-        s.title
-      );
-
-    if (!newTitle) return;
-
-    const newDescription =
-      prompt(
-        "Edit Description",
-        s.description
-      );
-
-    if (!newDescription) return;
-
-    const newDuration =
-      prompt(
-        "Edit Duration",
-        s.duration
-      );
-
-    if (!newDuration) return;
-
-    await updateSubject(
-      s.id,
-      {
-        title:newTitle,
-        description:newDescription,
-        duration:newDuration,
-      }
-    );
   }
 
   function openEditQuestion(q) {
@@ -243,6 +212,10 @@ export default function AdminDashboard() {
 
     setEditSubjectName(
       q.subject
+    );
+
+    setEditTopic(
+      q.topic
     );
 
     setEditOption1(
@@ -277,6 +250,9 @@ export default function AdminDashboard() {
         subject:
           editSubjectName,
 
+        topic:
+          editTopic,
+
         question:
           editQuestionText,
 
@@ -300,19 +276,6 @@ export default function AdminDashboard() {
 
   }
 
-  async function handleDeleteSubject(id) {
-
-    const ok =
-      window.confirm(
-        "Delete Subject?"
-      );
-
-    if (!ok) return;
-
-    await deleteSubject(id);
-
-  }
-
   async function handleDeleteQuestion(id) {
 
     const ok =
@@ -323,6 +286,19 @@ export default function AdminDashboard() {
     if (!ok) return;
 
     await deleteQuestion(id);
+
+  }
+
+  async function handleDeleteSubject(id) {
+
+    const ok =
+      window.confirm(
+        "Delete Subject?"
+      );
+
+    if (!ok) return;
+
+    await deleteSubject(id);
 
   }
 
@@ -455,6 +431,16 @@ export default function AdminDashboard() {
           </select>
 
           <input
+            placeholder="Topic"
+            value={topic}
+            onChange={(e)=>
+              setTopic(
+                e.target.value
+              )
+            }
+          />
+
+          <input
             placeholder="Question"
             value={question}
             onChange={(e)=>
@@ -527,59 +513,6 @@ export default function AdminDashboard() {
       )}
 
       <h2>
-        Subjects
-      </h2>
-
-      <div className="grid">
-
-        {subjects.map((s)=>(
-
-          <div
-            key={s.id}
-            className="subject-card"
-          >
-
-            <h2>
-              {s.title}
-            </h2>
-
-            <p>
-              {s.description}
-            </p>
-
-            <p>
-              Duration:
-              {" "}
-              {s.duration}
-              {" "}
-              mins
-            </p>
-
-            <button
-              onClick={() =>
-                editSubject(s)
-              }
-            >
-              Edit
-            </button>
-
-            <button
-              onClick={() =>
-                handleDeleteSubject(
-                  s.id
-                )
-              }
-            >
-              Delete
-            </button>
-
-          </div>
-
-        ))}
-
-      </div>
-
-      <h2>
         Questions
       </h2>
 
@@ -591,7 +524,7 @@ export default function AdminDashboard() {
         }}
       >
 
-        {questions.map((q)=>(
+        {questions.map((q,index)=>(
 
           <div
             key={q.id}
@@ -603,8 +536,12 @@ export default function AdminDashboard() {
             >
 
               <h3>
-                {q.question}
+                {index + 1}. {q.question}
               </h3>
+
+              <p>
+                Topic: {q.topic}
+              </p>
 
               <div className="option-line">
 
@@ -705,6 +642,16 @@ export default function AdminDashboard() {
             ))}
 
           </select>
+
+          <input
+            value={editTopic}
+            onChange={(e)=>
+              setEditTopic(
+                e.target.value
+              )
+            }
+            placeholder="Topic"
+          />
 
           <input
             value={editOption1}

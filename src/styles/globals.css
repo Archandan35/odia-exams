@@ -443,3 +443,12 @@ min-width:100%;
 }
 
 }
+
+
+.checkbox{
+display:flex;
+align-items:center;
+gap:10px;
+color:black;
+font-weight:bold;
+}

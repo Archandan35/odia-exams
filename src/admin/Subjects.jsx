@@ -21,181 +21,48 @@ import { db } from "../firebase/config";
 
 import AdminLayout from "./AdminLayout";
 
-export default function SubTopics() {
+export default function Subjects() {
 
-  const [subjects,
-    setSubjects] =
+  const [subjects, setSubjects] =
     useState([]);
 
-  const [topics,
-    setTopics] =
-    useState([]);
-
-  const [subTopics,
-    setSubTopics] =
-    useState([]);
-
-  const [selectedSubject,
-    setSelectedSubject] =
-    useState("");
-
-  const [selectedTopic,
-    setSelectedTopic] =
-    useState("");
-
-  const [showPopup,
-    setShowPopup] =
+  const [showPopup, setShowPopup] =
     useState(false);
 
-  const [subTopicName,
-    setSubTopicName] =
+  const [subjectName, setSubjectName] =
     useState("");
 
-  const [editingId,
-    setEditingId] =
+  const [editingId, setEditingId] =
     useState(null);
 
   useEffect(() => {
 
-    const unsubSubjects =
-      onSnapshot(
-        collection(db, "subjects"),
-        (snapshot) => {
+    const unsub = onSnapshot(
+      collection(db, "subjects"),
+      (snapshot) => {
 
-          const data =
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            );
+        const data = snapshot.docs.map(
+          (doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
 
-          setSubjects(data);
+        setSubjects(data);
 
-          if (
-            data.length > 0 &&
-            !selectedSubject
-          ) {
-
-            setSelectedSubject(
-              data[0].id
-            );
-
-          }
-
-        }
-      );
-
-    return () =>
-      unsubSubjects();
-
-  }, []);
-
-  useEffect(() => {
-
-    const unsubTopics =
-      onSnapshot(
-        collection(db, "topics"),
-        (snapshot) => {
-
-          const data =
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            );
-
-          setTopics(data);
-
-        }
-      );
-
-    return () =>
-      unsubTopics();
-
-  }, []);
-
-  useEffect(() => {
-
-    const unsubSubTopics =
-      onSnapshot(
-        collection(db, "subtopics"),
-        (snapshot) => {
-
-          const data =
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            );
-
-          setSubTopics(data);
-
-        }
-      );
-
-    return () =>
-      unsubSubTopics();
-
-  }, []);
-
-  const filteredTopics =
-    topics.filter(
-      (t) =>
-        t.subjectId ===
-        selectedSubject
+      }
     );
 
-  useEffect(() => {
+    return () => unsub();
 
-    if (
-      filteredTopics.length > 0 &&
-      !selectedTopic
-    ) {
+  }, []);
 
-      setSelectedTopic(
-        filteredTopics[0].id
-      );
+  async function handleAddSubject() {
 
-    }
-
-  }, [
-    selectedSubject,
-    topics,
-  ]);
-
-  const filteredSubTopics =
-    subTopics.filter(
-      (s) =>
-        s.subjectId ===
-          selectedSubject &&
-        s.topicId ===
-          selectedTopic
-    );
-
-  async function handleAddSubTopic() {
-
-    if (
-      !subTopicName.trim()
-    ) {
+    if (!subjectName.trim()) {
 
       toast.error(
-        "SubTopic name required"
-      );
-
-      return;
-
-    }
-
-    if (
-      !selectedSubject ||
-      !selectedTopic
-    ) {
-
-      toast.error(
-        "Select subject and topic"
+        "Subject name required"
       );
 
       return;
@@ -204,21 +71,11 @@ export default function SubTopics() {
 
     const duplicateQuery =
       query(
-        collection(db, "subtopics"),
+        collection(db, "subjects"),
         where(
           "name",
           "==",
-          subTopicName.trim()
-        ),
-        where(
-          "subjectId",
-          "==",
-          selectedSubject
-        ),
-        where(
-          "topicId",
-          "==",
-          selectedTopic
+          subjectName.trim()
         )
       );
 
@@ -230,7 +87,7 @@ export default function SubTopics() {
     if (!duplicate.empty) {
 
       toast.error(
-        "SubTopic already exists"
+        "Subject already exists"
       );
 
       return;
@@ -238,17 +95,11 @@ export default function SubTopics() {
     }
 
     await addDoc(
-      collection(db, "subtopics"),
+      collection(db, "subjects"),
       {
 
         name:
-          subTopicName.trim(),
-
-        subjectId:
-          selectedSubject,
-
-        topicId:
-          selectedTopic,
+          subjectName.trim(),
 
         createdAt:
           Date.now(),
@@ -257,41 +108,29 @@ export default function SubTopics() {
     );
 
     toast.success(
-      "SubTopic Added"
+      "Subject Added"
     );
 
     resetForm();
 
   }
 
-  function editSubTopic(subTopic) {
+  function editSubject(subject) {
 
-    setEditingId(subTopic.id);
+    setEditingId(subject.id);
 
-    setSubTopicName(
-      subTopic.name
-    );
-
-    setSelectedSubject(
-      subTopic.subjectId
-    );
-
-    setSelectedTopic(
-      subTopic.topicId
-    );
+    setSubjectName(subject.name);
 
     setShowPopup(true);
 
   }
 
-  async function updateSubTopic() {
+  async function updateSubject() {
 
-    if (
-      !subTopicName.trim()
-    ) {
+    if (!subjectName.trim()) {
 
       toast.error(
-        "SubTopic name required"
+        "Subject name required"
       );
 
       return;
@@ -301,25 +140,19 @@ export default function SubTopics() {
     await updateDoc(
       doc(
         db,
-        "subtopics",
+        "subjects",
         editingId
       ),
       {
 
         name:
-          subTopicName.trim(),
-
-        subjectId:
-          selectedSubject,
-
-        topicId:
-          selectedTopic,
+          subjectName.trim(),
 
       }
     );
 
     toast.success(
-      "SubTopic Updated"
+      "Subject Updated"
     );
 
     resetForm();
@@ -331,7 +164,10 @@ export default function SubTopics() {
     const confirmDelete =
       window.confirm(
 
-`Deleting this subtopic may affect:
+`This will permanently delete:
+
+• Topics
+• SubTopics
 • Questions
 • Exams
 
@@ -342,49 +178,160 @@ Continue?`
     if (!confirmDelete)
       return;
 
-    await deleteDoc(
-      doc(
-        db,
-        "subtopics",
-        id
-      )
-    );
+    try {
 
-    toast.success(
-      "SubTopic Deleted"
-    );
+      /* TOPICS */
 
-  }
+      const topicQuery =
+        query(
+          collection(db,"topics"),
+          where(
+            "subjectId",
+            "==",
+            id
+          )
+        );
 
-  function getSubjectName(id) {
+      const topicSnapshot =
+        await getDocs(
+          topicQuery
+        );
 
-    const item =
-      subjects.find(
-        (s) => s.id === id
+      for(const topicDoc of topicSnapshot.docs){
+
+        await deleteDoc(
+          doc(
+            db,
+            "topics",
+            topicDoc.id
+          )
+        );
+
+      }
+
+      /* SUBTOPICS */
+
+      const subTopicQuery =
+        query(
+          collection(db,"subtopics"),
+          where(
+            "subjectId",
+            "==",
+            id
+          )
+        );
+
+      const subTopicSnapshot =
+        await getDocs(
+          subTopicQuery
+        );
+
+      for(
+        const subTopicDoc
+        of subTopicSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "subtopics",
+            subTopicDoc.id
+          )
+        );
+
+      }
+
+      /* QUESTIONS */
+
+      const questionQuery =
+        query(
+          collection(db,"questions"),
+          where(
+            "subjectId",
+            "==",
+            id
+          )
+        );
+
+      const questionSnapshot =
+        await getDocs(
+          questionQuery
+        );
+
+      for(
+        const questionDoc
+        of questionSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "questions",
+            questionDoc.id
+          )
+        );
+
+      }
+
+      /* EXAMS */
+
+      const examQuery =
+        query(
+          collection(db,"exams"),
+          where(
+            "subjectId",
+            "==",
+            id
+          )
+        );
+
+      const examSnapshot =
+        await getDocs(
+          examQuery
+        );
+
+      for(
+        const examDoc
+        of examSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "exams",
+            examDoc.id
+          )
+        );
+
+      }
+
+      /* SUBJECT */
+
+      await deleteDoc(
+        doc(
+          db,
+          "subjects",
+          id
+        )
       );
 
-    return item
-      ? item.name
-      : "Unknown";
-
-  }
-
-  function getTopicName(id) {
-
-    const item =
-      topics.find(
-        (t) => t.id === id
+      toast.success(
+        "Subject Cascade Deleted"
       );
 
-    return item
-      ? item.name
-      : "Unknown";
+    } catch(error){
+
+      toast.error(
+        "Delete failed"
+      );
+
+    }
 
   }
 
   function resetForm() {
 
-    setSubTopicName("");
+    setSubjectName("");
 
     setEditingId(null);
 
@@ -401,15 +348,13 @@ Continue?`
         <div>
 
           <h2>
-            SubTopic Management
+            Subject Management
           </h2>
 
           <p>
-            Total SubTopics:
+            Total Subjects:
             {" "}
-            {
-              filteredSubTopics.length
-            }
+            {subjects.length}
           </p>
 
         </div>
@@ -419,66 +364,8 @@ Continue?`
             setShowPopup(true)
           }
         >
-          + Add SubTopic
+          + Add Subject
         </button>
-
-      </div>
-
-      <div className="filter-bar">
-
-        <select
-          value={
-            selectedSubject
-          }
-          onChange={(e) =>
-            setSelectedSubject(
-              e.target.value
-            )
-          }
-        >
-
-          {
-            subjects.map(
-              (s) => (
-
-              <option
-                key={s.id}
-                value={s.id}
-              >
-                {s.name}
-              </option>
-
-            ))
-          }
-
-        </select>
-
-        <select
-          value={
-            selectedTopic
-          }
-          onChange={(e) =>
-            setSelectedTopic(
-              e.target.value
-            )
-          }
-        >
-
-          {
-            filteredTopics.map(
-              (t) => (
-
-              <option
-                key={t.id}
-                value={t.id}
-              >
-                {t.name}
-              </option>
-
-            ))
-          }
-
-        </select>
 
       </div>
 
@@ -491,15 +378,7 @@ Continue?`
             <tr>
 
               <th>
-                SubTopic
-              </th>
-
-              <th>
                 Subject
-              </th>
-
-              <th>
-                Topic
               </th>
 
               <th>
@@ -517,8 +396,7 @@ Continue?`
           <tbody>
 
             {
-              filteredSubTopics.map(
-                (s) => (
+              subjects.map((s) => (
 
                 <tr key={s.id}>
 
@@ -527,27 +405,11 @@ Continue?`
                   </td>
 
                   <td>
-                    {
-                      getSubjectName(
-                        s.subjectId
-                      )
-                    }
-                  </td>
-
-                  <td>
-                    {
-                      getTopicName(
-                        s.topicId
-                      )
-                    }
-                  </td>
-
-                  <td>
 
                     <button
                       className="edit-btn"
                       onClick={() =>
-                        editSubTopic(s)
+                        editSubject(s)
                       }
                     >
                       Edit
@@ -560,9 +422,7 @@ Continue?`
                     <button
                       className="delete-btn"
                       onClick={() =>
-                        handleDelete(
-                          s.id
-                        )
+                        handleDelete(s.id)
                       }
                     >
                       Delete
@@ -592,72 +452,18 @@ Continue?`
 
                 {
                   editingId
-                    ? "Edit SubTopic"
-                    : "Add SubTopic"
+                    ? "Edit Subject"
+                    : "Add Subject"
                 }
 
               </h3>
 
-              <select
-                value={
-                  selectedSubject
-                }
-                onChange={(e) =>
-                  setSelectedSubject(
-                    e.target.value
-                  )
-                }
-              >
-
-                {
-                  subjects.map(
-                    (s) => (
-
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
-
-                  ))
-                }
-
-              </select>
-
-              <select
-                value={
-                  selectedTopic
-                }
-                onChange={(e) =>
-                  setSelectedTopic(
-                    e.target.value
-                  )
-                }
-              >
-
-                {
-                  filteredTopics.map(
-                    (t) => (
-
-                    <option
-                      key={t.id}
-                      value={t.id}
-                    >
-                      {t.name}
-                    </option>
-
-                  ))
-                }
-
-              </select>
-
               <input
                 type="text"
-                placeholder="SubTopic Name"
-                value={subTopicName}
+                placeholder="Subject Name"
+                value={subjectName}
                 onChange={(e) =>
-                  setSubTopicName(
+                  setSubjectName(
                     e.target.value
                   )
                 }
@@ -668,20 +474,20 @@ Continue?`
 
                   <button
                     onClick={
-                      updateSubTopic
+                      updateSubject
                     }
                   >
-                    Update SubTopic
+                    Update Subject
                   </button>
 
                 ) : (
 
                   <button
                     onClick={
-                      handleAddSubTopic
+                      handleAddSubject
                     }
                   >
-                    Add SubTopic
+                    Add Subject
                   </button>
 
                 )

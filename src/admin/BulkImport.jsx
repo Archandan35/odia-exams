@@ -57,6 +57,10 @@ const [selectedSubTopic,
 setSelectedSubTopic] =
 useState("");
 
+const [ocrLanguage,
+setOcrLanguage] =
+useState("eng");
+
 const [previewQuestions,
 setPreviewQuestions] =
 useState([]);
@@ -158,13 +162,13 @@ try{
 setLoading(true);
 
 toast.loading(
-"Scanning Image OCR..."
+"Scanning OCR..."
 );
 
 const result =
 await Tesseract.recognize(
 file,
-"eng"
+ocrLanguage
 );
 
 const parsed =
@@ -181,7 +185,9 @@ toast.success(
 Questions Parsed`
 );
 
-}catch{
+}catch(error){
+
+console.log(error);
 
 toast.dismiss();
 
@@ -257,7 +263,9 @@ toast.success(
 Questions Parsed`
 );
 
-}catch{
+}catch(error){
+
+console.log(error);
 
 toast.dismiss();
 
@@ -315,6 +323,12 @@ q.difficulty ||
 explanation:
 q.explanation ||
 "",
+
+language:
+q.language ||
+"english",
+
+confidence:95,
 
 }));
 
@@ -436,6 +450,16 @@ difficulty:
 q.difficulty ||
 "easy",
 
+language:
+q.language ||
+"english",
+
+confidence:
+q.confidence || 90,
+
+tags:
+q.tags || [],
+
 explanation:
 q.explanation ||
 "",
@@ -455,7 +479,9 @@ Questions Imported`
 
 setPreviewQuestions([]);
 
-}catch{
+}catch(error){
+
+console.log(error);
 
 toast.error(
 "Import Failed"
@@ -508,6 +534,7 @@ const rows = [[
 "optionC",
 "optionD",
 "correctAnswer",
+"language",
 
 ]];
 
@@ -526,6 +553,8 @@ q.options?.[2] || "",
 q.options?.[3] || "",
 
 q.correctAnswer,
+
+q.language,
 
 ]);
 
@@ -562,15 +591,46 @@ return(
 <div>
 
 <h2>
-Advanced OCR Import
+Multilingual OCR Import
 </h2>
 
 <p>
-PDF / Image / CSV / JSON
-Bulk Question System
+English / Hindi / Odia
+Question Import System
 </p>
 
 </div>
+
+</div>
+
+<div className="glass-card">
+
+<h3>
+OCR Language
+</h3>
+
+<select
+value={ocrLanguage}
+onChange={(e)=>
+setOcrLanguage(
+e.target.value
+)
+}
+>
+
+<option value="eng">
+English
+</option>
+
+<option value="hin">
+Hindi
+</option>
+
+<option value="eng+hin">
+English + Hindi
+</option>
+
+</select>
 
 </div>
 
@@ -581,10 +641,6 @@ Bulk Question System
 <h3>
 Image OCR
 </h3>
-
-<p>
-Upload scanned images
-</p>
 
 <input
 type="file"
@@ -602,10 +658,6 @@ handleImageOCR
 PDF OCR
 </h3>
 
-<p>
-Upload PDF Question Papers
-</p>
-
 <input
 type="file"
 accept=".pdf"
@@ -622,10 +674,6 @@ handlePDFOCR
 CSV Upload
 </h3>
 
-<p>
-Bulk CSV Questions
-</p>
-
 <input
 type="file"
 accept=".csv"
@@ -641,10 +689,6 @@ handleCSVUpload
 <h3>
 JSON Upload
 </h3>
-
-<p>
-Bulk JSON Questions
-</p>
 
 <input
 type="file"
@@ -780,11 +824,11 @@ marginTop:"25px",
 <div>
 
 <h2>
-Preview Questions
+OCR Preview
 </h2>
 
 <p>
-Verify Before Import
+Verify Questions Before Save
 </p>
 
 </div>
@@ -915,6 +959,18 @@ q.correctAnswer || 0
 )
 )
 }
+
+</p>
+
+<p>
+
+<b>
+Language:
+</b>
+
+{" "}
+
+{q.language}
 
 </p>
 

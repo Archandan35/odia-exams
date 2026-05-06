@@ -1,97 +1,119 @@
 import {
+  BrowserRouter,
   Routes,
   Route,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
-
 import Register from "./pages/Register";
 
-import Dashboard from "./pages/StudentDashboard";
+import StudentDashboard
+from "./pages/StudentDashboard";
 
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard
+from "./pages/AdminDashboard";
 
-import ExamPage from "./pages/ExamPage";
+import ExamPage
+from "./pages/ExamPage";
 
-import AnalyticsPage from "./pages/AnalyticsPage";
+import TopicDashboard
+from "./pages/TopicDashboard";
 
-import LeaderboardPage from "./pages/LeaderboardPage";
+import MixedExamPage
+from "./pages/MixedExamPage";
 
-import ProtectedRoute from "./routes/ProtectedRoute";
+import ProtectedRoute
+from "./routes/ProtectedRoute";
 
-import AdminRoute from "./routes/AdminRoute";
+import AdminRoute
+from "./routes/AdminRoute";
 
 export default function App() {
 
   return (
 
-    <Routes>
+    <BrowserRouter>
 
-      <Route
-        path="/"
-        element={<Login />}
-      />
+      <Routes>
 
-      <Route
-        path="/register"
-        element={<Register />}
-      />
+        <Route
+          path="/"
+          element={<Login/>}
+        />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
+        <Route
+          path="/register"
+          element={<Register/>}
+        />
 
-            <Dashboard />
+        <Route
+          path="/dashboard"
+          element={
 
-          </ProtectedRoute>
-        }
-      />
+            <ProtectedRoute>
 
-      <Route
-        path="/exam/:subject"
-        element={
-          <ProtectedRoute>
+              <StudentDashboard/>
 
-            <ExamPage />
+            </ProtectedRoute>
 
-          </ProtectedRoute>
-        }
-      />
+          }
+        />
 
-      <Route
-        path="/leaderboard"
-        element={
-          <ProtectedRoute>
+        <Route
+          path="/admin"
+          element={
 
-            <LeaderboardPage />
+            <AdminRoute>
 
-          </ProtectedRoute>
-        }
-      />
+              <AdminDashboard/>
 
-      <Route
-        path="/analytics"
-        element={
-          <AdminRoute>
+            </AdminRoute>
 
-            <AnalyticsPage />
+          }
+        />
 
-          </AdminRoute>
-        }
-      />
+        <Route
+          path="/exam/:subject"
+          element={
 
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
+            <ProtectedRoute>
 
-            <AdminDashboard />
+              <ExamPage/>
 
-          </AdminRoute>
-        }
-      />
+            </ProtectedRoute>
 
-    </Routes>
+          }
+        />
+
+        <Route
+          path="/topics"
+          element={
+
+            <ProtectedRoute>
+
+              <TopicDashboard/>
+
+            </ProtectedRoute>
+
+          }
+        />
+
+        <Route
+          path="/mixed-exam"
+          element={
+
+            <ProtectedRoute>
+
+              <MixedExamPage/>
+
+            </ProtectedRoute>
+
+          }
+        />
+
+      </Routes>
+
+    </BrowserRouter>
+
   );
 }

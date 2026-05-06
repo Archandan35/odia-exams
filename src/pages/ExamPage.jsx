@@ -485,9 +485,36 @@ ${String(secs)
 
       if (!ans) return;
 
-      if (
-        ans === q.answer
-      ) {
+      let correctIndex = 0;
+
+if(
+  q.correctAnswer !== undefined
+){
+
+  correctIndex =
+    q.correctAnswer;
+
+}else{
+
+  const legacyMap = {
+    A:0,
+    B:1,
+    C:2,
+    D:3,
+  };
+
+  correctIndex =
+    legacyMap[q.answer] || 0;
+
+}
+
+if(
+  q.options[
+    correctIndex
+  ] === ans
+)
+
+{
 
         correct++;
 

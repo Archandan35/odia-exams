@@ -9,20 +9,25 @@
     "preview": "vite preview --host 0.0.0.0 --port $PORT"
   },
   "dependencies": {
+    "file-saver": "^2.0.5",
     "firebase": "^11.0.0",
+    "framer-motion": "^11.0.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^5.0.7",
+    "papaparse": "^5.5.3",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
-    "zustand": "^5.0.3",
     "react-hot-toast": "^2.4.1",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^6.28.0",
     "recharts": "^2.15.1",
-    "framer-motion": "^11.0.0",
-    "jspdf": "^2.5.2",
-    "html2canvas": "^1.4.1",
-    "react-icons": "^5.5.0"
+    "tesseract.js": "^7.0.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "vite": "^5.4.10",
-    "@vitejs/plugin-react": "^4.3.1"
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.10"
   }
 }

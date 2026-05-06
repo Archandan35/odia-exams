@@ -1,27 +1,27 @@
-import Sidebar from "./Sidebar";
+import AdminSidebar from "../components/AdminSidebar";
 
-export default function AdminLayout({ children }) {
+import TopNavbar from "../components/TopNavbar";
 
-  return (
+export default function AdminLayout({
+children,
+}) {
 
-    <div className="admin-layout">
+return(
 
-      <Sidebar />
+<div className="admin-layout">
 
-      <div className="admin-content">
+<AdminSidebar/>
 
-        <div className="topbar">
+<div className="admin-content">
 
-          <h2>
-            Admin Panel
-          </h2>
+<TopNavbar/>
 
-        </div>
+{children}
 
-        {children}
+</div>
 
-      </div>
+</div>
 
-    </div>
-  );
+);
+
 }

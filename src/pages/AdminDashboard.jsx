@@ -163,29 +163,105 @@ export default function AdminDashboard() {
 
   async function editSubject(s) {
 
-    const newTitle =
-      prompt(
-        "Edit Subject",
-        s.title
-      );
-
-    if (!newTitle) return;
-
-    await updateSubject(
-      s.id,
-      {
-        title:newTitle,
-      }
+  const newTitle =
+    prompt(
+      "Edit Title",
+      s.title
     );
-  }
+
+  if (!newTitle) return;
+
+  const newDescription =
+    prompt(
+      "Edit Description",
+      s.description
+    );
+
+  if (!newDescription) return;
+
+  const newDuration =
+    prompt(
+      "Edit Duration",
+      s.duration
+    );
+
+  if (!newDuration) return;
+
+  await updateSubject(
+    s.id,
+    {
+      title:newTitle,
+      description:newDescription,
+      duration:newDuration,
+    }
+  );
+}
 
   async function editQuestion(q) {
 
-    const newQuestion =
-      prompt(
-        "Edit Question",
-        q.question
-      );
+  const newSubject =
+    prompt(
+      "Edit Subject",
+      q.subject
+    );
+
+  if (!newSubject) return;
+
+  const newQuestion =
+    prompt(
+      "Edit Question",
+      q.question
+    );
+
+  if (!newQuestion) return;
+
+  const newOption1 =
+    prompt(
+      "Edit Option 1",
+      q.options[0]
+    );
+
+  const newOption2 =
+    prompt(
+      "Edit Option 2",
+      q.options[1]
+    );
+
+  const newOption3 =
+    prompt(
+      "Edit Option 3",
+      q.options[2]
+    );
+
+  const newOption4 =
+    prompt(
+      "Edit Option 4",
+      q.options[3]
+    );
+
+  const newAnswer =
+    prompt(
+      "Edit Correct Answer",
+      q.answer
+    );
+
+  await updateQuestion(
+    q.id,
+    {
+      subject:newSubject,
+      question:newQuestion,
+
+      options:[
+        newOption1,
+        newOption2,
+        newOption3,
+        newOption4,
+      ],
+
+      answer:newAnswer,
+    }
+  );
+}
 
     if (!newQuestion) return;
 

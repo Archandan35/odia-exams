@@ -26,6 +26,8 @@ import Questions from "./admin/Questions";
 
 import Exams from "./admin/Exams";
 
+import Profile from "./pages/Profile";
+
 import Results from "./admin/Results";
 
 export default function App() {
@@ -115,6 +117,15 @@ export default function App() {
       <Results />
     </AdminRoute>
   }
+/>
+
+        <Route
+path="/profile"
+element={
+<ProtectedRoute>
+<Profile/>
+</ProtectedRoute>
+}
 />
         
         <Route

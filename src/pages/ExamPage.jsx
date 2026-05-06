@@ -305,8 +305,6 @@ allQuestions.sort(
 
 }
 
-/* SHUFFLE */
-
 if(
 currentExam.shuffleQuestions
 ){
@@ -317,8 +315,6 @@ allQuestions.sort(
 );
 
 }
-
-/* LIMIT */
 
 allQuestions =
 allQuestions.slice(
@@ -776,17 +772,34 @@ answers[q.id]
 
 <input
 type="radio"
+className="option-radio"
 checked={
 answers[q.id]
 === index
 }
-onChange={()=>selectAnswer(
+onChange={()=>
+selectAnswer(
 q.id,
 index
-)}
+)
+}
 />
 
+<div className="option-text">
+
+<span className="option-label">
+
+{
+String.fromCharCode(
+65 + index
+)
+}) 
+
+</span>
+
 {option}
+
+</div>
 
 </label>
 
@@ -926,43 +939,6 @@ index
 
 })
 }
-
-</div>
-
-<div className="legend">
-
-<div>
-
-<span className="
-legend-box
-answered-btn
-"></span>
-
-Answered
-
-</div>
-
-<div>
-
-<span className="
-legend-box
-visited-btn
-"></span>
-
-Visited
-
-</div>
-
-<div>
-
-<span className="
-legend-box
-review-btn
-"></span>
-
-Review
-
-</div>
 
 </div>
 

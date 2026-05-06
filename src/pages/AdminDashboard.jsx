@@ -29,19 +29,23 @@ import {
 
 export default function AdminDashboard() {
 
-  const nav =
-    useNavigate();
+  const nav = useNavigate();
 
-  const [subjects,
-    setSubjects] =
+  const [subjects, setSubjects] =
     useState([]);
 
-  const [questions,
-    setQuestions] =
+  const [questions, setQuestions] =
     useState([]);
 
-  const [title,
-    setTitle] =
+  const [showSubjectForm,
+    setShowSubjectForm] =
+    useState(false);
+
+  const [showQuestionForm,
+    setShowQuestionForm] =
+    useState(false);
+
+  const [title, setTitle] =
     useState("");
 
   const [description,
@@ -83,20 +87,14 @@ export default function AdminDashboard() {
   useEffect(() => {
 
     const unsub1 =
-      listenSubjects(
-        setSubjects
-      );
+      listenSubjects(setSubjects);
 
     const unsub2 =
-      listenQuestions(
-        setQuestions
-      );
+      listenQuestions(setQuestions);
 
     return () => {
-
       unsub1();
       unsub2();
-
     };
 
   }, []);
@@ -151,171 +149,185 @@ export default function AdminDashboard() {
 
     <div className="page">
 
-      <div
-        style={{
-          display:"flex",
-          justifyContent:
-            "space-between",
-        }}
-      >
+      <div className="topbar">
 
-        <h1>
-          Admin Dashboard
-        </h1>
+        <h1>Admin Dashboard</h1>
 
-        <button
-          onClick={logout}
-        >
+        <button onClick={logout}>
           Logout
         </button>
 
       </div>
 
-      <div className="card">
-
-        <h2>
-          Add Subject
-        </h2>
-
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e)=>
-            setTitle(
-              e.target.value
-            )
-          }
-        />
-
-        <input
-          placeholder="Description"
-          value={description}
-          onChange={(e)=>
-            setDescription(
-              e.target.value
-            )
-          }
-        />
-
-        <input
-          placeholder="Duration"
-          value={duration}
-          onChange={(e)=>
-            setDuration(
-              e.target.value
-            )
-          }
-        />
+      <div className="admin-actions">
 
         <button
-          onClick={
-            createSubject
+          onClick={() =>
+            setShowSubjectForm(
+              !showSubjectForm
+            )
           }
         >
           Add Subject
         </button>
 
-      </div>
-
-      <div className="card">
-
-        <h2>
-          Add Question
-        </h2>
-
-        <select
-          value={subject}
-          onChange={(e)=>
-            setSubject(
-              e.target.value
+        <button
+          onClick={() =>
+            setShowQuestionForm(
+              !showQuestionForm
             )
           }
         >
+          Add Question
+        </button>
 
-          <option>
-            Select Subject
-          </option>
+      </div>
 
-          {subjects.map((s)=>(
-            <option
-              key={s.id}
-              value={s.title}
-            >
-              {s.title}
+      {showSubjectForm && (
+
+        <div className="card">
+
+          <h2>Add Subject</h2>
+
+          <input
+            placeholder="Title"
+            value={title}
+            onChange={(e)=>
+              setTitle(e.target.value)
+            }
+          />
+
+          <input
+            placeholder="Description"
+            value={description}
+            onChange={(e)=>
+              setDescription(
+                e.target.value
+              )
+            }
+          />
+
+          <input
+            placeholder="Duration"
+            value={duration}
+            onChange={(e)=>
+              setDuration(
+                e.target.value
+              )
+            }
+          />
+
+          <button
+            onClick={createSubject}
+          >
+            Save Subject
+          </button>
+
+        </div>
+
+      )}
+
+      {showQuestionForm && (
+
+        <div className="card">
+
+          <h2>Add Question</h2>
+
+          <select
+            value={subject}
+            onChange={(e)=>
+              setSubject(
+                e.target.value
+              )
+            }
+          >
+
+            <option>
+              Select Subject
             </option>
-          ))}
 
-        </select>
+            {subjects.map((s)=>(
+              <option
+                key={s.id}
+                value={s.title}
+              >
+                {s.title}
+              </option>
+            ))}
 
-        <input
-          placeholder="Question"
-          value={question}
-          onChange={(e)=>
-            setQuestion(
-              e.target.value
-            )
-          }
-        />
+          </select>
 
-        <input
-          placeholder="Option 1"
-          value={option1}
-          onChange={(e)=>
-            setOption1(
-              e.target.value
-            )
-          }
-        />
+          <input
+            placeholder="Question"
+            value={question}
+            onChange={(e)=>
+              setQuestion(
+                e.target.value
+              )
+            }
+          />
 
-        <input
-          placeholder="Option 2"
-          value={option2}
-          onChange={(e)=>
-            setOption2(
-              e.target.value
-            )
-          }
-        />
+          <input
+            placeholder="Option 1"
+            value={option1}
+            onChange={(e)=>
+              setOption1(
+                e.target.value
+              )
+            }
+          />
 
-        <input
-          placeholder="Option 3"
-          value={option3}
-          onChange={(e)=>
-            setOption3(
-              e.target.value
-            )
-          }
-        />
+          <input
+            placeholder="Option 2"
+            value={option2}
+            onChange={(e)=>
+              setOption2(
+                e.target.value
+              )
+            }
+          />
 
-        <input
-          placeholder="Option 4"
-          value={option4}
-          onChange={(e)=>
-            setOption4(
-              e.target.value
-            )
-          }
-        />
+          <input
+            placeholder="Option 3"
+            value={option3}
+            onChange={(e)=>
+              setOption3(
+                e.target.value
+              )
+            }
+          />
 
-        <input
-          placeholder="Correct Answer"
-          value={answer}
-          onChange={(e)=>
-            setAnswer(
-              e.target.value
-            )
-          }
-        />
+          <input
+            placeholder="Option 4"
+            value={option4}
+            onChange={(e)=>
+              setOption4(
+                e.target.value
+              )
+            }
+          />
 
-        <button
-          onClick={
-            createQuestion
-          }
-        >
-          Add Question
-        </button>
+          <input
+            placeholder="Correct Answer"
+            value={answer}
+            onChange={(e)=>
+              setAnswer(
+                e.target.value
+              )
+            }
+          />
 
-      </div>
+          <button
+            onClick={createQuestion}
+          >
+            Save Question
+          </button>
+
+        </div>
+
+      )}
+
+      <h2>Subjects</h2>
 
       <div className="grid">
 
@@ -326,15 +338,15 @@ export default function AdminDashboard() {
             className="subject-card"
           >
 
-            <h2>
-              {s.title}
-            </h2>
+            <h2>{s.title}</h2>
+
+            <p>{s.description}</p>
+
+            <button>Edit</button>
 
             <button
               onClick={() =>
-                deleteSubject(
-                  s.id
-                )
+                deleteSubject(s.id)
               }
             >
               Delete
@@ -346,9 +358,7 @@ export default function AdminDashboard() {
 
       </div>
 
-      <h2>
-        Questions
-      </h2>
+      <h2>Questions</h2>
 
       <div className="grid">
 
@@ -359,20 +369,17 @@ export default function AdminDashboard() {
             className="subject-card"
           >
 
-            <h3>
-              {q.question}
-            </h3>
+            <h3>{q.question}</h3>
 
             <p>
-              Subject:
-              {q.subject}
+              Subject: {q.subject}
             </p>
+
+            <button>Edit</button>
 
             <button
               onClick={() =>
-                deleteQuestion(
-                  q.id
-                )
+                deleteQuestion(q.id)
               }
             >
               Delete

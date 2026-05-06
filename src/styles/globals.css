@@ -76,5 +76,25 @@ color:white;
 .subject-card{
 display:flex;
 flex-direction:column;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+}
+
+.admin-actions{
+  display:flex;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.option{
+  display:flex;
+  gap:10px;
+  margin:10px 0;
+}
 gap:10px;
 }

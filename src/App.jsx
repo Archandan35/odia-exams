@@ -13,10 +13,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 import ExamPage from "./pages/ExamPage";
 
-import TopicDashboard from "./pages/TopicDashboard";
-
-import MixedExamPage from "./pages/MixedExamPage";
-
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import AdminRoute from "./routes/AdminRoute";
@@ -62,24 +58,6 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ExamPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/topics"
-          element={
-            <ProtectedRoute>
-              <TopicDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mixed-exam"
-          element={
-            <ProtectedRoute>
-              <MixedExamPage />
             </ProtectedRoute>
           }
         />

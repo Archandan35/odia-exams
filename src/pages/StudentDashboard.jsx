@@ -1,4 +1,36 @@
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  listenSubjects,
+} from "../services/subjectService";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
 export default function StudentDashboard() {
+
+  const [subjects,
+    setSubjects] =
+    useState([]);
+
+  const nav =
+    useNavigate();
+
+  useEffect(() => {
+
+    const unsubscribe =
+      listenSubjects(
+        setSubjects
+      );
+
+    return () =>
+      unsubscribe();
+
+  }, []);
 
   return (
 
@@ -10,35 +42,37 @@ export default function StudentDashboard() {
 
       <div className="grid">
 
-        <div className="subject-card">
+        {subjects.map((s) => (
 
-          <h2>SBI PO Mock</h2>
+          <div
+            key={s.id}
+            className="subject-card"
+          >
 
-          <button>
-            Start Test
-          </button>
+            <h2>
+              {s.title}
+            </h2>
 
-        </div>
+            <p>
+              {s.description}
+            </p>
 
-        <div className="subject-card">
+            <p>
+              Duration:
+              {s.duration} mins
+            </p>
 
-          <h2>RRB PO Mock</h2>
+            <button
+              onClick={() =>
+                nav("/exam")
+              }
+            >
+              Start Test
+            </button>
 
-          <button>
-            Start Test
-          </button>
+          </div>
 
-        </div>
-
-        <div className="subject-card">
-
-          <h2>SSC Mock</h2>
-
-          <button>
-            Start Test
-          </button>
-
-        </div>
+        ))}
 
       </div>
 

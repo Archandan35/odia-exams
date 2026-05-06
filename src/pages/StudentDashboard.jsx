@@ -98,7 +98,7 @@ nav(
 
 return(
 
-<div className="page">
+<div className="subject-card glass-card">
 
 <h1>
 Mock Test Dashboard

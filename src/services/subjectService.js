@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 
 import {
@@ -13,9 +14,7 @@ import {
 const subjectsRef =
   collection(db, "subjects");
 
-export async function addSubject(
-  subject
-) {
+export async function addSubject(subject) {
 
   await addDoc(
     subjectsRef,
@@ -23,18 +22,25 @@ export async function addSubject(
   );
 }
 
-export async function deleteSubject(
-  id
-) {
+export async function deleteSubject(id) {
 
   await deleteDoc(
     doc(db, "subjects", id)
   );
 }
 
-export function listenSubjects(
-  callback
+export async function updateSubject(
+  id,
+  data
 ) {
+
+  await updateDoc(
+    doc(db, "subjects", id),
+    data
+  );
+}
+
+export function listenSubjects(callback) {
 
   return onSnapshot(
     subjectsRef,
@@ -42,7 +48,7 @@ export function listenSubjects(
 
       const data =
         snapshot.docs.map((d) => ({
-          id: d.id,
+          id:d.id,
           ...d.data(),
         }));
 

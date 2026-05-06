@@ -34,6 +34,9 @@ parseMCQ,
 import AdminLayout
 from "./AdminLayout";
 
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
 export default function BulkImport(){
 
 const [subjects,setSubjects] =
@@ -132,23 +135,7 @@ unsubSubTopics();
 
 },[]);
 
-const filteredTopics =
-topics.filter(
-(t)=>
-t.subjectId ===
-selectedSubject
-);
-
-const filteredSubTopics =
-subTopics.filter(
-(s)=>
-s.subjectId ===
-selectedSubject &&
-s.topicId ===
-selectedTopic
-);
-
-/* OCR IMAGE */
+/* IMAGE OCR */
 
 async function handleImageOCR(e){
 
@@ -162,28 +149,44 @@ try{
 setLoading(true);
 
 toast.loading(
-"Scanning OCR..."
+"Running OCR..."
 );
 
 const result =
 await Tesseract.recognize(
 file,
-ocrLanguage
+ocrLanguage,
+{
+logger:m=>console.log(m),
+}
 );
 
+const text =
+result.data.text;
+
+console.log(text);
+
 const parsed =
-parseMCQ(
-result.data.text
-);
+parseMCQ(text);
 
 setPreviewQuestions(parsed);
 
 toast.dismiss();
 
+if(parsed.length === 0){
+
+toast.error(
+"No MCQ Detected"
+);
+
+}else{
+
 toast.success(
 `${parsed.length}
 Questions Parsed`
 );
+
+}
 
 }catch(error){
 
@@ -251,6 +254,8 @@ strings.join(" ");
 
 }
 
+console.log(fullText);
+
 const parsed =
 parseMCQ(fullText);
 
@@ -258,10 +263,20 @@ setPreviewQuestions(parsed);
 
 toast.dismiss();
 
+if(parsed.length === 0){
+
+toast.error(
+"No Questions Parsed"
+);
+
+}else{
+
 toast.success(
 `${parsed.length}
 Questions Parsed`
 );
+
+}
 
 }catch(error){
 
@@ -270,313 +285,12 @@ console.log(error);
 toast.dismiss();
 
 toast.error(
-"PDF OCR Failed"
+"PDF Import Failed"
 );
 
 }
 
 setLoading(false);
-
-}
-
-/* CSV */
-
-function handleCSVUpload(e){
-
-const file =
-e.target.files[0];
-
-if(!file) return;
-
-Papa.parse(file,{
-
-header:true,
-
-skipEmptyLines:true,
-
-complete:(results)=>{
-
-const parsed =
-results.data.map((q)=>({
-
-question:
-q.question || "",
-
-options:[
-
-q.optionA || "",
-q.optionB || "",
-q.optionC || "",
-q.optionD || "",
-
-],
-
-correctAnswer:
-Number(
-q.correctAnswer || 0
-),
-
-difficulty:
-q.difficulty ||
-"easy",
-
-explanation:
-q.explanation ||
-"",
-
-language:
-q.language ||
-"english",
-
-confidence:95,
-
-}));
-
-setPreviewQuestions(parsed);
-
-toast.success(
-"CSV Imported"
-);
-
-},
-
-});
-
-}
-
-/* JSON */
-
-function handleJSONUpload(e){
-
-const file =
-e.target.files[0];
-
-if(!file) return;
-
-const reader =
-new FileReader();
-
-reader.onload =
-(event)=>{
-
-try{
-
-const json =
-JSON.parse(
-event.target.result
-);
-
-setPreviewQuestions(json);
-
-toast.success(
-"JSON Imported"
-);
-
-}catch{
-
-toast.error(
-"Invalid JSON"
-);
-
-}
-
-};
-
-reader.readAsText(file);
-
-}
-
-/* SAVE */
-
-async function handleSaveQuestions(){
-
-if(
-previewQuestions.length === 0
-){
-
-toast.error(
-"No Questions"
-);
-
-return;
-
-}
-
-if(
-!selectedSubject ||
-!selectedTopic ||
-!selectedSubTopic
-){
-
-toast.error(
-"Select Subject Hierarchy"
-);
-
-return;
-
-}
-
-try{
-
-setLoading(true);
-
-for(const q of previewQuestions){
-
-await addDoc(
-collection(db,"questions"),
-{
-
-subjectId:
-selectedSubject,
-
-topicId:
-selectedTopic,
-
-subTopicId:
-selectedSubTopic,
-
-question:
-q.question,
-
-options:
-q.options,
-
-correctAnswer:
-Number(
-q.correctAnswer || 0
-),
-
-difficulty:
-q.difficulty ||
-"easy",
-
-language:
-q.language ||
-"english",
-
-confidence:
-q.confidence || 90,
-
-tags:
-q.tags || [],
-
-explanation:
-q.explanation ||
-"",
-
-createdAt:
-Date.now(),
-
-}
-);
-
-}
-
-toast.success(
-`${previewQuestions.length}
-Questions Imported`
-);
-
-setPreviewQuestions([]);
-
-}catch(error){
-
-console.log(error);
-
-toast.error(
-"Import Failed"
-);
-
-}
-
-setLoading(false);
-
-}
-
-/* EXPORT JSON */
-
-function exportJSON(){
-
-const blob =
-new Blob(
-
-[
-JSON.stringify(
-previewQuestions,
-null,
-2
-)
-],
-
-{
-type:
-"application/json",
-}
-
-);
-
-saveAs(
-blob,
-"questions.json"
-);
-
-}
-
-/* EXPORT CSV */
-
-function exportCSV(){
-
-const rows = [[
-
-"question",
-"optionA",
-"optionB",
-"optionC",
-"optionD",
-"correctAnswer",
-"language",
-
-]];
-
-previewQuestions.forEach((q)=>{
-
-rows.push([
-
-q.question,
-
-q.options?.[0] || "",
-
-q.options?.[1] || "",
-
-q.options?.[2] || "",
-
-q.options?.[3] || "",
-
-q.correctAnswer,
-
-q.language,
-
-]);
-
-});
-
-const csv =
-rows.map(
-(r)=>r.join(",")
-).join("\n");
-
-const blob =
-new Blob(
-[csv],
-{
-type:"text/csv",
-}
-);
-
-saveAs(
-blob,
-"questions.csv"
-);
 
 }
 
@@ -591,12 +305,12 @@ return(
 <div>
 
 <h2>
-Multilingual OCR Import
+Advanced OCR Import
 </h2>
 
 <p>
-English / Hindi / Odia
-Question Import System
+Odia / Hindi / English
+MCQ OCR System
 </p>
 
 </div>
@@ -668,145 +382,6 @@ handlePDFOCR
 
 </div>
 
-<div className="import-card">
-
-<h3>
-CSV Upload
-</h3>
-
-<input
-type="file"
-accept=".csv"
-onChange={
-handleCSVUpload
-}
-/>
-
-</div>
-
-<div className="import-card">
-
-<h3>
-JSON Upload
-</h3>
-
-<input
-type="file"
-accept=".json"
-onChange={
-handleJSONUpload
-}
-/>
-
-</div>
-
-</div>
-
-<div className="glass-card"
-style={{
-padding:"25px",
-marginTop:"25px",
-}}
->
-
-<h3>
-Select Hierarchy
-</h3>
-
-<div className="filter-bar">
-
-<select
-value={selectedSubject}
-onChange={(e)=>
-setSelectedSubject(
-e.target.value
-)
-}
->
-
-<option value="">
-Subject
-</option>
-
-{
-subjects.map((s)=>(
-
-<option
-key={s.id}
-value={s.id}
->
-
-{s.name}
-
-</option>
-
-))
-}
-
-</select>
-
-<select
-value={selectedTopic}
-onChange={(e)=>
-setSelectedTopic(
-e.target.value
-)
-}
->
-
-<option value="">
-Topic
-</option>
-
-{
-filteredTopics.map((t)=>(
-
-<option
-key={t.id}
-value={t.id}
->
-
-{t.name}
-
-</option>
-
-))
-}
-
-</select>
-
-<select
-value={selectedSubTopic}
-onChange={(e)=>
-setSelectedSubTopic(
-e.target.value
-)
-}
->
-
-<option value="">
-SubTopic
-</option>
-
-{
-filteredSubTopics.map((s)=>(
-
-<option
-key={s.id}
-value={s.id}
->
-
-{s.name}
-
-</option>
-
-))
-}
-
-</select>
-
-</div>
-
 </div>
 
 {
@@ -819,70 +394,16 @@ marginTop:"25px",
 }}
 >
 
-<div className="page-header">
-
-<div>
-
 <h2>
-OCR Preview
+Parsed Questions
 </h2>
-
-<p>
-Verify Questions Before Save
-</p>
-
-</div>
-
-<div
-style={{
-display:"flex",
-gap:"12px",
-}}
->
-
-<button
-onClick={
-exportJSON
-}
->
-Export JSON
-</button>
-
-<button
-onClick={
-exportCSV
-}
->
-Export CSV
-</button>
-
-<button
-className="submit-btn"
-onClick={
-handleSaveQuestions
-}
-disabled={loading}
->
-
-{
-loading
-?
-"Importing..."
-:
-"Confirm Import"
-}
-
-</button>
-
-</div>
-
-</div>
 
 <div
 style={{
 display:"flex",
 flexDirection:"column",
 gap:"20px",
+marginTop:"20px",
 }}
 >
 
@@ -942,25 +463,6 @@ String.fromCharCode(
 }
 
 </div>
-
-<p>
-
-<b>
-Correct:
-</b>
-
-{" "}
-
-{
-String.fromCharCode(
-65 +
-(
-q.correctAnswer || 0
-)
-)
-}
-
-</p>
 
 <p>
 

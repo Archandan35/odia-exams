@@ -30,6 +30,8 @@ import Profile from "./pages/Profile";
 
 import Results from "./admin/Results";
 
+import ResultPage from "./pages/ResultPage";
+
 export default function App() {
 
   return (
@@ -124,6 +126,14 @@ path="/profile"
 element={
 <ProtectedRoute>
 <Profile/>
+</ProtectedRoute>
+}
+/>
+        <Route
+path="/result"
+element={
+<ProtectedRoute>
+<ResultPage/>
 </ProtectedRoute>
 }
 />

@@ -49,7 +49,7 @@ export default function App() {
       />
 
       <Route
-        path="/exam/:subject""
+        path="/exam/:subject"
         element={
           <ProtectedRoute>
 

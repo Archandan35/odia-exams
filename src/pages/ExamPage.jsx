@@ -1,429 +1,302 @@
 import {
-  useEffect,
-  useState,
+useEffect,
+useState,
 } from "react";
 
 import {
-  useParams,
+useParams,
 } from "react-router-dom";
 
 import {
-  getQuestionsBySubject,
-} from "../services/questionService";
+collection,
+getDocs,
+} from "firebase/firestore";
 
-export default function ExamPage() {
+import {
+db,
+} from "../firebase/config";
 
-  const { subject } =
-    useParams();
+export default function ExamPage(){
 
-  const [questions,
-    setQuestions] =
-    useState([]);
+const { subject } =
+useParams();
 
-  const [answers,
-    setAnswers] =
-    useState({});
+const [questions,
+setQuestions] =
+useState([]);
 
-  const [review,
-    setReview] =
-    useState({});
+const [current,
+setCurrent] =
+useState(0);
 
-  const [current,
-    setCurrent] =
-    useState(0);
+const [answers,
+setAnswers] =
+useState({});
 
-  const [timeLeft,
-    setTimeLeft] =
-    useState(1800);
+const [timeLeft,
+setTimeLeft] =
+useState(3600);
 
-  const [submitted,
-    setSubmitted] =
-    useState(false);
+useEffect(()=>{
 
-  const [score,
-    setScore] =
-    useState(0);
+async function load(){
 
-  useEffect(() => {
+const params =
+new URLSearchParams(
+window.location.search
+);
 
-    async function load() {
+const topic =
+params.get("topic");
 
-      const data =
-        await getQuestionsBySubject(
-          subject
-        );
+const mixed =
+params.get("mixed");
 
-      setQuestions(data);
+const count =
+parseInt(
+params.get("count")
+|| 10
+);
 
-    }
+const snapshot =
+await getDocs(
+collection(db,"questions")
+);
 
-    load();
+let data =
+snapshot.docs.map((d)=>(
+{
+id:d.id,
+...d.data(),
+}
+));
 
-  }, [subject]);
+if(topic){
 
-  useEffect(() => {
+data = data.filter((q)=>
+q.subject === subject
+&&
+q.topic === topic
+);
+}
 
-    if (submitted) return;
+else if(mixed){
 
-    const interval =
-      setInterval(() => {
+data = data.filter((q)=>
+q.subject === subject
+);
+}
 
-        setTimeLeft((prev)=>{
+else{
 
-          if (prev <= 1) {
+data = data.filter((q)=>
+q.subject === subject
+);
+}
 
-            clearInterval(
-              interval
-            );
+// shuffle
 
-            submitExam();
+data = data.sort(()=>
+Math.random()-0.5
+);
 
-            return 0;
+setQuestions(
+data.slice(0,count)
+);
 
-          }
+}
 
-          return prev - 1;
+load();
 
-        });
+},[subject]);
 
-      },1000);
+useEffect(()=>{
 
-    return () =>
-      clearInterval(
-        interval
-      );
+const interval =
+setInterval(()=>{
 
-  }, [submitted]);
+setTimeLeft((prev)=>{
 
-  function selectAnswer(
-    qid,
-    option
-  ) {
+if(prev <= 0){
 
-    setAnswers((prev)=>({
+clearInterval(interval);
+return 0;
 
-      ...prev,
+}
 
-      [qid]:option,
+return prev - 1;
 
-    }));
+});
 
-  }
+},1000);
 
-  function markReview(qid) {
+return()=>clearInterval(interval);
 
-    setReview((prev)=>({
+},[]);
 
-      ...prev,
+function formatTime(seconds){
 
-      [qid]:!prev[qid],
+const hrs =
+Math.floor(seconds/3600);
 
-    }));
+const mins =
+Math.floor(
+(seconds%3600)/60
+);
 
-  }
+const secs =
+seconds%60;
 
-  function saveNext() {
+return `
+${String(hrs)
+.padStart(2,"0")}h
+${String(mins)
+.padStart(2,"0")}m
+${String(secs)
+.padStart(2,"0")}s
+`;
 
-    if (
-      current <
-      questions.length - 1
-    ) {
+}
 
-      setCurrent(
-        current + 1
-      );
+function selectAnswer(id,opt){
 
-    }
+setAnswers((prev)=>(
+{
+...prev,
+[id]:opt,
+}
+));
 
-  }
+}
 
-  function previousQuestion() {
+const q =
+questions[current];
 
-    if (current > 0) {
+return(
 
-      setCurrent(
-        current - 1
-      );
+<div className="exam-layout">
 
-    }
+<div className="exam-main">
 
-  }
+<div className="topbar">
 
-  function submitExam() {
+<h2>
+{subject}
+</h2>
 
-    let total = 0;
+<h2>
+⏳ {formatTime(timeLeft)}
+</h2>
 
-    questions.forEach((q)=>{
+</div>
 
-      if (
-        answers[q.id] ===
-        q.answer
-      ) {
+{q && (
 
-        total += 1;
+<div className="card">
 
-      }
+<h3>
+Question {current+1}
+</h3>
 
-      else if (
-        answers[q.id]
-      ) {
+<h2>
+{q.question}
+</h2>
 
-        total -= 0.25;
+<div className="option-line">
 
-      }
+{q.options?.map((o,index)=>(
 
-    });
+<label
+key={index}
+className="option"
+>
 
-    setScore(total);
+<input
+type="radio"
+checked={
+answers[q.id] === o
+}
+onChange={()=>
+selectAnswer(
+q.id,
+o
+)
+}
+/>
 
-    setSubmitted(true);
+{o}
 
-  }
+</label>
 
-  const answered =
-    Object.keys(
-      answers
-    ).length;
+))}
 
-  const q =
-    questions[current];
+</div>
 
-  function getColor(id) {
+<div
+style={{
+display:"flex",
+gap:"10px",
+marginTop:"20px",
+}}
+>
 
-    if (review[id]) {
+<button
+onClick={()=>
+setCurrent(
+Math.max(current-1,0)
+)
+}
+>
+Previous
+</button>
 
-      return "#f59e0b";
+<button
+onClick={()=>
+setCurrent(
+Math.min(
+current+1,
+questions.length-1
+)
+)
+}
+>
+Save & Next
+</button>
 
-    }
+</div>
 
-    if (answers[id]) {
+</div>
 
-      return "#16a34a";
+)}
 
-    }
+</div>
 
-    return "#334155";
+<div className="navigator">
 
-  }
+<h3>
+Questions
+</h3>
 
-  return (
+<div className="palette-grid">
 
-    <div className="exam-layout">
+{questions.map((item,index)=>(
 
-      <div className="exam-main">
+<button
+key={item.id}
+className="palette-btn"
+onClick={()=>
+setCurrent(index)
+}
+>
+{index+1}
+</button>
 
-        <div className="topbar">
+))}
 
-          <h2>
-            {subject}
-          </h2>
+</div>
 
-          <h3>
-            ⏳ {timeLeft}s
-          </h3>
+</div>
 
-        </div>
-
-        <div className="progress-box">
-
-          Progress:
-          {" "}
-          {answered}
-          /
-          {questions.length}
-
-        </div>
-
-        {questions.length > 0 && q && (
-
-          <div className="card">
-
-            <h3>
-
-              Question
-              {" "}
-              {current + 1}
-
-            </h3>
-
-            <h2>
-              {q.question}
-            </h2>
-
-            {q.options.map((o,i)=>(
-
-              <label
-                key={i}
-                className="option"
-              >
-
-                <input
-                  type="radio"
-                  checked={
-                    answers[q.id]
-                    === o
-                  }
-                  onChange={() =>
-                    selectAnswer(
-                      q.id,
-                      o
-                    )
-                  }
-                />
-
-                {o}
-
-              </label>
-
-            ))}
-
-            <div
-              style={{
-                display:"flex",
-                gap:"10px",
-                marginTop:"20px",
-                flexWrap:"wrap",
-              }}
-            >
-
-              <button
-                onClick={
-                  previousQuestion
-                }
-              >
-                Previous
-              </button>
-
-              <button
-                onClick={
-                  saveNext
-                }
-              >
-                Save & Next
-              </button>
-
-              <button
-                onClick={() =>
-                  markReview(
-                    q.id
-                  )
-                }
-              >
-                Mark Review
-              </button>
-
-              <button
-                onClick={
-                  submitExam
-                }
-              >
-                Submit
-              </button>
-
-            </div>
-
-          </div>
-
-        )}
-
-        {submitted && (
-
-          <div className="card">
-
-            <h2>
-              Exam Submitted
-            </h2>
-
-            <h3>
-              Score:
-              {" "}
-              {score}
-            </h3>
-
-            <p>
-
-              Accuracy:
-              {" "}
-
-              {
-                questions.length
-                ?
-
-                (
-                  (score /
-                  questions.length)
-                  *100
-                ).toFixed(2)
-
-                :
-
-                0
-              }
-
-              %
-
-            </p>
-
-          </div>
-
-        )}
-
-      </div>
-
-      <div className="navigator">
-
-        <h3>
-          Question Palette
-        </h3>
-
-        <div className="palette-grid">
-
-          {questions.map((item,index)=>(
-
-            <button
-              key={item.id}
-              className="palette-btn"
-              style={{
-                background:
-                  getColor(
-                    item.id
-                  ),
-              }}
-              onClick={() =>
-                setCurrent(index)
-              }
-            >
-
-              {index + 1}
-
-            </button>
-
-          ))}
-
-        </div>
-
-        <div
-          style={{
-            marginTop:"20px",
-          }}
-        >
-
-          <p>
-            🟩 Answered
-          </p>
-
-          <p>
-            🟨 Review
-          </p>
-
-          <p>
-            ⬛ Not Answered
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
+</div>
+);
 }

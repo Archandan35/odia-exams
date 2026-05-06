@@ -4,7 +4,7 @@ const cleanText =
 text
 .replace(/\r/g,"\n")
 .replace(/\t/g," ")
-.replace(/\s+/g," ")
+.replace(/[ ]+/g," ")
 .replace(/\n+/g,"\n");
 
 const lines =
@@ -55,10 +55,16 @@ for(let i=0;i<lines.length;i++){
 
 const line = lines[i];
 
-/* QUESTION */
+/* QUESTION DETECTION */
 
 if(
+
 /^\d+[\.\)]/.test(line)
+
+||
+
+/^[୧-୯]+[\.\)]/.test(line)
+
 ){
 
 pushCurrent();
@@ -69,6 +75,10 @@ question:
 line
 .replace(
 /^\d+[\.\)]/,
+""
+)
+.replace(
+/^[୧-୯]+[\.\)]/,
 ""
 )
 .trim(),
@@ -84,7 +94,7 @@ explanation:"",
 language:
 detectLanguage(line),
 
-confidence:90,
+confidence:85,
 
 tags:[],
 
@@ -92,7 +102,7 @@ tags:[],
 
 }
 
-/* OPTIONS */
+/* ENGLISH OPTIONS */
 
 else if(
 /^[A-D][\)\.\-:]/i.test(line)
@@ -105,6 +115,52 @@ current.options.push(
 line
 .replace(
 /^[A-D][\)\.\-:]/i,
+""
+)
+.trim()
+
+);
+
+}
+
+}
+
+/* ODIA OPTIONS */
+
+else if(
+/^\([କଖଗଘ]\)/.test(line)
+){
+
+if(current){
+
+current.options.push(
+
+line
+.replace(
+/^\([କଖଗଘ]\)/,
+""
+)
+.trim()
+
+);
+
+}
+
+}
+
+/* HINDI OPTIONS */
+
+else if(
+/^\([कखगघ]\)/.test(line)
+){
+
+if(current){
+
+current.options.push(
+
+line
+.replace(
+/^\([कखगघ]\)/,
 ""
 )
 .trim()
@@ -165,7 +221,7 @@ line
 
 }
 
-/* MULTI-LINE */
+/* MULTI LINE QUESTION */
 
 else{
 

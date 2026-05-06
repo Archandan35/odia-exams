@@ -1,4 +1,9 @@
 import AdminLayout from "./AdminLayout";
+import AdminSidebar
+from "../components/AdminSidebar";
+
+import TopNavbar
+from "../components/TopNavbar";
 
 export default function Dashboard() {
 

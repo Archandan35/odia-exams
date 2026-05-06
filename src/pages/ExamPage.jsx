@@ -66,6 +66,109 @@ export default function ExamPage() {
     setLoading] =
     useState(true);
 
+  const [cheatCount,
+    setCheatCount] =
+    useState(0);
+
+  /* ENTER FULLSCREEN */
+
+  useEffect(()=>{
+
+    const elem =
+      document.documentElement;
+
+    if(
+      elem.requestFullscreen
+    ){
+
+      elem.requestFullscreen();
+
+    }
+
+  },[]);
+
+  /* CHEAT DETECTION */
+
+  useEffect(()=>{
+
+    function handleVisibility(){
+
+      if(document.hidden){
+
+        handleCheating(
+          "Tab Switch Detected"
+        );
+
+      }
+
+    }
+
+    function handleFullscreen(){
+
+      if(
+        !document.fullscreenElement
+      ){
+
+        handleCheating(
+          "Fullscreen Exited"
+        );
+
+      }
+
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
+
+    document.addEventListener(
+      "fullscreenchange",
+      handleFullscreen
+    );
+
+    return ()=>{
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
+
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullscreen
+      );
+
+    };
+
+  },[cheatCount]);
+
+  function handleCheating(msg){
+
+    const newCount =
+      cheatCount + 1;
+
+    setCheatCount(newCount);
+
+    alert(
+      `${msg}
+
+Warning:
+${newCount}/3`
+    );
+
+    if(newCount >= 3){
+
+      alert(
+        "Exam Auto Submitted"
+      );
+
+      submitExam(true);
+
+    }
+
+  }
+
   /* LOAD EXAM */
 
   useEffect(() => {
@@ -259,36 +362,6 @@ export default function ExamPage() {
     questions,
   ]);
 
-  /* WARNING */
-
-  useEffect(() => {
-
-    const handleBeforeUnload =
-      (e) => {
-
-      e.preventDefault();
-
-      e.returnValue =
-        "Exam in progress";
-
-    };
-
-    window.addEventListener(
-      "beforeunload",
-      handleBeforeUnload
-    );
-
-    return () => {
-
-      window.removeEventListener(
-        "beforeunload",
-        handleBeforeUnload
-      );
-
-    };
-
-  }, []);
-
   function formatTime(seconds) {
 
     const hrs =
@@ -385,15 +458,21 @@ ${String(secs)
 
   }
 
-  async function submitExam() {
+  async function submitExam(
+    autoSubmit=false
+  ) {
 
-    const confirmSubmit =
-      window.confirm(
-        "Submit Exam?"
-      );
+    if(!autoSubmit){
 
-    if(!confirmSubmit)
-    return;
+      const confirmSubmit =
+        window.confirm(
+          "Submit Exam?"
+        );
+
+      if(!confirmSubmit)
+      return;
+
+    }
 
     let correct = 0;
 
@@ -471,6 +550,8 @@ ${String(secs)
         * 60
         - timeLeft,
 
+      cheatCount,
+
       createdAt:
         Date.now(),
 
@@ -524,7 +605,7 @@ ${String(secs)
           <div>
 
             <h2>
-              Exam Engine
+              Secure Exam Engine
             </h2>
 
             <p>
@@ -546,6 +627,12 @@ ${String(secs)
                 )
               }
             </h2>
+
+            <p>
+              Warnings:
+              {" "}
+              {cheatCount}/3
+            </p>
 
           </div>
 

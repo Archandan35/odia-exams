@@ -451,25 +451,6 @@ setVisited((prev)=>({
 }));
 
 }
-  {
-
-setAnswers((prev)=>({
-
-...prev,
-
-[qid]:option,
-
-}));
-
-setVisited((prev)=>({
-
-...prev,
-
-[qid]:true,
-
-}));
-
-}
 
 function markReview(qid){
 
@@ -549,7 +530,9 @@ questions.forEach((q)=>{
 const ans =
 answers[q.id];
 
-if(!ans) return;
+if(
+ans === undefined
+) return;
 
 let correctIndex = 0;
 
@@ -558,7 +541,9 @@ q.correctAnswer !== undefined
 ){
 
 correctIndex =
-q.correctAnswer;
+Number(
+q.correctAnswer
+);
 
 }else{
 
@@ -664,8 +649,6 @@ review,
 
 createdAt:
 Date.now(),
-
-};
 
 };
 
@@ -783,7 +766,7 @@ index
 key={index}
 className={
 answers[q.id]
-=== option
+=== index
 ?
 "selected-option"
 :
@@ -906,6 +889,7 @@ btnClass +=
 
 else if(
 answers[item.id]
+!== undefined
 ){
 
 btnClass +=

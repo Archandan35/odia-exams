@@ -31,6 +31,7 @@ import Profile from "./pages/Profile";
 import Results from "./admin/Results";
 
 import ResultPage from "./pages/ResultPage";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
 
@@ -129,6 +130,15 @@ element={
 </ProtectedRoute>
 }
 />
+        <Route
+path="/leaderboard"
+element={
+<ProtectedRoute>
+<Leaderboard/>
+</ProtectedRoute>
+}
+/>
+        
         <Route
 path="/result"
 element={

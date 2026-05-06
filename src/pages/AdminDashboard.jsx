@@ -19,19 +19,13 @@ import {
   addSubject,
   deleteSubject,
   listenSubjects,
+  updateSubject,
 } from "../services/subjectService";
 
 import {
   addQuestion,
   deleteQuestion,
   listenQuestions,
-} from "../services/questionService";
-
-import {
-  updateSubject,
-} from "../services/subjectService";
-
-import {
   updateQuestion,
 } from "../services/questionService";
 
@@ -101,8 +95,10 @@ export default function AdminDashboard() {
       listenQuestions(setQuestions);
 
     return () => {
+
       unsub1();
       unsub2();
+
     };
 
   }, []);
@@ -117,6 +113,8 @@ export default function AdminDashboard() {
 
   async function createSubject() {
 
+    if (!title) return;
+
     await addSubject({
       title,
       description,
@@ -130,80 +128,28 @@ export default function AdminDashboard() {
 
   }
 
-  async function editSubject(s) {
-
-  const newTitle =
-    prompt(
-      "Edit Subject",
-      s.title
-    );
-
-  if (!newTitle) return;
-
-  await updateSubject(
-    s.id,
-    {
-      title:newTitle,
-    }
-  );
-}
-
-async function editQuestion(q) {
-
-  const newQuestion =
-    prompt(
-      "Edit Question",
-      q.question
-    );
-
-  if (!newQuestion) return;
-
-  await updateQuestion(
-    q.id,
-    {
-      question:newQuestion,
-    }
-  );
-}
-
-async function handleDeleteSubject(id) {
-
-  const ok =
-    window.confirm(
-      "Delete Subject?"
-    );
-
-  if (!ok) return;
-
-  await deleteSubject(id);
-
-}
-
-async function handleDeleteQuestion(id) {
-
-  const ok =
-    window.confirm(
-      "Delete Question?"
-    );
-
-  if (!ok) return;
-
-  await deleteQuestion(id);
-
-}
-  
   async function createQuestion() {
 
+    if (
+      !subject ||
+      !question
+    ) return;
+
     await addQuestion({
+
       subject,
+
       question,
+
       options:[
         option1,
         option2,
         option3,
         option4,
       ],
+
       answer,
+
     });
 
     setQuestion("");
@@ -215,15 +161,81 @@ async function handleDeleteQuestion(id) {
 
   }
 
+  async function editSubject(s) {
+
+    const newTitle =
+      prompt(
+        "Edit Subject",
+        s.title
+      );
+
+    if (!newTitle) return;
+
+    await updateSubject(
+      s.id,
+      {
+        title:newTitle,
+      }
+    );
+  }
+
+  async function editQuestion(q) {
+
+    const newQuestion =
+      prompt(
+        "Edit Question",
+        q.question
+      );
+
+    if (!newQuestion) return;
+
+    await updateQuestion(
+      q.id,
+      {
+        question:newQuestion,
+      }
+    );
+  }
+
+  async function handleDeleteSubject(id) {
+
+    const ok =
+      window.confirm(
+        "Delete Subject?"
+      );
+
+    if (!ok) return;
+
+    await deleteSubject(id);
+
+  }
+
+  async function handleDeleteQuestion(id) {
+
+    const ok =
+      window.confirm(
+        "Delete Question?"
+      );
+
+    if (!ok) return;
+
+    await deleteQuestion(id);
+
+  }
+
   return (
 
     <div className="page">
 
       <div className="topbar">
 
-        <h1>Admin Dashboard</h1>
+        <h1>
+          Admin Dashboard
+        </h1>
 
-        <button onClick={logout}>
+        <button
+          onClick={logout}
+        >
           Logout
         </button>
 
@@ -257,13 +269,17 @@ async function handleDeleteQuestion(id) {
 
         <div className="card">
 
-          <h2>Add Subject</h2>
+          <h2>
+            Add Subject
+          </h2>
 
           <input
             placeholder="Title"
             value={title}
             onChange={(e)=>
-              setTitle(e.target.value)
+              setTitle(
+                e.target.value
+              )
             }
           />
 
@@ -288,7 +304,9 @@ async function handleDeleteQuestion(id) {
           />
 
           <button
-            onClick={createSubject}
+            onClick={
+              createSubject
+            }
           >
             Save Subject
           </button>
@@ -301,7 +319,9 @@ async function handleDeleteQuestion(id) {
 
         <div className="card">
 
-          <h2>Add Question</h2>
+          <h2>
+            Add Question
+          </h2>
 
           <select
             value={subject}
@@ -317,12 +337,16 @@ async function handleDeleteQuestion(id) {
             </option>
 
             {subjects.map((s)=>(
+
               <option
                 key={s.id}
                 value={s.title}
               >
+
                 {s.title}
+
               </option>
+
             ))}
 
           </select>
@@ -388,7 +412,9 @@ async function handleDeleteQuestion(id) {
           />
 
           <button
-            onClick={createQuestion}
+            onClick={
+              createQuestion
+            }
           >
             Save Question
           </button>
@@ -397,7 +423,9 @@ async function handleDeleteQuestion(id) {
 
       )}
 
-      <h2>Subjects</h2>
+      <h2>
+        Subjects
+      </h2>
 
       <div className="grid">
 
@@ -408,24 +436,28 @@ async function handleDeleteQuestion(id) {
             className="subject-card"
           >
 
-            <h2>{s.title}</h2>
+            <h2>
+              {s.title}
+            </h2>
 
-            <p>{s.description}</p>
+            <p>
+              {s.description}
+            </p>
 
             <button
               onClick={() =>
-               editSubject(s)
-                      }
+                editSubject(s)
+              }
             >
-  Edit
-</button>
+              Edit
+            </button>
 
             <button
               onClick={() =>
-  handleDeleteSubject(
-    s.id
-  )
-}
+                handleDeleteSubject(
+                  s.id
+                )
+              }
             >
               Delete
             </button>
@@ -436,7 +468,9 @@ async function handleDeleteQuestion(id) {
 
       </div>
 
-      <h2>Questions</h2>
+      <h2>
+        Questions
+      </h2>
 
       <div className="grid">
 
@@ -447,23 +481,29 @@ async function handleDeleteQuestion(id) {
             className="subject-card"
           >
 
-            <h3>{q.question}</h3>
+            <h3>
+              {q.question}
+            </h3>
 
             <p>
-              Subject: {q.subject}
+              Subject:
+              {" "}
+              {q.subject}
             </p>
 
             <button
-  onClick={() =>
-    editSubject(s)
-  }
->
-  Edit
-</button>
+              onClick={() =>
+                editQuestion(q)
+              }
+            >
+              Edit
+            </button>
 
             <button
               onClick={() =>
-                deleteQuestion(q.id)
+                handleDeleteQuestion(
+                  q.id
+                )
               }
             >
               Delete

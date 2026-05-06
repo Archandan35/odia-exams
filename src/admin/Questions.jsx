@@ -64,7 +64,7 @@ export default function Questions() {
 
   const [correctAnswer,
     setCorrectAnswer] =
-    useState("A");
+    useState(0);
 
   const [showPopup,
     setShowPopup] =
@@ -100,15 +100,6 @@ export default function Questions() {
             );
 
           setSubjects(data);
-
-          if (
-            data.length > 0 &&
-            !selectedSubject
-          ) {
-            setSelectedSubject(
-              data[0].id
-            );
-          }
 
         }
       );
@@ -209,31 +200,23 @@ export default function Questions() {
           selectedTopic
     );
 
-  useEffect(() => {
-
-    if (
-      filteredTopics.length > 0
-    ) {
-      setSelectedTopic(
-        filteredTopics[0].id
-      );
-    }
-
-  }, [selectedSubject]);
-
-  useEffect(() => {
-
-    if (
-      filteredSubTopics.length > 0
-    ) {
-      setSelectedSubTopic(
-        filteredSubTopics[0].id
-      );
-    }
-
-  }, [selectedTopic]);
-
   async function handleAddQuestion() {
+
+    if(
+      !questionText ||
+      !optionA ||
+      !optionB ||
+      !optionC ||
+      !optionD
+    ){
+
+      alert(
+        "Fill all fields"
+      );
+
+      return;
+
+    }
 
     await addDoc(
       collection(db, "questions"),
@@ -258,8 +241,8 @@ export default function Questions() {
           optionD,
         ],
 
-        answer:
-          correctAnswer,
+        correctAnswer:
+          Number(correctAnswer),
 
         createdAt:
           Date.now(),
@@ -268,6 +251,7 @@ export default function Questions() {
     );
 
     resetForm();
+
   }
 
   function editQuestion(q) {
@@ -306,11 +290,31 @@ export default function Questions() {
       q.options[3]
     );
 
-    setCorrectAnswer(
-      q.answer
-    );
+    if(
+      q.correctAnswer !== undefined
+    ){
+
+      setCorrectAnswer(
+        q.correctAnswer
+      );
+
+    } else {
+
+      const legacyMap = {
+        A:0,
+        B:1,
+        C:2,
+        D:3,
+      };
+
+      setCorrectAnswer(
+        legacyMap[q.answer] || 0
+      );
+
+    }
 
     setShowPopup(true);
+
   }
 
   async function updateQuestion() {
@@ -342,13 +346,14 @@ export default function Questions() {
           optionD,
         ],
 
-        answer:
-          correctAnswer,
+        correctAnswer:
+          Number(correctAnswer),
 
       }
     );
 
     resetForm();
+
   }
 
   async function handleDelete(id) {
@@ -368,6 +373,7 @@ export default function Questions() {
         id
       )
     );
+
   }
 
   function resetForm() {
@@ -378,11 +384,12 @@ export default function Questions() {
     setOptionC("");
     setOptionD("");
 
-    setCorrectAnswer("A");
+    setCorrectAnswer(0);
 
     setEditingId(null);
 
     setShowPopup(false);
+
   }
 
   function getName(
@@ -398,6 +405,7 @@ export default function Questions() {
     return item
       ? item.name
       : "Unknown";
+
   }
 
   const filteredQuestions =
@@ -420,6 +428,13 @@ export default function Questions() {
       (page - 1) * perPage,
       page * perPage
     );
+
+  const optionLabels = [
+    "A",
+    "B",
+    "C",
+    "D",
+  ];
 
   return (
 
@@ -484,14 +499,6 @@ export default function Questions() {
               </th>
 
               <th>
-                Topic
-              </th>
-
-              <th>
-                SubTopic
-              </th>
-
-              <th>
                 Answer
               </th>
 
@@ -539,25 +546,13 @@ export default function Questions() {
                   </td>
 
                   <td>
-                    {
-                      getName(
-                        topics,
-                        q.topicId
-                      )
-                    }
-                  </td>
 
-                  <td>
                     {
-                      getName(
-                        subTopics,
-                        q.subTopicId
-                      )
+                      optionLabels[
+                        q.correctAnswer ?? 0
+                      ]
                     }
-                  </td>
 
-                  <td>
-                    {q.answer}
                   </td>
 
                   <td>
@@ -780,19 +775,19 @@ export default function Questions() {
                 }
               >
 
-                <option value="A">
+                <option value={0}>
                   A
                 </option>
 
-                <option value="B">
+                <option value={1}>
                   B
                 </option>
 
-                <option value="C">
+                <option value={2}>
                   C
                 </option>
 
-                <option value="D">
+                <option value={3}>
                   D
                 </option>
 
@@ -841,4 +836,5 @@ export default function Questions() {
     </AdminLayout>
 
   );
+
 }

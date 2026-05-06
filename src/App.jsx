@@ -1,7 +1,7 @@
 import {
-  BrowserRouter,
-  Routes,
-  Route,
+BrowserRouter,
+Routes,
+Route,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -11,82 +11,70 @@ import StudentDashboard from "./pages/StudentDashboard";
 
 import AdminDashboard from "./pages/AdminDashboard";
 
+import SubjectTopicsPage from "./pages/SubjectTopicsPage";
+
 import ExamPage from "./pages/ExamPage";
-
-import TopicDashboard from "./pages/TopicDashboard";
-
-import MixedExamPage from "./pages/MixedExamPage";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import AdminRoute from "./routes/AdminRoute";
 
-export default function App() {
+export default function App(){
 
-  return (
+return(
 
-    <BrowserRouter>
+<BrowserRouter>
 
-      <Routes>
+<Routes>
 
-        <Route
-          path="/"
-          element={<Login />}
-        />
+<Route
+path="/"
+element={<Login/>}
+/>
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+<Route
+path="/register"
+element={<Register/>}
+/>
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
+<Route
+path="/dashboard"
+element={
+<ProtectedRoute>
+<StudentDashboard/>
+</ProtectedRoute>
+}
+/>
 
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+<Route
+path="/admin"
+element={
+<AdminRoute>
+<AdminDashboard/>
+</AdminRoute>
+}
+/>
 
-        <Route
-          path="/exam/:subject"
-          element={
-            <ProtectedRoute>
-              <ExamPage />
-            </ProtectedRoute>
-          }
-        />
+<Route
+path="/subject/:subject"
+element={
+<ProtectedRoute>
+<SubjectTopicsPage/>
+</ProtectedRoute>
+}
+/>
 
-        <Route
-          path="/topics"
-          element={
-            <ProtectedRoute>
-              <TopicDashboard />
-            </ProtectedRoute>
-          }
-        />
+<Route
+path="/exam/:subject"
+element={
+<ProtectedRoute>
+<ExamPage/>
+</ProtectedRoute>
+}
+/>
 
-        <Route
-          path="/mixed-exam"
-          element={
-            <ProtectedRoute>
-              <MixedExamPage />
-            </ProtectedRoute>
-          }
-        />
+</Routes>
 
-      </Routes>
-
-    </BrowserRouter>
-
-  );
+</BrowserRouter>
+);
 }

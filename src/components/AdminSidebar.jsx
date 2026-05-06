@@ -8,12 +8,7 @@ export default function AdminSidebar(){
 const location =
 useLocation();
 
-const menus = [
-
-{
-title:"Dashboard",
-path:"/admin",
-},
+const academicMenus = [
 
 {
 title:"Subjects",
@@ -39,7 +34,11 @@ path:"/admin/questions",
 title:"Bulk Import",
 path:"/admin/bulk-import",
 },
-  
+
+];
+
+const examMenus = [
+
 {
 title:"Exams",
 path:"/admin/exams",
@@ -50,6 +49,10 @@ title:"Results",
 path:"/admin/results",
 },
 
+];
+
+const userMenus = [
+
 {
 title:"Profile",
 path:"/profile",
@@ -57,26 +60,9 @@ path:"/profile",
 
 ];
 
-return(
+function renderMenus(menus){
 
-<div className="sidebar">
-
-<div className="logo">
-
-Odia Exam
-
-</div>
-
-<div className="menu-title">
-
-MAIN MENU
-
-</div>
-
-<div className="menu">
-
-{
-menus.map((m)=>(
+return menus.map((m)=>(
 
 <Link
 key={m.path}
@@ -95,8 +81,107 @@ m.path
 
 </Link>
 
-))
+));
+
 }
+
+return(
+
+<div className="sidebar">
+
+<div className="logo">
+
+Odia Exam Admin
+
+</div>
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+
+Dashboard
+
+</div>
+
+<div className="menu">
+
+<Link
+to="/admin"
+className={
+location.pathname ===
+"/admin"
+?
+"active-link"
+:
+""
+}
+>
+
+Dashboard
+
+</Link>
+
+</div>
+
+</div>
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+
+Academic
+
+</div>
+
+<div className="menu">
+
+{
+renderMenus(
+academicMenus
+)
+}
+
+</div>
+
+</div>
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+
+Examinations
+
+</div>
+
+<div className="menu">
+
+{
+renderMenus(
+examMenus
+)
+}
+
+</div>
+
+</div>
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+
+Users
+
+</div>
+
+<div className="menu">
+
+{
+renderMenus(
+userMenus
+)
+}
+
+</div>
 
 </div>
 

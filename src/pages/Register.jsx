@@ -1,144 +1,174 @@
 import {
-  useState,
+useState,
 } from "react";
 
 import {
-  createUserWithEmailAndPassword,
+createUserWithEmailAndPassword,
 } from "firebase/auth";
 
 import {
-  collection,
-  addDoc,
+collection,
+addDoc,
 } from "firebase/firestore";
 
 import {
-  auth,
-  db,
+auth,
+db,
 } from "../firebase/config";
 
 import {
-  useNavigate,
-  Link,
+useNavigate,
+Link,
 } from "react-router-dom";
 
-export default function Register() {
+export default function Register(){
 
-  const nav = useNavigate();
+const nav =
+useNavigate();
 
-  const [name, setName] =
-    useState("");
+const [name,setName] =
+useState("");
 
-  const [email, setEmail] =
-    useState("");
+const [email,setEmail] =
+useState("");
 
-  const [password,
-    setPassword] =
-    useState("");
+const [password,
+setPassword] =
+useState("");
 
-  const [role, setRole] =
-    useState("student");
+const [role,setRole] =
+useState("student");
 
-  async function register() {
+const [loading,
+setLoading] =
+useState(false);
 
-    try {
+async function register(){
 
-      const res =
-        await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+try{
 
-      await addDoc(
-        collection(db, "users"),
-        {
-          uid: res.user.uid,
-          name,
-          email,
-          role,
-        }
-      );
+setLoading(true);
 
-      alert(
-        "Registration Successful"
-      );
+const res =
+await createUserWithEmailAndPassword(
+auth,
+email,
+password
+);
 
-      nav("/");
+await addDoc(
+collection(db,"users"),
+{
+uid:res.user.uid,
+name,
+email,
+role,
+createdAt:
+Date.now(),
+}
+);
 
-    } catch (e) {
+alert(
+"Registration Successful"
+);
 
-      alert(e.message);
+nav("/");
 
-    }
-  }
+}catch(e){
 
-  return (
+alert(e.message);
 
-    <div className="center">
+}
 
-      <div className="card auth">
+setLoading(false);
 
-        <h1>Register</h1>
+}
 
-        <input
-          placeholder="Full Name"
-          onChange={(e) =>
-            setName(
-              e.target.value
-            )
-          }
-        />
+return(
 
-        <input
-          placeholder="Email"
-          onChange={(e) =>
-            setEmail(
-              e.target.value
-            )
-          }
-        />
+<div className="auth-container">
 
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) =>
-            setPassword(
-              e.target.value
-            )
-          }
-        />
+<div className="auth-card">
 
-        <select
-          value={role}
-          onChange={(e) =>
-            setRole(
-              e.target.value
-            )
-          }
-        >
+<h1>
+Create Account
+</h1>
 
-          <option value="student">
-            Student
-          </option>
+<input
+placeholder="Full Name"
+value={name}
+onChange={(e)=>
+setName(
+e.target.value
+)
+}
+/>
 
-          <option value="admin">
-            Admin
-          </option>
+<input
+placeholder="Email"
+value={email}
+onChange={(e)=>
+setEmail(
+e.target.value
+)
+}
+/>
 
-        </select>
+<input
+type="password"
+placeholder="Password"
+value={password}
+onChange={(e)=>
+setPassword(
+e.target.value
+)
+}
+/>
 
-        <button
-          onClick={register}
-        >
-          Register
-        </button>
+<select
+value={role}
+onChange={(e)=>
+setRole(
+e.target.value
+)
+}
+>
 
-        <Link to="/">
-          Back to Login
-        </Link>
+<option value="student">
+Student
+</option>
 
-      </div>
+<option value="admin">
+Admin
+</option>
 
-    </div>
-  );
+</select>
+
+<button
+onClick={register}
+disabled={loading}
+>
+
+{
+loading
+?
+"Creating..."
+:
+"Register"
+}
+
+</button>
+
+<Link to="/">
+
+Already have account?
+
+</Link>
+
+</div>
+
+</div>
+
+);
+
 }

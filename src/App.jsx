@@ -61,7 +61,7 @@ export default function App() {
         />
 
         <Route
-          path="/exam/:subject"
+          path="/exam/:examId"
           element={
             <ProtectedRoute>
               <ExamPage />

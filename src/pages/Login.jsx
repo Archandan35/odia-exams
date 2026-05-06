@@ -1,9 +1,14 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
 import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 
-import { auth } from "../firebase/config";
+import {
+  auth,
+} from "../firebase/config";
 
 import {
   useNavigate,
@@ -14,10 +19,12 @@ export default function Login() {
 
   const nav = useNavigate();
 
-  const [email, setEmail] =
+  const [email,
+    setEmail] =
     useState("");
 
-  const [password, setPassword] =
+  const [password,
+    setPassword] =
     useState("");
 
   async function login() {
@@ -45,12 +52,16 @@ export default function Login() {
 
       <div className="card auth">
 
-        <h1>Odia Exam Portal</h1>
+        <h1>
+          Odia Exam Portal
+        </h1>
 
         <input
           placeholder="Email"
           onChange={(e) =>
-            setEmail(e.target.value)
+            setEmail(
+              e.target.value
+            )
           }
         />
 
@@ -64,12 +75,14 @@ export default function Login() {
           }
         />
 
-        <button onClick={login}>
+        <button
+          onClick={login}
+        >
           Login
         </button>
 
         <Link to="/register">
-          Register
+          Create Account
         </Link>
 
       </div>

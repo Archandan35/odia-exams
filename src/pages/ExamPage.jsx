@@ -5,6 +5,7 @@ import {
 
 import {
   useParams,
+  useNavigate,
 } from "react-router-dom";
 
 import {
@@ -22,6 +23,12 @@ export default function ExamPage() {
 
   const { subject } =
     useParams();
+
+  const navigate =
+    useNavigate();
+
+  const STORAGE_KEY =
+    `exam_${subject}`;
 
   const [questions,
     setQuestions] =
@@ -43,6 +50,10 @@ export default function ExamPage() {
     setReview] =
     useState({});
 
+  const [bookmarks,
+    setBookmarks] =
+    useState({});
+
   const [timeLeft,
     setTimeLeft] =
     useState(1800);
@@ -55,9 +66,47 @@ export default function ExamPage() {
     setLoading] =
     useState(true);
 
+  /* LOAD EXAM */
+
   useEffect(() => {
 
     async function loadExam() {
+
+      const saved =
+        localStorage.getItem(
+          STORAGE_KEY
+        );
+
+      if(saved){
+
+        const parsed =
+          JSON.parse(saved);
+
+        setAnswers(
+          parsed.answers || {}
+        );
+
+        setVisited(
+          parsed.visited || {}
+        );
+
+        setReview(
+          parsed.review || {}
+        );
+
+        setBookmarks(
+          parsed.bookmarks || {}
+        );
+
+        setCurrentQuestion(
+          parsed.currentQuestion || 0
+        );
+
+        setTimeLeft(
+          parsed.timeLeft || 1800
+        );
+
+      }
 
       const examSnapshot =
         await getDocs(
@@ -81,7 +130,10 @@ export default function ExamPage() {
 
       setExamData(currentExam);
 
-      if (currentExam) {
+      if (
+        currentExam &&
+        !saved
+      ) {
 
         setTimeLeft(
           currentExam.duration
@@ -138,6 +190,39 @@ export default function ExamPage() {
 
   }, [subject]);
 
+  /* AUTO SAVE */
+
+  useEffect(() => {
+
+    localStorage.setItem(
+      STORAGE_KEY,
+
+      JSON.stringify({
+
+        answers,
+        visited,
+        review,
+        bookmarks,
+        currentQuestion,
+        timeLeft,
+
+      })
+
+    );
+
+  }, [
+
+    answers,
+    visited,
+    review,
+    bookmarks,
+    currentQuestion,
+    timeLeft,
+
+  ]);
+
+  /* TIMER */
+
   useEffect(() => {
 
     if (
@@ -173,6 +258,36 @@ export default function ExamPage() {
     loading,
     questions,
   ]);
+
+  /* WARNING */
+
+  useEffect(() => {
+
+    const handleBeforeUnload =
+      (e) => {
+
+      e.preventDefault();
+
+      e.returnValue =
+        "Exam in progress";
+
+    };
+
+    window.addEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
+
+    return () => {
+
+      window.removeEventListener(
+        "beforeunload",
+        handleBeforeUnload
+      );
+
+    };
+
+  }, []);
 
   function formatTime(seconds) {
 
@@ -228,6 +343,19 @@ ${String(secs)
 
   }
 
+  function toggleBookmark(qid){
+
+    setBookmarks((prev)=>({
+
+      ...prev,
+
+      [qid]:
+        !prev[qid],
+
+    }));
+
+  }
+
   function nextQuestion() {
 
     if (
@@ -258,6 +386,14 @@ ${String(secs)
   }
 
   async function submitExam() {
+
+    const confirmSubmit =
+      window.confirm(
+        "Submit Exam?"
+      );
+
+    if(!confirmSubmit)
+    return;
 
     let correct = 0;
 
@@ -304,61 +440,57 @@ ${String(secs)
       ).toFixed(2)
       : 0;
 
+    const resultData = {
+
+      userId:
+        auth.currentUser?.uid,
+
+      subject,
+
+      totalQuestions:
+        questions.length,
+
+      correct,
+
+      wrong,
+
+      unanswered:
+        questions.length
+        -
+        (
+          correct + wrong
+        ),
+
+      score:
+        finalScore,
+
+      accuracy,
+
+      timeTaken:
+        examData?.duration
+        * 60
+        - timeLeft,
+
+      createdAt:
+        Date.now(),
+
+    };
+
     await addDoc(
       collection(db, "results"),
+      resultData
+    );
+
+    localStorage.removeItem(
+      STORAGE_KEY
+    );
+
+    navigate(
+      "/result",
       {
-
-        userId:
-          auth.currentUser?.uid,
-
-        subject,
-
-        totalQuestions:
-          questions.length,
-
-        correct,
-
-        wrong,
-
-        unanswered:
-          questions.length
-          -
-          (
-            correct + wrong
-          ),
-
-        score:
-          finalScore,
-
-        accuracy,
-
-        timeTaken:
-          examData?.duration
-          * 60
-          - timeLeft,
-
-        createdAt:
-          Date.now(),
-
+        state: resultData,
       }
     );
-
-    alert(
-      `
-Exam Submitted
-
-Correct: ${correct}
-
-Wrong: ${wrong}
-
-Score: ${finalScore}
-
-Accuracy: ${accuracy}%
-`
-    );
-
-    window.location.href =
-      "/dashboard";
 
   }
 
@@ -422,7 +554,7 @@ Accuracy: ${accuracy}%
         {
           q && (
 
-            <div className="card">
+            <div className="question-card">
 
               <h3>
 
@@ -502,6 +634,20 @@ Accuracy: ${accuracy}%
                     review[q.id]
                     ? "Remove Review"
                     : "Mark Review"
+                  }
+                </button>
+
+                <button
+                  onClick={() =>
+                    toggleBookmark(
+                      q.id
+                    )
+                  }
+                >
+                  {
+                    bookmarks[q.id]
+                    ? "Bookmarked"
+                    : "Bookmark"
                   }
                 </button>
 

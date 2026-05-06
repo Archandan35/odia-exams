@@ -86,6 +86,38 @@ export default function AdminDashboard() {
     setAnswer] =
     useState("");
 
+  const [editingQuestion,
+    setEditingQuestion] =
+    useState(null);
+
+  const [editQuestionText,
+    setEditQuestionText] =
+    useState("");
+
+  const [editSubjectName,
+    setEditSubjectName] =
+    useState("");
+
+  const [editOption1,
+    setEditOption1] =
+    useState("");
+
+  const [editOption2,
+    setEditOption2] =
+    useState("");
+
+  const [editOption3,
+    setEditOption3] =
+    useState("");
+
+  const [editOption4,
+    setEditOption4] =
+    useState("");
+
+  const [editAnswer,
+    setEditAnswer] =
+    useState("");
+
   useEffect(() => {
 
     const unsub1 =
@@ -201,71 +233,71 @@ export default function AdminDashboard() {
     );
   }
 
-  async function editQuestion(q) {
+  function openEditQuestion(q) {
 
-    const newSubject =
-      prompt(
-        "Edit Subject",
-        q.subject
-      );
+    setEditingQuestion(q.id);
 
-    if (!newSubject) return;
+    setEditQuestionText(
+      q.question
+    );
 
-    const newQuestion =
-      prompt(
-        "Edit Question",
-        q.question
-      );
+    setEditSubjectName(
+      q.subject
+    );
 
-    if (!newQuestion) return;
+    setEditOption1(
+      q.options[0]
+    );
 
-    const newOption1 =
-      prompt(
-        "Edit Option 1",
-        q.options[0]
-      );
+    setEditOption2(
+      q.options[1]
+    );
 
-    const newOption2 =
-      prompt(
-        "Edit Option 2",
-        q.options[1]
-      );
+    setEditOption3(
+      q.options[2]
+    );
 
-    const newOption3 =
-      prompt(
-        "Edit Option 3",
-        q.options[2]
-      );
+    setEditOption4(
+      q.options[3]
+    );
 
-    const newOption4 =
-      prompt(
-        "Edit Option 4",
-        q.options[3]
-      );
+    setEditAnswer(
+      q.answer
+    );
+  }
 
-    const newAnswer =
-      prompt(
-        "Edit Correct Answer",
-        q.answer
-      );
+  async function saveEditQuestion() {
 
     await updateQuestion(
-      q.id,
-      {
-        subject:newSubject,
 
-        question:newQuestion,
+      editingQuestion,
+
+      {
+
+        subject:
+          editSubjectName,
+
+        question:
+          editQuestionText,
 
         options:[
-          newOption1,
-          newOption2,
-          newOption3,
-          newOption4,
+
+          editOption1,
+          editOption2,
+          editOption3,
+          editOption4,
+
         ],
 
-        answer:newAnswer,
+        answer:
+          editAnswer,
+
       }
+
     );
+
+    setEditingQuestion(null);
+
   }
 
   async function handleDeleteSubject(id) {
@@ -551,66 +583,186 @@ export default function AdminDashboard() {
         Questions
       </h2>
 
-      <div className="grid">
+      <div
+        style={{
+          display:"flex",
+          flexDirection:"column",
+          gap:"15px",
+        }}
+      >
 
         {questions.map((q)=>(
 
           <div
             key={q.id}
-            className="subject-card"
+            className="question-row"
           >
 
-            <h3>
-              {q.question}
-            </h3>
+            <div
+              className="question-left"
+            >
 
-            <p>
-              Subject:
-              {" "}
-              {q.subject}
-            </p>
+              <h3>
+                {q.question}
+              </h3>
 
-            <p>
-              Answer:
-              {" "}
-              {q.answer}
-            </p>
+              <p>
+                A) {q.options?.[0]}
+              </p>
 
-            <div>
+              <p>
+                B) {q.options?.[1]}
+              </p>
 
-              {q.options?.map(
-                (o,index)=>(
-                  <p key={index}>
-                    {o}
-                  </p>
-                )
-              )}
+              <p>
+                C) {q.options?.[2]}
+              </p>
+
+              <p>
+                D) {q.options?.[3]}
+              </p>
+
+              <p>
+                Answer:
+                {" "}
+                {q.answer}
+              </p>
 
             </div>
 
-            <button
-              onClick={() =>
-                editQuestion(q)
-              }
+            <div
+              className="question-right"
             >
-              Edit
-            </button>
 
-            <button
-              onClick={() =>
-                handleDeleteQuestion(
-                  q.id
-                )
-              }
-            >
-              Delete
-            </button>
+              <button
+                onClick={() =>
+                  openEditQuestion(q)
+                }
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() =>
+                  handleDeleteQuestion(
+                    q.id
+                  )
+                }
+              >
+                Delete
+              </button>
+
+            </div>
 
           </div>
 
         ))}
 
       </div>
+
+      {editingQuestion && (
+
+        <div className="card">
+
+          <h2>
+            Edit Question
+          </h2>
+
+          <input
+            value={editQuestionText}
+            onChange={(e)=>
+              setEditQuestionText(
+                e.target.value
+              )
+            }
+            placeholder="Question"
+          />
+
+          <select
+            value={editSubjectName}
+            onChange={(e)=>
+              setEditSubjectName(
+                e.target.value
+              )
+            }
+          >
+
+            {subjects.map((s)=>(
+
+              <option
+                key={s.id}
+                value={s.title}
+              >
+
+                {s.title}
+
+              </option>
+
+            ))}
+
+          </select>
+
+          <input
+            value={editOption1}
+            onChange={(e)=>
+              setEditOption1(
+                e.target.value
+              )
+            }
+            placeholder="Option 1"
+          />
+
+          <input
+            value={editOption2}
+            onChange={(e)=>
+              setEditOption2(
+                e.target.value
+              )
+            }
+            placeholder="Option 2"
+          />
+
+          <input
+            value={editOption3}
+            onChange={(e)=>
+              setEditOption3(
+                e.target.value
+              )
+            }
+            placeholder="Option 3"
+          />
+
+          <input
+            value={editOption4}
+            onChange={(e)=>
+              setEditOption4(
+                e.target.value
+              )
+            }
+            placeholder="Option 4"
+          />
+
+          <input
+            value={editAnswer}
+            onChange={(e)=>
+              setEditAnswer(
+                e.target.value
+              )
+            }
+            placeholder="Correct Answer"
+          />
+
+          <button
+            onClick={
+              saveEditQuestion
+            }
+          >
+            Update Question
+          </button>
+
+        </div>
+
+      )}
 
     </div>
   );

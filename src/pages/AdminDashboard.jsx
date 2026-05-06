@@ -4,12 +4,27 @@ import {
 } from "react";
 
 import {
+  signOut,
+} from "firebase/auth";
+
+import {
+  auth,
+} from "../firebase/config";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
   addSubject,
   deleteSubject,
   listenSubjects,
 } from "../services/subjectService";
 
 export default function AdminDashboard() {
+
+  const nav =
+    useNavigate();
 
   const [subjects,
     setSubjects] =
@@ -39,6 +54,14 @@ export default function AdminDashboard() {
 
   }, []);
 
+  async function logout() {
+
+    await signOut(auth);
+
+    nav("/");
+
+  }
+
   async function createSubject() {
 
     if (!title) return;
@@ -60,9 +83,27 @@ export default function AdminDashboard() {
 
     <div className="page">
 
-      <h1>
-        Admin Dashboard
-      </h1>
+      <div
+        style={{
+          display:"flex",
+          justifyContent:
+            "space-between",
+          alignItems:
+            "center",
+        }}
+      >
+
+        <h1>
+          Admin Dashboard
+        </h1>
+
+        <button
+          onClick={logout}
+        >
+          Logout
+        </button>
+
+      </div>
 
       <div className="card">
 

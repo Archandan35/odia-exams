@@ -20,6 +20,8 @@ import Subjects from "./admin/Subjects";
 
 import Topics from "./admin/Topics";
 
+import SubTopics from "./admin/SubTopics";
+
 export default function App() {
 
   return (
@@ -73,6 +75,16 @@ export default function App() {
     </AdminRoute>
   }
 />
+
+        <Route
+  path="/admin/subtopics"
+  element={
+    <AdminRoute>
+      <SubTopics />
+    </AdminRoute>
+  }
+/>
+        
         <Route
           path="/admin"
           element={

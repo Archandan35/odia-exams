@@ -153,7 +153,7 @@ export default function Topics() {
     if (!duplicate.empty) {
 
       toast.error(
-        "Topic already exists in this subject"
+        "Topic already exists"
       );
 
       return;
@@ -242,7 +242,8 @@ export default function Topics() {
     const confirmDelete =
       window.confirm(
 
-`Deleting this topic may affect:
+`This will permanently delete:
+
 • SubTopics
 • Questions
 • Exams
@@ -254,17 +255,125 @@ Continue?`
     if (!confirmDelete)
       return;
 
-    await deleteDoc(
-      doc(
-        db,
-        "topics",
-        id
-      )
-    );
+    try {
 
-    toast.success(
-      "Topic Deleted"
-    );
+      /* SUBTOPICS */
+
+      const subTopicQuery =
+        query(
+          collection(db,"subtopics"),
+          where(
+            "topicId",
+            "==",
+            id
+          )
+        );
+
+      const subTopicSnapshot =
+        await getDocs(
+          subTopicQuery
+        );
+
+      for(
+        const subTopicDoc
+        of subTopicSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "subtopics",
+            subTopicDoc.id
+          )
+        );
+
+      }
+
+      /* QUESTIONS */
+
+      const questionQuery =
+        query(
+          collection(db,"questions"),
+          where(
+            "topicId",
+            "==",
+            id
+          )
+        );
+
+      const questionSnapshot =
+        await getDocs(
+          questionQuery
+        );
+
+      for(
+        const questionDoc
+        of questionSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "questions",
+            questionDoc.id
+          )
+        );
+
+      }
+
+      /* EXAMS */
+
+      const examQuery =
+        query(
+          collection(db,"exams"),
+          where(
+            "topicId",
+            "==",
+            id
+          )
+        );
+
+      const examSnapshot =
+        await getDocs(
+          examQuery
+        );
+
+      for(
+        const examDoc
+        of examSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "exams",
+            examDoc.id
+          )
+        );
+
+      }
+
+      /* TOPIC */
+
+      await deleteDoc(
+        doc(
+          db,
+          "topics",
+          id
+        )
+      );
+
+      toast.success(
+        "Topic Cascade Deleted"
+      );
+
+    } catch(error){
+
+      toast.error(
+        "Delete failed"
+      );
+
+    }
 
   }
 

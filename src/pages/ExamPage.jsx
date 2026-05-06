@@ -4,13 +4,18 @@ import {
 } from "react";
 
 import {
+  useParams,
+} from "react-router-dom";
+
+import {
   getQuestionsBySubject,
 } from "../services/questionService";
 
 export default function ExamPage() {
 
-  const [questions,
-    setQuestions] =
+  const { subject } = useParams();
+
+  const [questions, setQuestions] =
     useState([]);
 
   useEffect(() => {
@@ -18,9 +23,7 @@ export default function ExamPage() {
     async function load() {
 
       const data =
-        await getQuestionsBySubject(
-          "SBI PO Mock"
-        );
+        await getQuestionsBySubject(subject);
 
       setQuestions(data);
 
@@ -28,17 +31,19 @@ export default function ExamPage() {
 
     load();
 
-  }, []);
+  }, [subject]);
 
   return (
 
     <div className="page">
 
-      <h1>
-        Mock Exam
-      </h1>
+      <h1>{subject}</h1>
 
-      {questions.map((q,index)=>(
+      {questions.length === 0 && (
+        <h3>No Questions Found</h3>
+      )}
+
+      {questions.map((q, index) => (
 
         <div
           key={q.id}
@@ -46,28 +51,24 @@ export default function ExamPage() {
         >
 
           <h3>
-            {index+1}.
-            {" "}
-            {q.question}
+            {index + 1}. {q.question}
           </h3>
 
-          {q.options.map((o,i)=>(
+          {q.options.map((o, i) => (
 
-            <div key={i}>
+            <label
+              key={i}
+              className="option"
+            >
 
-              <label>
+              <input
+                type="radio"
+                name={q.id}
+              />
 
-                <input
-                  type="radio"
-                  name={q.id}
-                />
+              {o}
 
-                {" "}
-                {o}
-
-              </label>
-
-            </div>
+            </label>
 
           ))}
 

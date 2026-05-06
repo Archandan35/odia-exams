@@ -608,6 +608,9 @@ examData?.name,
 examType:
 examData?.examType,
 
+subject:
+questions?.[0]?.subjectId || "",
+
 totalQuestions:
 questions.length,
 
@@ -634,8 +637,18 @@ examData?.duration
 
 cheatCount,
 
+questions,
+
+answers,
+
+bookmarks,
+
+review,
+
 createdAt:
 Date.now(),
+
+};
 
 };
 

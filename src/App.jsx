@@ -31,6 +31,7 @@ import Profile from "./pages/Profile";
 import Results from "./admin/Results";
 
 import ResultPage from "./pages/ResultPage";
+import BulkImport from "./admin/BulkImport";
 import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
@@ -104,6 +105,16 @@ export default function App() {
     </AdminRoute>
   }
 />
+
+        <Route
+path="/admin/bulk-import"
+element={
+<AdminRoute>
+<BulkImport/>
+</AdminRoute>
+}
+/>
+        
 
 <Route
   path="/admin/exams"

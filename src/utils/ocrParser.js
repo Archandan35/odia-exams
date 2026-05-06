@@ -17,6 +17,18 @@ const questions = [];
 
 let current = null;
 
+function detectLanguage(str){
+
+if(/[଀-୿]/.test(str))
+return "odia";
+
+if(/[ऀ-ॿ]/.test(str))
+return "hindi";
+
+return "english";
+
+}
+
 function pushCurrent(){
 
 if(
@@ -69,7 +81,12 @@ difficulty:"easy",
 
 explanation:"",
 
-language:"mixed",
+language:
+detectLanguage(line),
+
+confidence:90,
+
+tags:[],
 
 };
 
@@ -148,7 +165,7 @@ line
 
 }
 
-/* MULTI-LINE QUESTION */
+/* MULTI-LINE */
 
 else{
 

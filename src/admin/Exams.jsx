@@ -18,16 +18,16 @@ import AdminLayout from "./AdminLayout";
 
 export default function Exams() {
 
-  const [subjects, setSubjects] =
+  const [subjects,setSubjects] =
     useState([]);
 
-  const [topics, setTopics] =
+  const [topics,setTopics] =
     useState([]);
 
-  const [subTopics, setSubTopics] =
+  const [subTopics,setSubTopics] =
     useState([]);
 
-  const [exams, setExams] =
+  const [exams,setExams] =
     useState([]);
 
   const [showPopup,
@@ -41,6 +41,10 @@ export default function Exams() {
   const [examName,
     setExamName] =
     useState("");
+
+  const [examType,
+    setExamType] =
+    useState("subject");
 
   const [selectedSubject,
     setSelectedSubject] =
@@ -70,171 +74,121 @@ export default function Exams() {
     setShuffleQuestions] =
     useState(true);
 
-  useEffect(() => {
+  useEffect(()=>{
 
     const unsubSubjects =
       onSnapshot(
-        collection(db, "subjects"),
-        (snapshot) => {
+        collection(db,"subjects"),
+        (snapshot)=>{
 
-          const data =
+          setSubjects(
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
-            );
-
-          setSubjects(data);
-
-          if (
-            data.length > 0 &&
-            !selectedSubject
-          ) {
-            setSelectedSubject(
-              data[0].id
-            );
-          }
+            )
+          );
 
         }
       );
-
-    return () =>
-      unsubSubjects();
-
-  }, []);
-
-  useEffect(() => {
 
     const unsubTopics =
       onSnapshot(
-        collection(db, "topics"),
-        (snapshot) => {
+        collection(db,"topics"),
+        (snapshot)=>{
 
-          const data =
+          setTopics(
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
-            );
-
-          setTopics(data);
+            )
+          );
 
         }
       );
-
-    return () =>
-      unsubTopics();
-
-  }, []);
-
-  useEffect(() => {
 
     const unsubSubTopics =
       onSnapshot(
-        collection(db, "subtopics"),
-        (snapshot) => {
+        collection(db,"subtopics"),
+        (snapshot)=>{
 
-          const data =
+          setSubTopics(
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
-            );
-
-          setSubTopics(data);
+            )
+          );
 
         }
       );
-
-    return () =>
-      unsubSubTopics();
-
-  }, []);
-
-  useEffect(() => {
 
     const unsubExams =
       onSnapshot(
-        collection(db, "exams"),
-        (snapshot) => {
+        collection(db,"exams"),
+        (snapshot)=>{
 
-          const data =
+          setExams(
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
-            );
-
-          setExams(data);
+            )
+          );
 
         }
       );
 
-    return () =>
+    return ()=>{
+
+      unsubSubjects();
+      unsubTopics();
+      unsubSubTopics();
       unsubExams();
 
-  }, []);
+    };
+
+  },[]);
 
   const filteredTopics =
     topics.filter(
-      (t) =>
+      (t)=>
         t.subjectId ===
         selectedSubject
     );
 
   const filteredSubTopics =
     subTopics.filter(
-      (s) =>
+      (s)=>
         s.subjectId ===
           selectedSubject &&
         s.topicId ===
           selectedTopic
     );
 
-  useEffect(() => {
-
-    if (
-      filteredTopics.length > 0
-    ) {
-      setSelectedTopic(
-        filteredTopics[0].id
-      );
-    }
-
-  }, [selectedSubject]);
-
-  useEffect(() => {
-
-    if (
-      filteredSubTopics.length > 0
-    ) {
-      setSelectedSubTopic(
-        filteredSubTopics[0].id
-      );
-    }
-
-  }, [selectedTopic]);
-
-  async function handleAddExam() {
+  async function handleAddExam(){
 
     await addDoc(
-      collection(db, "exams"),
+      collection(db,"exams"),
       {
 
-        name: examName,
+        name:examName,
+
+        examType,
 
         subjectId:
-          selectedSubject,
+          selectedSubject || null,
 
         topicId:
-          selectedTopic,
+          selectedTopic || null,
 
         subTopicId:
-          selectedSubTopic,
+          selectedSubTopic || null,
 
         questionCount:
           Number(questionCount),
@@ -256,24 +210,73 @@ export default function Exams() {
     );
 
     resetForm();
+
   }
 
-  function editExam(exam) {
+  async function updateExam(){
+
+    await updateDoc(
+      doc(
+        db,
+        "exams",
+        editingId
+      ),
+      {
+
+        name:examName,
+
+        examType,
+
+        subjectId:
+          selectedSubject || null,
+
+        topicId:
+          selectedTopic || null,
+
+        subTopicId:
+          selectedSubTopic || null,
+
+        questionCount:
+          Number(questionCount),
+
+        duration:
+          Number(duration),
+
+        negativeMarking:
+          Number(
+            negativeMarking
+          ),
+
+        shuffleQuestions,
+
+      }
+    );
+
+    resetForm();
+
+  }
+
+  function editExam(exam){
 
     setEditingId(exam.id);
 
     setExamName(exam.name);
 
+    setExamType(
+      exam.examType ||
+      "subject"
+    );
+
     setSelectedSubject(
-      exam.subjectId
+      exam.subjectId || ""
     );
 
     setSelectedTopic(
-      exam.topicId
+      exam.topicId || ""
     );
 
     setSelectedSubTopic(
-      exam.subTopicId
+      exam.subTopicId || ""
     );
 
     setQuestionCount(
@@ -293,70 +296,30 @@ export default function Exams() {
     );
 
     setShowPopup(true);
+
   }
 
-  async function updateExam() {
-
-    await updateDoc(
-      doc(
-        db,
-        "exams",
-        editingId
-      ),
-      {
-
-        name: examName,
-
-        subjectId:
-          selectedSubject,
-
-        topicId:
-          selectedTopic,
-
-        subTopicId:
-          selectedSubTopic,
-
-        questionCount:
-          Number(questionCount),
-
-        duration:
-          Number(duration),
-
-        negativeMarking:
-          Number(
-            negativeMarking
-          ),
-
-        shuffleQuestions,
-
-      }
-    );
-
-    resetForm();
-  }
-
-  async function handleDelete(id) {
+  async function handleDelete(id){
 
     const confirmDelete =
       window.confirm(
         "Delete Exam?"
       );
 
-    if (!confirmDelete)
-      return;
+    if(!confirmDelete)
+    return;
 
     await deleteDoc(
-      doc(
-        db,
-        "exams",
-        id
-      )
+      doc(db,"exams",id)
     );
+
   }
 
-  function resetForm() {
+  function resetForm(){
 
     setExamName("");
+
+    setExamType("subject");
 
     setQuestionCount(10);
 
@@ -369,24 +332,23 @@ export default function Exams() {
     setEditingId(null);
 
     setShowPopup(false);
+
   }
 
-  function getName(
-    arr,
-    id
-  ) {
+  function getName(arr,id){
 
     const item =
       arr.find(
-        (x) => x.id === id
+        (x)=>x.id === id
       );
 
     return item
       ? item.name
-      : "Unknown";
+      : "-";
+
   }
 
-  return (
+  return(
 
     <AdminLayout>
 
@@ -395,7 +357,7 @@ export default function Exams() {
         <div>
 
           <h2>
-            Exam Management
+            Advanced Exams
           </h2>
 
           <p>
@@ -407,7 +369,7 @@ export default function Exams() {
         </div>
 
         <button
-          onClick={() =>
+          onClick={()=>
             setShowPopup(true)
           }
         >
@@ -424,33 +386,12 @@ export default function Exams() {
 
             <tr>
 
-              <th>
-                Exam
-              </th>
-
-              <th>
-                Subject
-              </th>
-
-              <th>
-                Questions
-              </th>
-
-              <th>
-                Duration
-              </th>
-
-              <th>
-                Negative
-              </th>
-
-              <th>
-                Edit
-              </th>
-
-              <th>
-                Delete
-              </th>
+              <th>Exam</th>
+              <th>Type</th>
+              <th>Questions</th>
+              <th>Duration</th>
+              <th>Edit</th>
+              <th>Delete</th>
 
             </tr>
 
@@ -459,68 +400,53 @@ export default function Exams() {
           <tbody>
 
             {
-              exams.map((e) => (
+              exams.map((e)=>(
 
-                <tr key={e.id}>
+              <tr key={e.id}>
 
-                  <td>
-                    {e.name}
-                  </td>
+                <td>
+                  {e.name}
+                </td>
 
-                  <td>
-                    {
-                      getName(
-                        subjects,
-                        e.subjectId
-                      )
+                <td>
+                  {e.examType}
+                </td>
+
+                <td>
+                  {e.questionCount}
+                </td>
+
+                <td>
+                  {e.duration}m
+                </td>
+
+                <td>
+
+                  <button
+                    className="edit-btn"
+                    onClick={()=>
+                      editExam(e)
                     }
-                  </td>
+                  >
+                    Edit
+                  </button>
 
-                  <td>
-                    {
-                      e.questionCount
+                </td>
+
+                <td>
+
+                  <button
+                    className="delete-btn"
+                    onClick={()=>
+                      handleDelete(e.id)
                     }
-                  </td>
+                  >
+                    Delete
+                  </button>
 
-                  <td>
-                    {e.duration} min
-                  </td>
+                </td>
 
-                  <td>
-                    {
-                      e.negativeMarking
-                    }
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="edit-btn"
-                      onClick={() =>
-                        editExam(e)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="delete-btn"
-                      onClick={() =>
-                        handleDelete(
-                          e.id
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-
-                  </td>
-
-                </tr>
+              </tr>
 
               ))
             }
@@ -534,29 +460,61 @@ export default function Exams() {
       {
         showPopup && (
 
-          <div className="popup-overlay">
+        <div className="popup-overlay">
 
-            <div className="popup large-popup">
+          <div className="popup large-popup">
 
-              <h3>
+            <h3>
 
-                {
-                  editingId
-                    ? "Edit Exam"
-                    : "Create Exam"
-                }
+              {
+                editingId
+                ?
+                "Edit Exam"
+                :
+                "Create Exam"
+              }
 
-              </h3>
+            </h3>
 
-              <input
-                placeholder="Exam Name"
-                value={examName}
-                onChange={(e)=>
-                  setExamName(
-                    e.target.value
-                  )
-                }
-              />
+            <input
+              placeholder="Exam Name"
+              value={examName}
+              onChange={(e)=>
+                setExamName(
+                  e.target.value
+                )
+              }
+            />
+
+            <select
+              value={examType}
+              onChange={(e)=>
+                setExamType(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="subject">
+                Subject Exam
+              </option>
+
+              <option value="topic">
+                Topic Exam
+              </option>
+
+              <option value="subtopic">
+                SubTopic Exam
+              </option>
+
+              <option value="mixed">
+                Mixed Exam
+              </option>
+
+            </select>
+
+            {
+              examType !== "mixed" && (
 
               <select
                 value={
@@ -569,20 +527,31 @@ export default function Exams() {
                 }
               >
 
+                <option value="">
+                  Select Subject
+                </option>
+
                 {
-                  subjects.map(
-                    (s)=>(
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
+                  subjects.map((s)=>(
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
                   ))
                 }
 
               </select>
 
+              )
+            }
+
+            {
+              examType === "topic" &&
+              (
               <select
                 value={
                   selectedTopic
@@ -595,19 +564,25 @@ export default function Exams() {
               >
 
                 {
-                  filteredTopics.map(
-                    (t)=>(
-                    <option
-                      key={t.id}
-                      value={t.id}
-                    >
-                      {t.name}
-                    </option>
+                  filteredTopics.map((t)=>(
+
+                  <option
+                    key={t.id}
+                    value={t.id}
+                  >
+                    {t.name}
+                  </option>
+
                   ))
                 }
 
               </select>
+              )
+            }
 
+            {
+              examType === "subtopic" &&
+              (
               <select
                 value={
                   selectedSubTopic
@@ -620,111 +595,110 @@ export default function Exams() {
               >
 
                 {
-                  filteredSubTopics.map(
-                    (s)=>(
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
+                  filteredSubTopics.map((s)=>(
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
                   ))
                 }
 
               </select>
+              )
+            }
 
-              <input
-                type="number"
-                placeholder="Question Count"
-                value={questionCount}
-                onChange={(e)=>
-                  setQuestionCount(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                type="number"
-                placeholder="Duration"
-                value={duration}
-                onChange={(e)=>
-                  setDuration(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                type="number"
-                step="0.25"
-                placeholder="Negative Marking"
-                value={
-                  negativeMarking
-                }
-                onChange={(e)=>
-                  setNegativeMarking(
-                    e.target.value
-                  )
-                }
-              />
-
-              <label
-                className="checkbox"
-              >
-
-                <input
-                  type="checkbox"
-                  checked={
-                    shuffleQuestions
-                  }
-                  onChange={(e)=>
-                    setShuffleQuestions(
-                      e.target.checked
-                    )
-                  }
-                />
-
-                Shuffle Questions
-
-              </label>
-
-              {
-                editingId ? (
-
-                  <button
-                    onClick={
-                      updateExam
-                    }
-                  >
-                    Update Exam
-                  </button>
-
-                ) : (
-
-                  <button
-                    onClick={
-                      handleAddExam
-                    }
-                  >
-                    Create Exam
-                  </button>
-
+            <input
+              type="number"
+              placeholder="Question Count"
+              value={questionCount}
+              onChange={(e)=>
+                setQuestionCount(
+                  e.target.value
                 )
               }
+            />
 
+            <input
+              type="number"
+              placeholder="Duration"
+              value={duration}
+              onChange={(e)=>
+                setDuration(
+                  e.target.value
+                )
+              }
+            />
+
+            <input
+              type="number"
+              step="0.25"
+              placeholder="Negative"
+              value={negativeMarking}
+              onChange={(e)=>
+                setNegativeMarking(
+                  e.target.value
+                )
+              }
+            />
+
+            <label
+              className="checkbox"
+            >
+
+              <input
+                type="checkbox"
+                checked={
+                  shuffleQuestions
+                }
+                onChange={(e)=>
+                  setShuffleQuestions(
+                    e.target.checked
+                  )
+                }
+              />
+
+              Shuffle Questions
+
+            </label>
+
+            {
+              editingId
+              ?
+              (
               <button
-                className="cancel-btn"
                 onClick={
-                  resetForm
+                  updateExam
                 }
               >
-                Cancel
+                Update Exam
               </button>
+              )
+              :
+              (
+              <button
+                onClick={
+                  handleAddExam
+                }
+              >
+                Create Exam
+              </button>
+              )
+            }
 
-            </div>
+            <button
+              className="cancel-btn"
+              onClick={resetForm}
+            >
+              Cancel
+            </button>
 
           </div>
+
+        </div>
 
         )
       }
@@ -732,4 +706,5 @@ export default function Exams() {
     </AdminLayout>
 
   );
+
 }

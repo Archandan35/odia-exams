@@ -17,6 +17,20 @@ import {
 db,
 } from "../firebase/config";
 
+import Tesseract
+from "tesseract.js";
+
+import * as pdfjsLib
+from "pdfjs-dist";
+
+import {
+saveAs,
+} from "file-saver";
+
+import {
+parseMCQ,
+} from "../utils/ocrParser";
+
 import AdminLayout
 from "./AdminLayout";
 

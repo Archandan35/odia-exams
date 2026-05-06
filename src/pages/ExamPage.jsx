@@ -431,8 +431,27 @@ ${String(secs)
 
 function selectAnswer(
 qid,
-option
+index
 ){
+
+setAnswers((prev)=>({
+
+...prev,
+
+[qid]:index,
+
+}));
+
+setVisited((prev)=>({
+
+...prev,
+
+[qid]:true,
+
+}));
+
+}
+  {
 
 setAnswers((prev)=>({
 
@@ -558,9 +577,7 @@ legacyMap[q.answer] || 0;
 }
 
 if(
-q.options[
-correctIndex
-] === ans
+correctIndex === ans
 ){
 
 correct++;
@@ -778,11 +795,11 @@ answers[q.id]
 type="radio"
 checked={
 answers[q.id]
-=== option
+=== index
 }
 onChange={()=>selectAnswer(
 q.id,
-option
+index
 )}
 />
 

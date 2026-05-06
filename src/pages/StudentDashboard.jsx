@@ -16,70 +16,33 @@ import {
 useNavigate,
 } from "react-router-dom";
 
+import TopNavbar from "../components/TopNavbar";
+
 export default function StudentDashboard(){
 
-const nav = useNavigate();
-
-const [questions,
-setQuestions] =
-useState([]);
+const navigate =
+useNavigate();
 
 const [subjects,
 setSubjects] =
 useState([]);
 
-const [questionCount,
-setQuestionCount] =
-useState(10);
-
 useEffect(()=>{
 
-const unsub = onSnapshot(
-collection(db,"questions"),
+const unsub =
+onSnapshot(
+collection(db,"subjects"),
 (snapshot)=>{
 
 const data =
-snapshot.docs.map((d)=>(
-{
-id:d.id,
-...d.data(),
-}
-));
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
 
-setQuestions(data);
-
-const grouped = {};
-
-data.forEach((q)=>{
-
-if(!grouped[q.subject]){
-
-grouped[q.subject]={
-questions:0,
-topics:new Set(),
-};
-
-}
-
-grouped[q.subject]
-.questions++;
-
-grouped[q.subject]
-.topics.add(q.topic);
-
-});
-
-const arr =
-Object.entries(grouped)
-.map(([subject,val])=>(
-{
-subject,
-questions:val.questions,
-topics:val.topics.size,
-}
-));
-
-setSubjects(arr);
+setSubjects(data);
 
 }
 );
@@ -88,77 +51,80 @@ return ()=>unsub();
 
 },[]);
 
-function openSubject(subject){
-
-nav(
-`/subject/${encodeURIComponent(subject)}`
-);
-
-}
-
 return(
 
-<div className="subject-card glass-card">
+<div className="page">
 
-<h1>
-Mock Test Dashboard
-</h1>
+<TopNavbar/>
 
-<div className="card">
+<div className="page-header">
 
-<h3>
-Choose Question Count
-</h3>
-
-<input
-value={questionCount}
-type="number"
-onChange={(e)=>
-setQuestionCount(
-e.target.value
-)
-}
-/>
-
-</div>
-
-<div className="grid">
-
-{subjects.map((s,index)=>(
-
-<div
-key={index}
-className="subject-card"
->
+<div>
 
 <h2>
-{s.subject}
+Student Dashboard
 </h2>
 
 <p>
-Topics: {s.topics}
+Choose a subject
 </p>
 
-<p>
-Questions: {s.questions}
-</p>
+</div>
 
 <button
 onClick={()=>
-openSubject(
-s.subject
-)
+navigate("/profile")
 }
 >
-Open Subject
+
+My Profile
+
 </button>
 
 </div>
 
-))}
+<div className="subject-grid">
+
+{
+subjects.map((s)=>(
+
+<div
+key={s.id}
+className="
+subject-card
+glass-card
+"
+>
+
+<h3>
+{s.name}
+</h3>
+
+<p>
+Start mock tests
+</p>
+
+<button
+onClick={()=>
+navigate(
+`/exam/${s.id}`
+)
+}
+>
+
+Start Test
+
+</button>
+
+</div>
+
+))
+}
 
 </div>
 
 </div>
+
 );
+
 }

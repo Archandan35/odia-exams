@@ -6,16 +6,35 @@ import App from "./App";
 
 import "./styles/globals.css";
 
-ReactDOM
-  .createRoot(
-    document.getElementById("root")
-  )
-  .render(
+import {
+Toaster,
+} from "react-hot-toast";
 
-    <React.StrictMode>
+ReactDOM.createRoot(
+document.getElementById("root")
+).render(
 
-      <App />
+<React.StrictMode>
 
-    </React.StrictMode>
+<App/>
 
-  );
+<Toaster
+position="top-right"
+toastOptions={{
+
+style:{
+
+background:"#111827",
+color:"#fff",
+border:"1px solid #334155",
+
+},
+
+},
+
+}
+/>
+
+</React.StrictMode>
+
+);

@@ -7,26 +7,19 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
-import StudentDashboard
-from "./pages/StudentDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
 
-import AdminDashboard
-from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
-import ExamPage
-from "./pages/ExamPage";
+import ExamPage from "./pages/ExamPage";
 
-import TopicDashboard
-from "./pages/TopicDashboard";
+import TopicDashboard from "./pages/TopicDashboard";
 
-import MixedExamPage
-from "./pages/MixedExamPage";
+import MixedExamPage from "./pages/MixedExamPage";
 
-import ProtectedRoute
-from "./routes/ProtectedRoute";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-import AdminRoute
-from "./routes/AdminRoute";
+import AdminRoute from "./routes/AdminRoute";
 
 export default function App() {
 
@@ -38,76 +31,56 @@ export default function App() {
 
         <Route
           path="/"
-          element={<Login/>}
+          element={<Login />}
         />
 
         <Route
           path="/register"
-          element={<Register/>}
+          element={<Register />}
         />
 
         <Route
           path="/dashboard"
           element={
-
             <ProtectedRoute>
-
-              <StudentDashboard/>
-
+              <StudentDashboard />
             </ProtectedRoute>
-
           }
         />
 
         <Route
           path="/admin"
           element={
-
             <AdminRoute>
-
-              <AdminDashboard/>
-
+              <AdminDashboard />
             </AdminRoute>
-
           }
         />
 
         <Route
           path="/exam/:subject"
           element={
-
             <ProtectedRoute>
-
-              <ExamPage/>
-
+              <ExamPage />
             </ProtectedRoute>
-
           }
         />
 
         <Route
           path="/topics"
           element={
-
             <ProtectedRoute>
-
-              <TopicDashboard/>
-
+              <TopicDashboard />
             </ProtectedRoute>
-
           }
         />
 
         <Route
           path="/mixed-exam"
           element={
-
             <ProtectedRoute>
-
-              <MixedExamPage/>
-
+              <MixedExamPage />
             </ProtectedRoute>
-
           }
         />
 

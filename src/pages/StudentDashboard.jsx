@@ -16,22 +16,23 @@ import {
 useNavigate,
 } from "react-router-dom";
 
-import TopNavbar from "../components/TopNavbar";
+import TopNavbar
+from "../components/TopNavbar";
 
 export default function StudentDashboard(){
 
 const navigate =
 useNavigate();
 
-const [subjects,
-setSubjects] =
+const [exams,
+setExams] =
 useState([]);
 
 useEffect(()=>{
 
 const unsub =
 onSnapshot(
-collection(db,"subjects"),
+collection(db,"exams"),
 (snapshot)=>{
 
 const data =
@@ -42,7 +43,7 @@ id:doc.id,
 })
 );
 
-setSubjects(data);
+setExams(data);
 
 }
 );
@@ -50,6 +51,21 @@ setSubjects(data);
 return ()=>unsub();
 
 },[]);
+
+function getExamTitle(exam){
+
+if(exam.examType === "mixed")
+return "Mixed Exam";
+
+if(exam.examType === "topic")
+return "Topic Exam";
+
+if(exam.examType === "subtopic")
+return "SubTopic Exam";
+
+return "Subject Exam";
+
+}
 
 return(
 
@@ -66,39 +82,45 @@ Student Dashboard
 </h2>
 
 <p>
-Choose a subject
+Available Exams
 </p>
 
 </div>
+
+<div
+style={{
+display:"flex",
+gap:"10px",
+}}
+>
+
+<button
+onClick={()=>
+navigate("/leaderboard")
+}
+>
+Leaderboard
+</button>
 
 <button
 onClick={()=>
 navigate("/profile")
 }
 >
-<button
-onClick={()=>
-navigate("/leaderboard")
-}
->
-
-Leaderboard
-
-</button>
-  
 My Profile
-
 </button>
+
+</div>
 
 </div>
 
 <div className="subject-grid">
 
 {
-subjects.map((s)=>(
+exams.map((e)=>(
 
 <div
-key={s.id}
+key={e.id}
 className="
 subject-card
 glass-card
@@ -106,22 +128,34 @@ glass-card
 >
 
 <h3>
-{s.name}
+{e.name}
 </h3>
 
 <p>
-Start mock tests
+{getExamTitle(e)}
+</p>
+
+<p>
+Questions:
+{" "}
+{e.questionCount}
+</p>
+
+<p>
+Duration:
+{" "}
+{e.duration} mins
 </p>
 
 <button
 onClick={()=>
 navigate(
-`/exam/${s.id}`
+`/exam/${e.id}`
 )
 }
 >
 
-Start Test
+Start Exam
 
 </button>
 

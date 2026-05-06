@@ -15,13 +15,13 @@ export default function TopNavbar(){
 const navigate =
 useNavigate();
 
-const logout = async()=>{
+async function logout(){
 
 await signOut(auth);
 
 navigate("/");
 
-};
+}
 
 return(
 

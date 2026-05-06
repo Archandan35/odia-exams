@@ -15,9 +15,17 @@ db,
 auth,
 } from "../firebase/config";
 
-import TopNavbar from "../components/TopNavbar";
+import {
+useNavigate,
+} from "react-router-dom";
+
+import TopNavbar
+from "../components/TopNavbar";
 
 export default function Profile(){
+
+const navigate =
+useNavigate();
 
 const [results,
 setResults] =
@@ -46,6 +54,12 @@ snapshot.docs.map(
 id:doc.id,
 ...doc.data(),
 })
+);
+
+data.sort(
+(a,b)=>
+b.createdAt -
+a.createdAt
 );
 
 setResults(data);
@@ -87,6 +101,30 @@ b.score
 0
 );
 
+const bestScore =
+results.length > 0
+?
+Math.max(
+...results.map(
+(r)=>
+Number(r.score)
+)
+)
+:
+0;
+
+function formatDate(timestamp){
+
+if(!timestamp)
+return "-";
+
+const d =
+new Date(timestamp);
+
+return d.toLocaleDateString();
+
+}
+
 return(
 
 <div className="page">
@@ -104,6 +142,36 @@ Student Profile
 <p>
 Performance Overview
 </p>
+
+</div>
+
+<div
+style={{
+display:"flex",
+gap:"12px",
+flexWrap:"wrap",
+}}
+>
+
+<button
+onClick={()=>
+navigate("/dashboard")
+}
+>
+
+Dashboard
+
+</button>
+
+<button
+onClick={()=>
+navigate("/leaderboard")
+}
+>
+
+Leaderboard
+
+</button>
 
 </div>
 
@@ -147,6 +215,18 @@ Total Score
 
 </div>
 
+<div className="analytics-card">
+
+<h3>
+Best Score
+</h3>
+
+<h1>
+{bestScore}
+</h1>
+
+</div>
+
 </div>
 
 <div className="table-card">
@@ -155,11 +235,32 @@ Total Score
 Attempt History
 </h3>
 
+{
+results.length === 0
+?
+(
+<p
+style={{
+marginTop:"15px",
+color:"#94a3b8",
+}}
+>
+
+No exam attempts yet.
+
+</p>
+)
+:
+(
 <table>
 
 <thead>
 
 <tr>
+
+<th>
+Date
+</th>
 
 <th>
 Subject
@@ -181,6 +282,10 @@ Score
 Accuracy
 </th>
 
+<th>
+Warnings
+</th>
+
 </tr>
 
 </thead>
@@ -191,6 +296,14 @@ Accuracy
 results.map((r)=>(
 
 <tr key={r.id}>
+
+<td>
+{
+formatDate(
+r.createdAt
+)
+}
+</td>
 
 <td>
 {r.subject}
@@ -212,6 +325,12 @@ results.map((r)=>(
 {r.accuracy}%
 </td>
 
+<td>
+{
+r.cheatCount || 0
+}
+</td>
+
 </tr>
 
 ))
@@ -220,6 +339,8 @@ results.map((r)=>(
 </tbody>
 
 </table>
+)
+}
 
 </div>
 

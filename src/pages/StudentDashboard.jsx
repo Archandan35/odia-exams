@@ -76,7 +76,16 @@ onClick={()=>
 navigate("/profile")
 }
 >
+<button
+onClick={()=>
+navigate("/leaderboard")
+}
+>
 
+Leaderboard
+
+</button>
+  
 My Profile
 
 </button>

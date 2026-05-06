@@ -1,153 +1,196 @@
 import {
-useEffect,
-useState,
+  useEffect,
+  useState,
 } from "react";
 
 import {
-useParams,
+  useParams,
 } from "react-router-dom";
 
 import {
-collection,
-getDocs,
+  collection,
+  getDocs,
+  addDoc,
 } from "firebase/firestore";
 
 import {
-db,
+  db,
+  auth,
 } from "../firebase/config";
 
-export default function ExamPage(){
+export default function ExamPage() {
 
-const { subject } =
-useParams();
+  const { subject } =
+    useParams();
 
-const [questions,
-setQuestions] =
-useState([]);
+  const [questions,
+    setQuestions] =
+    useState([]);
 
-const [current,
-setCurrent] =
-useState(0);
+  const [currentQuestion,
+    setCurrentQuestion] =
+    useState(0);
 
-const [answers,
-setAnswers] =
-useState({});
+  const [answers,
+    setAnswers] =
+    useState({});
 
-const [timeLeft,
-setTimeLeft] =
-useState(3600);
+  const [visited,
+    setVisited] =
+    useState({});
 
-useEffect(()=>{
+  const [review,
+    setReview] =
+    useState({});
 
-async function load(){
+  const [timeLeft,
+    setTimeLeft] =
+    useState(1800);
 
-const params =
-new URLSearchParams(
-window.location.search
-);
+  const [examData,
+    setExamData] =
+    useState(null);
 
-const topic =
-params.get("topic");
+  const [loading,
+    setLoading] =
+    useState(true);
 
-const mixed =
-params.get("mixed");
+  useEffect(() => {
 
-const count =
-parseInt(
-params.get("count")
-|| 10
-);
+    async function loadExam() {
 
-const snapshot =
-await getDocs(
-collection(db,"questions")
-);
+      const examSnapshot =
+        await getDocs(
+          collection(db, "exams")
+        );
 
-let data =
-snapshot.docs.map((d)=>(
-{
-id:d.id,
-...d.data(),
-}
-));
+      const exams =
+        examSnapshot.docs.map(
+          (doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
 
-if(topic){
+      const currentExam =
+        exams.find(
+          (e) =>
+            e.subjectId ===
+            subject
+        );
 
-data = data.filter((q)=>
-q.subject === subject
-&&
-q.topic === topic
-);
-}
+      setExamData(currentExam);
 
-else if(mixed){
+      if (currentExam) {
 
-data = data.filter((q)=>
-q.subject === subject
-);
-}
+        setTimeLeft(
+          currentExam.duration
+          * 60
+        );
 
-else{
+      }
 
-data = data.filter((q)=>
-q.subject === subject
-);
-}
+      const questionSnapshot =
+        await getDocs(
+          collection(db, "questions")
+        );
 
-// shuffle
+      let allQuestions =
+        questionSnapshot.docs.map(
+          (doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
 
-data = data.sort(()=>
-Math.random()-0.5
-);
+      allQuestions =
+        allQuestions.filter(
+          (q) =>
+            q.subjectId ===
+            subject
+        );
 
-setQuestions(
-data.slice(0,count)
-);
+      if (
+        currentExam?.shuffleQuestions
+      ) {
 
-}
+        allQuestions =
+          allQuestions.sort(
+            () =>
+              Math.random() - 0.5
+          );
 
-load();
+      }
 
-},[subject]);
+      allQuestions =
+        allQuestions.slice(
+          0,
+          currentExam?.questionCount
+        );
 
-useEffect(()=>{
+      setQuestions(allQuestions);
 
-const interval =
-setInterval(()=>{
+      setLoading(false);
 
-setTimeLeft((prev)=>{
+    }
 
-if(prev <= 0){
+    loadExam();
 
-clearInterval(interval);
-return 0;
+  }, [subject]);
 
-}
+  useEffect(() => {
 
-return prev - 1;
+    if (
+      loading ||
+      questions.length === 0
+    ) return;
 
-});
+    const timer =
+      setInterval(() => {
 
-},1000);
+        setTimeLeft((prev) => {
 
-return()=>clearInterval(interval);
+          if (prev <= 1) {
 
-},[]);
+            clearInterval(timer);
 
-function formatTime(seconds){
+            submitExam();
 
-const hrs =
-Math.floor(seconds/3600);
+            return 0;
 
-const mins =
-Math.floor(
-(seconds%3600)/60
-);
+          }
 
-const secs =
-seconds%60;
+          return prev - 1;
 
-return `
+        });
+
+      }, 1000);
+
+    return () =>
+      clearInterval(timer);
+
+  }, [
+    loading,
+    questions,
+  ]);
+
+  function formatTime(seconds) {
+
+    const hrs =
+      Math.floor(
+        seconds / 3600
+      );
+
+    const mins =
+      Math.floor(
+        (seconds % 3600)
+        / 60
+      );
+
+    const secs =
+      seconds % 60;
+
+    return `
 ${String(hrs)
 .padStart(2,"0")}h
 ${String(mins)
@@ -156,147 +199,430 @@ ${String(secs)
 .padStart(2,"0")}s
 `;
 
-}
+  }
 
-function selectAnswer(id,opt){
+  function selectAnswer(
+    qid,
+    option
+  ) {
 
-setAnswers((prev)=>(
-{
-...prev,
-[id]:opt,
-}
-));
+    setAnswers((prev) => ({
+      ...prev,
+      [qid]: option,
+    }));
 
-}
+    setVisited((prev) => ({
+      ...prev,
+      [qid]: true,
+    }));
 
-const q =
-questions[current];
+  }
 
-return(
+  function markReview(qid) {
 
-<div className="exam-layout">
+    setReview((prev) => ({
+      ...prev,
+      [qid]:
+        !prev[qid],
+    }));
 
-<div className="exam-main">
+  }
 
-<div className="topbar">
+  function nextQuestion() {
 
-<h2>
-{subject}
-</h2>
+    if (
+      currentQuestion <
+      questions.length - 1
+    ) {
 
-<h2>
-⏳ {formatTime(timeLeft)}
-</h2>
+      setCurrentQuestion(
+        currentQuestion + 1
+      );
 
-</div>
+    }
 
-{q && (
+  }
 
-<div className="card">
+  function prevQuestion() {
 
-<h3>
-Question {current+1}
-</h3>
+    if (
+      currentQuestion > 0
+    ) {
 
-<h2>
-{q.question}
-</h2>
+      setCurrentQuestion(
+        currentQuestion - 1
+      );
 
-<div className="option-line">
+    }
 
-{q.options?.map((o,index)=>(
+  }
 
-<label
-key={index}
-className="option"
->
+  async function submitExam() {
 
-<input
-type="radio"
-checked={
-answers[q.id] === o
-}
-onChange={()=>
-selectAnswer(
-q.id,
-o
-)
-}
-/>
+    let correct = 0;
 
-{o}
+    let wrong = 0;
 
-</label>
+    questions.forEach((q) => {
 
-))}
+      const ans =
+        answers[q.id];
 
-</div>
+      if (!ans) return;
 
-<div
-style={{
-display:"flex",
-gap:"10px",
-marginTop:"20px",
-}}
->
+      if (
+        ans === q.answer
+      ) {
 
-<button
-onClick={()=>
-setCurrent(
-Math.max(current-1,0)
-)
-}
->
-Previous
-</button>
+        correct++;
 
-<button
-onClick={()=>
-setCurrent(
-Math.min(
-current+1,
-questions.length-1
-)
-)
-}
->
-Save & Next
-</button>
+      } else {
 
-</div>
+        wrong++;
 
-</div>
+      }
 
-)}
+    });
 
-</div>
+    const negative =
+      wrong *
+      (
+        examData
+        ?.negativeMarking || 0
+      );
 
-<div className="navigator">
+    const finalScore =
+      correct - negative;
 
-<h3>
-Questions
-</h3>
+    const accuracy =
+      questions.length > 0
+      ? (
+        (
+          correct /
+          questions.length
+        ) * 100
+      ).toFixed(2)
+      : 0;
 
-<div className="palette-grid">
+    await addDoc(
+      collection(db, "results"),
+      {
 
-{questions.map((item,index)=>(
+        userId:
+          auth.currentUser?.uid,
 
-<button
-key={item.id}
-className="palette-btn"
-onClick={()=>
-setCurrent(index)
-}
->
-{index+1}
-</button>
+        subject,
 
-))}
+        totalQuestions:
+          questions.length,
 
-</div>
+        correct,
 
-</div>
+        wrong,
 
-</div>
-);
+        unanswered:
+          questions.length
+          -
+          (
+            correct + wrong
+          ),
+
+        score:
+          finalScore,
+
+        accuracy,
+
+        timeTaken:
+          examData?.duration
+          * 60
+          - timeLeft,
+
+        createdAt:
+          Date.now(),
+
+      }
+    );
+
+    alert(
+      `
+Exam Submitted
+
+Correct: ${correct}
+
+Wrong: ${wrong}
+
+Score: ${finalScore}
+
+Accuracy: ${accuracy}%
+`
+    );
+
+    window.location.href =
+      "/dashboard";
+
+  }
+
+  if (loading) {
+
+    return (
+
+      <div className="page">
+
+        <h2>
+          Loading Exam...
+        </h2>
+
+      </div>
+
+    );
+
+  }
+
+  const q =
+    questions[currentQuestion];
+
+  return (
+
+    <div className="exam-layout">
+
+      <div className="exam-main">
+
+        <div className="topbar">
+
+          <div>
+
+            <h2>
+              Exam Engine
+            </h2>
+
+            <p>
+              Subject:
+              {" "}
+              {subject}
+            </p>
+
+          </div>
+
+          <div>
+
+            <h2>
+              ⏳
+              {" "}
+              {
+                formatTime(
+                  timeLeft
+                )
+              }
+            </h2>
+
+          </div>
+
+        </div>
+
+        {
+          q && (
+
+            <div className="card">
+
+              <h3>
+
+                Question
+                {" "}
+                {
+                  currentQuestion
+                  + 1
+                }
+
+              </h3>
+
+              <h2>
+                {q.question}
+              </h2>
+
+              <div className="options-list">
+
+                {
+                  q.options?.map(
+                    (
+                      option,
+                      index
+                    ) => (
+
+                    <label
+                      key={index}
+                      className={
+                        answers[q.id]
+                        === option
+                        ? "selected-option"
+                        : "option-card"
+                      }
+                    >
+
+                      <input
+                        type="radio"
+                        checked={
+                          answers[q.id]
+                          === option
+                        }
+                        onChange={() =>
+                          selectAnswer(
+                            q.id,
+                            option
+                          )
+                        }
+                      />
+
+                      {option}
+
+                    </label>
+
+                  ))
+                }
+
+              </div>
+
+              <div className="exam-buttons">
+
+                <button
+                  onClick={
+                    prevQuestion
+                  }
+                >
+                  Previous
+                </button>
+
+                <button
+                  onClick={() =>
+                    markReview(
+                      q.id
+                    )
+                  }
+                >
+                  {
+                    review[q.id]
+                    ? "Remove Review"
+                    : "Mark Review"
+                  }
+                </button>
+
+                <button
+                  onClick={
+                    nextQuestion
+                  }
+                >
+                  Save & Next
+                </button>
+
+                <button
+                  className="submit-btn"
+                  onClick={
+                    submitExam
+                  }
+                >
+                  Submit
+                </button>
+
+              </div>
+
+            </div>
+
+          )
+        }
+
+      </div>
+
+      <div className="navigator">
+
+        <h3>
+          Question Palette
+        </h3>
+
+        <div className="palette-grid">
+
+          {
+            questions.map(
+              (
+                item,
+                index
+              ) => {
+
+              let btnClass =
+                "palette-btn";
+
+              if (
+                review[item.id]
+              ) {
+
+                btnClass +=
+                  " review-btn";
+
+              }
+
+              else if (
+                answers[item.id]
+              ) {
+
+                btnClass +=
+                  " answered-btn";
+
+              }
+
+              else if (
+                visited[item.id]
+              ) {
+
+                btnClass +=
+                  " visited-btn";
+
+              }
+
+              return (
+
+                <button
+                  key={item.id}
+                  className={
+                    btnClass
+                  }
+                  onClick={() =>
+                    setCurrentQuestion(
+                      index
+                    )
+                  }
+                >
+
+                  {index + 1}
+
+                </button>
+
+              );
+
+            })
+          }
+
+        </div>
+
+        <div className="legend">
+
+          <div>
+            <span className="legend-box answered-btn"></span>
+            Answered
+          </div>
+
+          <div>
+            <span className="legend-box visited-btn"></span>
+            Visited
+          </div>
+
+          <div>
+            <span className="legend-box review-btn"></span>
+            Review
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
 }

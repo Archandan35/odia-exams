@@ -41,49 +41,10 @@ No Result Found
 
 }
 
-/* PERFORMANCE MESSAGE */
-
-function getPerformanceMessage(){
-
-const accuracy =
-Number(
-result.accuracy || 0
-);
-
-if(accuracy >= 90){
-
-return "Outstanding Performance";
-
-}
-
-if(accuracy >= 75){
-
-return "Very Good Performance";
-
-}
-
-if(accuracy >= 60){
-
-return "Good Attempt";
-
-}
-
-if(accuracy >= 40){
-
-return "Needs Improvement";
-
-}
-
-return "Practice More";
-
-}
-
-/* TIME FORMAT */
-
 function formatTime(sec){
 
 if(!sec)
-return "0m 0s";
+return "00h 00m 00s";
 
 const hrs =
 Math.floor(sec / 3600);
@@ -96,46 +57,10 @@ Math.floor(
 const seconds =
 sec % 60;
 
-if(hrs > 0){
-
-return `${hrs}h ${mins}m ${seconds}s`;
-
-}
-
-return `${mins}m ${seconds}s`;
-
-}
-
-/* AI INSIGHT */
-
-function getInsight(){
-
-const accuracy =
-Number(
-result.accuracy || 0
-);
-
-if(accuracy < 40){
-
 return `
-Focus on concept clarity and
-solve easier questions first.
-`;
-
-}
-
-if(accuracy < 70){
-
-return `
-Practice medium difficulty
-questions daily for improvement.
-`;
-
-}
-
-return `
-You are performing well.
-Focus on speed optimization.
+${String(hrs).padStart(2,"0")}h
+${String(mins).padStart(2,"0")}m
+${String(seconds).padStart(2,"0")}s
 `;
 
 }
@@ -151,22 +76,14 @@ return(
 <div>
 
 <h2>
-Advanced Result Analysis
+Exam Result
 </h2>
 
 <p>
-Detailed Exam Insights
+Detailed Performance Analysis
 </p>
 
 </div>
-
-<div
-style={{
-display:"flex",
-gap:"12px",
-flexWrap:"wrap",
-}}
->
 
 <button
 onClick={()=>
@@ -177,18 +94,6 @@ navigate("/dashboard")
 Dashboard
 
 </button>
-
-<button
-onClick={()=>
-navigate("/leaderboard")
-}
->
-
-Leaderboard
-
-</button>
-
-</div>
 
 </div>
 
@@ -245,18 +150,6 @@ Accuracy
 <div className="analytics-card">
 
 <h3>
-Unanswered
-</h3>
-
-<h1>
-{result.unanswered}
-</h1>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
 Time Taken
 </h3>
 
@@ -270,129 +163,17 @@ result.timeTaken
 
 </div>
 
-</div>
-
-<div className="dashboard-grid">
-
 <div className="analytics-card">
 
 <h3>
-Performance Level
-</h3>
-
-<h2>
-{
-getPerformanceMessage()
-}
-</h2>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
-Cheat Warnings
+Unanswered
 </h3>
 
 <h1>
-{
-result.cheatCount || 0
-}
+{result.unanswered}
 </h1>
 
 </div>
-
-<div className="analytics-card">
-
-<h3>
-AI Insight
-</h3>
-
-<p>
-{
-getInsight()
-}
-</p>
-
-</div>
-
-</div>
-
-<div className="table-card">
-
-<h3>
-Result Summary
-</h3>
-
-<table>
-
-<tbody>
-
-<tr>
-<td>Total Questions</td>
-<td>
-{result.totalQuestions}
-</td>
-</tr>
-
-<tr>
-<td>Correct</td>
-<td>
-{result.correct}
-</td>
-</tr>
-
-<tr>
-<td>Wrong</td>
-<td>
-{result.wrong}
-</td>
-</tr>
-
-<tr>
-<td>Unanswered</td>
-<td>
-{result.unanswered}
-</td>
-</tr>
-
-<tr>
-<td>Score</td>
-<td>
-{result.score}
-</td>
-</tr>
-
-<tr>
-<td>Accuracy</td>
-<td>
-{result.accuracy}%
-</td>
-</tr>
-
-<tr>
-<td>Time Taken</td>
-<td>
-{
-formatTime(
-result.timeTaken
-)
-}
-</td>
-</tr>
-
-<tr>
-<td>Warnings</td>
-<td>
-{
-result.cheatCount || 0
-}
-</td>
-</tr>
-
-</tbody>
-
-</table>
 
 </div>
 
@@ -401,24 +182,22 @@ result.cheatCount || 0
 <div
 style={{
 display:"flex",
-justifyContent:
-"space-between",
+justifyContent:"space-between",
 alignItems:"center",
+marginBottom:"20px",
 }}
 >
 
 <h3>
-Answer Review
+Question Review
 </h3>
 
 <button
-onClick={()=>{
-
+onClick={()=>
 setShowAnswers(
 !showAnswers
-);
-
-}}
+)
+}
 >
 
 {
@@ -434,50 +213,75 @@ showAnswers
 </div>
 
 {
-showAnswers
-?
-(
-result.questions?.length > 0
-?
-(
+showAnswers && (
+
 <div
 style={{
-marginTop:"20px",
 display:"flex",
 flexDirection:"column",
-gap:"20px",
+gap:"22px",
 }}
 >
 
 {
-result.questions.map(
+result.questions?.map(
 (q,index)=>{
 
 const userAnswer =
 result.answers?.[
-index
+q.id
 ];
 
-const correct =
+let correctIndex = 0;
+
+if(
+q.correctAnswer !==
+undefined
+){
+
+correctIndex =
+Number(
+q.correctAnswer
+);
+
+}else{
+
+const map = {
+
+A:0,
+B:1,
+C:2,
+D:3,
+
+};
+
+correctIndex =
+map[q.answer] || 0;
+
+}
+
+const isCorrect =
 userAnswer ===
-q.correctAnswer;
+correctIndex;
 
 return(
 
 <div
-key={index}
+key={q.id}
 className="
 question-review-card
 "
 >
 
-<h4>
+<h3>
 
 Q{index + 1}.
+
 {" "}
+
 {q.question}
 
-</h4>
+</h3>
 
 <div
 className="
@@ -492,11 +296,12 @@ q.options?.map(
 <div
 key={i}
 className={`
+
 review-option
 
 ${
 i ===
-q.correctAnswer
+correctIndex
 ?
 "correct-option"
 :
@@ -507,20 +312,25 @@ ${
 i ===
 userAnswer &&
 i !==
-q.correctAnswer
+correctIndex
 ?
 "wrong-option"
 :
 ""
 }
+
 `}
 >
 
-{
-["A","B","C","D"][i]
-}.
+<b>
 
-{" "}
+{
+String.fromCharCode(
+65 + i
+)
+}) 
+
+</b>
 
 {op}
 
@@ -540,9 +350,9 @@ Correct Answer:
 {" "}
 
 {
-["A","B","C","D"][
-q.correctAnswer
-]
+String.fromCharCode(
+65 + correctIndex
+)
 }
 
 </p>
@@ -559,11 +369,34 @@ Your Answer:
 userAnswer !==
 undefined
 ?
-["A","B","C","D"][
-userAnswer
-]
+String.fromCharCode(
+65 + userAnswer
+)
 :
 "Not Answered"
+}
+
+</p>
+
+<p>
+
+<b>
+Status:
+</b>
+
+{" "}
+
+{
+userAnswer ===
+undefined
+?
+"Unanswered"
+:
+isCorrect
+?
+"Correct"
+:
+"Wrong"
 }
 
 </p>
@@ -598,58 +431,9 @@ Explanation:
 }
 
 </div>
+
 )
-:
-(
-<p
-style={{
-marginTop:"15px",
-}}
->
-
-Detailed answer review
-not available.
-
-</p>
-)
-)
-:
-null
 }
-
-</div>
-
-<div className="dashboard-grid">
-
-<button
-onClick={()=>
-navigate("/dashboard")
-}
->
-
-Back Dashboard
-
-</button>
-
-<button
-onClick={()=>
-navigate("/leaderboard")
-}
->
-
-View Leaderboard
-
-</button>
-
-<button
-onClick={()=>
-window.print()
-}
->
-
-Print Result
-
-</button>
 
 </div>
 

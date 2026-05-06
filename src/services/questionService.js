@@ -7,6 +7,7 @@ import {
   query,
   where,
   getDocs,
+  updateDoc,
 } from "firebase/firestore";
 
 import {
@@ -16,9 +17,7 @@ import {
 const questionsRef =
   collection(db, "questions");
 
-export async function addQuestion(
-  question
-) {
+export async function addQuestion(question) {
 
   await addDoc(
     questionsRef,
@@ -26,22 +25,25 @@ export async function addQuestion(
   );
 }
 
-export async function deleteQuestion(
-  id
-) {
+export async function deleteQuestion(id) {
 
   await deleteDoc(
-    doc(
-      db,
-      "questions",
-      id
-    )
+    doc(db, "questions", id)
   );
 }
 
-export function listenQuestions(
-  callback
+export async function updateQuestion(
+  id,
+  data
 ) {
+
+  await updateDoc(
+    doc(db, "questions", id),
+    data
+  );
+}
+
+export function listenQuestions(callback) {
 
   return onSnapshot(
     questionsRef,
@@ -59,9 +61,7 @@ export function listenQuestions(
   );
 }
 
-export async function getQuestionsBySubject(
-  subject
-) {
+export async function getQuestionsBySubject(subject) {
 
   const q =
     query(

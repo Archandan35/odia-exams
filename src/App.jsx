@@ -1,7 +1,7 @@
 import {
-BrowserRouter,
-Routes,
-Route,
+  BrowserRouter,
+  Routes,
+  Route,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -9,72 +9,60 @@ import Register from "./pages/Register";
 
 import StudentDashboard from "./pages/StudentDashboard";
 
-import AdminDashboard from "./pages/AdminDashboard";
-
-import SubjectTopicsPage from "./pages/SubjectTopicsPage";
-
 import ExamPage from "./pages/ExamPage";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
-
 import AdminRoute from "./routes/AdminRoute";
 
-export default function App(){
+import AdminPage from "./pages/AdminPage";
 
-return(
+export default function App() {
 
-<BrowserRouter>
+  return (
 
-<Routes>
+    <BrowserRouter>
 
-<Route
-path="/"
-element={<Login/>}
-/>
+      <Routes>
 
-<Route
-path="/register"
-element={<Register/>}
-/>
+        <Route
+          path="/"
+          element={<Login />}
+        />
 
-<Route
-path="/dashboard"
-element={
-<ProtectedRoute>
-<StudentDashboard/>
-</ProtectedRoute>
-}
-/>
+        <Route
+          path="/register"
+          element={<Register />}
+        />
 
-<Route
-path="/admin"
-element={
-<AdminRoute>
-<AdminDashboard/>
-</AdminRoute>
-}
-/>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-path="/subject/:subject"
-element={
-<ProtectedRoute>
-<SubjectTopicsPage/>
-</ProtectedRoute>
-}
-/>
+        <Route
+          path="/exam/:subject"
+          element={
+            <ProtectedRoute>
+              <ExamPage />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-path="/exam/:subject"
-element={
-<ProtectedRoute>
-<ExamPage/>
-</ProtectedRoute>
-}
-/>
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          }
+        />
 
-</Routes>
+      </Routes>
 
-</BrowserRouter>
-);
+    </BrowserRouter>
+  );
 }

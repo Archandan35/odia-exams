@@ -21,48 +21,181 @@ import { db } from "../firebase/config";
 
 import AdminLayout from "./AdminLayout";
 
-export default function Subjects() {
+export default function SubTopics() {
 
-  const [subjects, setSubjects] =
+  const [subjects,
+    setSubjects] =
     useState([]);
 
-  const [showPopup, setShowPopup] =
-    useState(false);
+  const [topics,
+    setTopics] =
+    useState([]);
 
-  const [subjectName, setSubjectName] =
+  const [subTopics,
+    setSubTopics] =
+    useState([]);
+
+  const [selectedSubject,
+    setSelectedSubject] =
     useState("");
 
-  const [editingId, setEditingId] =
+  const [selectedTopic,
+    setSelectedTopic] =
+    useState("");
+
+  const [showPopup,
+    setShowPopup] =
+    useState(false);
+
+  const [subTopicName,
+    setSubTopicName] =
+    useState("");
+
+  const [editingId,
+    setEditingId] =
     useState(null);
 
   useEffect(() => {
 
-    const unsub = onSnapshot(
-      collection(db, "subjects"),
-      (snapshot) => {
+    const unsubSubjects =
+      onSnapshot(
+        collection(db, "subjects"),
+        (snapshot) => {
 
-        const data = snapshot.docs.map(
-          (doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
 
-        setSubjects(data);
+          setSubjects(data);
 
-      }
-    );
+          if (
+            data.length > 0 &&
+            !selectedSubject
+          ) {
 
-    return () => unsub();
+            setSelectedSubject(
+              data[0].id
+            );
+
+          }
+
+        }
+      );
+
+    return () =>
+      unsubSubjects();
 
   }, []);
 
-  async function handleAddSubject() {
+  useEffect(() => {
 
-    if (!subjectName.trim()) {
+    const unsubTopics =
+      onSnapshot(
+        collection(db, "topics"),
+        (snapshot) => {
+
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
+
+          setTopics(data);
+
+        }
+      );
+
+    return () =>
+      unsubTopics();
+
+  }, []);
+
+  useEffect(() => {
+
+    const unsubSubTopics =
+      onSnapshot(
+        collection(db, "subtopics"),
+        (snapshot) => {
+
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
+
+          setSubTopics(data);
+
+        }
+      );
+
+    return () =>
+      unsubSubTopics();
+
+  }, []);
+
+  const filteredTopics =
+    topics.filter(
+      (t) =>
+        t.subjectId ===
+        selectedSubject
+    );
+
+  useEffect(() => {
+
+    if (
+      filteredTopics.length > 0 &&
+      !selectedTopic
+    ) {
+
+      setSelectedTopic(
+        filteredTopics[0].id
+      );
+
+    }
+
+  }, [
+    selectedSubject,
+    topics,
+  ]);
+
+  const filteredSubTopics =
+    subTopics.filter(
+      (s) =>
+        s.subjectId ===
+          selectedSubject &&
+        s.topicId ===
+          selectedTopic
+    );
+
+  async function handleAddSubTopic() {
+
+    if (
+      !subTopicName.trim()
+    ) {
 
       toast.error(
-        "Subject name required"
+        "SubTopic name required"
+      );
+
+      return;
+
+    }
+
+    if (
+      !selectedSubject ||
+      !selectedTopic
+    ) {
+
+      toast.error(
+        "Select subject and topic"
       );
 
       return;
@@ -71,11 +204,21 @@ export default function Subjects() {
 
     const duplicateQuery =
       query(
-        collection(db, "subjects"),
+        collection(db, "subtopics"),
         where(
           "name",
           "==",
-          subjectName.trim()
+          subTopicName.trim()
+        ),
+        where(
+          "subjectId",
+          "==",
+          selectedSubject
+        ),
+        where(
+          "topicId",
+          "==",
+          selectedTopic
         )
       );
 
@@ -87,7 +230,7 @@ export default function Subjects() {
     if (!duplicate.empty) {
 
       toast.error(
-        "Subject already exists"
+        "SubTopic already exists"
       );
 
       return;
@@ -95,11 +238,17 @@ export default function Subjects() {
     }
 
     await addDoc(
-      collection(db, "subjects"),
+      collection(db, "subtopics"),
       {
 
         name:
-          subjectName.trim(),
+          subTopicName.trim(),
+
+        subjectId:
+          selectedSubject,
+
+        topicId:
+          selectedTopic,
 
         createdAt:
           Date.now(),
@@ -108,29 +257,41 @@ export default function Subjects() {
     );
 
     toast.success(
-      "Subject Added"
+      "SubTopic Added"
     );
 
     resetForm();
 
   }
 
-  function editSubject(subject) {
+  function editSubTopic(subTopic) {
 
-    setEditingId(subject.id);
+    setEditingId(subTopic.id);
 
-    setSubjectName(subject.name);
+    setSubTopicName(
+      subTopic.name
+    );
+
+    setSelectedSubject(
+      subTopic.subjectId
+    );
+
+    setSelectedTopic(
+      subTopic.topicId
+    );
 
     setShowPopup(true);
 
   }
 
-  async function updateSubject() {
+  async function updateSubTopic() {
 
-    if (!subjectName.trim()) {
+    if (
+      !subTopicName.trim()
+    ) {
 
       toast.error(
-        "Subject name required"
+        "SubTopic name required"
       );
 
       return;
@@ -140,19 +301,25 @@ export default function Subjects() {
     await updateDoc(
       doc(
         db,
-        "subjects",
+        "subtopics",
         editingId
       ),
       {
 
         name:
-          subjectName.trim(),
+          subTopicName.trim(),
+
+        subjectId:
+          selectedSubject,
+
+        topicId:
+          selectedTopic,
 
       }
     );
 
     toast.success(
-      "Subject Updated"
+      "SubTopic Updated"
     );
 
     resetForm();
@@ -164,9 +331,7 @@ export default function Subjects() {
     const confirmDelete =
       window.confirm(
 
-`Deleting this subject may affect:
-• Topics
-• SubTopics
+`Deleting this subtopic may affect:
 • Questions
 • Exams
 
@@ -180,20 +345,46 @@ Continue?`
     await deleteDoc(
       doc(
         db,
-        "subjects",
+        "subtopics",
         id
       )
     );
 
     toast.success(
-      "Subject Deleted"
+      "SubTopic Deleted"
     );
+
+  }
+
+  function getSubjectName(id) {
+
+    const item =
+      subjects.find(
+        (s) => s.id === id
+      );
+
+    return item
+      ? item.name
+      : "Unknown";
+
+  }
+
+  function getTopicName(id) {
+
+    const item =
+      topics.find(
+        (t) => t.id === id
+      );
+
+    return item
+      ? item.name
+      : "Unknown";
 
   }
 
   function resetForm() {
 
-    setSubjectName("");
+    setSubTopicName("");
 
     setEditingId(null);
 
@@ -210,13 +401,15 @@ Continue?`
         <div>
 
           <h2>
-            Subject Management
+            SubTopic Management
           </h2>
 
           <p>
-            Total Subjects:
+            Total SubTopics:
             {" "}
-            {subjects.length}
+            {
+              filteredSubTopics.length
+            }
           </p>
 
         </div>
@@ -226,8 +419,66 @@ Continue?`
             setShowPopup(true)
           }
         >
-          + Add Subject
+          + Add SubTopic
         </button>
+
+      </div>
+
+      <div className="filter-bar">
+
+        <select
+          value={
+            selectedSubject
+          }
+          onChange={(e) =>
+            setSelectedSubject(
+              e.target.value
+            )
+          }
+        >
+
+          {
+            subjects.map(
+              (s) => (
+
+              <option
+                key={s.id}
+                value={s.id}
+              >
+                {s.name}
+              </option>
+
+            ))
+          }
+
+        </select>
+
+        <select
+          value={
+            selectedTopic
+          }
+          onChange={(e) =>
+            setSelectedTopic(
+              e.target.value
+            )
+          }
+        >
+
+          {
+            filteredTopics.map(
+              (t) => (
+
+              <option
+                key={t.id}
+                value={t.id}
+              >
+                {t.name}
+              </option>
+
+            ))
+          }
+
+        </select>
 
       </div>
 
@@ -240,7 +491,15 @@ Continue?`
             <tr>
 
               <th>
+                SubTopic
+              </th>
+
+              <th>
                 Subject
+              </th>
+
+              <th>
+                Topic
               </th>
 
               <th>
@@ -258,7 +517,8 @@ Continue?`
           <tbody>
 
             {
-              subjects.map((s) => (
+              filteredSubTopics.map(
+                (s) => (
 
                 <tr key={s.id}>
 
@@ -267,11 +527,27 @@ Continue?`
                   </td>
 
                   <td>
+                    {
+                      getSubjectName(
+                        s.subjectId
+                      )
+                    }
+                  </td>
+
+                  <td>
+                    {
+                      getTopicName(
+                        s.topicId
+                      )
+                    }
+                  </td>
+
+                  <td>
 
                     <button
                       className="edit-btn"
                       onClick={() =>
-                        editSubject(s)
+                        editSubTopic(s)
                       }
                     >
                       Edit
@@ -284,7 +560,9 @@ Continue?`
                     <button
                       className="delete-btn"
                       onClick={() =>
-                        handleDelete(s.id)
+                        handleDelete(
+                          s.id
+                        )
                       }
                     >
                       Delete
@@ -314,18 +592,72 @@ Continue?`
 
                 {
                   editingId
-                    ? "Edit Subject"
-                    : "Add Subject"
+                    ? "Edit SubTopic"
+                    : "Add SubTopic"
                 }
 
               </h3>
 
+              <select
+                value={
+                  selectedSubject
+                }
+                onChange={(e) =>
+                  setSelectedSubject(
+                    e.target.value
+                  )
+                }
+              >
+
+                {
+                  subjects.map(
+                    (s) => (
+
+                    <option
+                      key={s.id}
+                      value={s.id}
+                    >
+                      {s.name}
+                    </option>
+
+                  ))
+                }
+
+              </select>
+
+              <select
+                value={
+                  selectedTopic
+                }
+                onChange={(e) =>
+                  setSelectedTopic(
+                    e.target.value
+                  )
+                }
+              >
+
+                {
+                  filteredTopics.map(
+                    (t) => (
+
+                    <option
+                      key={t.id}
+                      value={t.id}
+                    >
+                      {t.name}
+                    </option>
+
+                  ))
+                }
+
+              </select>
+
               <input
                 type="text"
-                placeholder="Subject Name"
-                value={subjectName}
+                placeholder="SubTopic Name"
+                value={subTopicName}
                 onChange={(e) =>
-                  setSubjectName(
+                  setSubTopicName(
                     e.target.value
                   )
                 }
@@ -336,20 +668,20 @@ Continue?`
 
                   <button
                     onClick={
-                      updateSubject
+                      updateSubTopic
                     }
                   >
-                    Update Subject
+                    Update SubTopic
                   </button>
 
                 ) : (
 
                   <button
                     onClick={
-                      handleAddSubject
+                      handleAddSubTopic
                     }
                   >
-                    Add Subject
+                    Add SubTopic
                   </button>
 
                 )

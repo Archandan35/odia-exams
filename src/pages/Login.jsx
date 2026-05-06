@@ -7,7 +7,13 @@ import {
 } from "firebase/auth";
 
 import {
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
+import {
   auth,
+  db,
 } from "../firebase/config";
 
 import {
@@ -31,13 +37,51 @@ export default function Login() {
 
     try {
 
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const res =
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
 
-      nav("/dashboard");
+      const snapshot =
+        await getDocs(
+          collection(
+            db,
+            "users"
+          )
+        );
+
+      let role =
+        "student";
+
+      snapshot.forEach((d) => {
+
+        const data =
+          d.data();
+
+        if (
+          data.email ===
+          res.user.email
+        ) {
+
+          role =
+            data.role;
+
+        }
+      });
+
+      if (
+        role === "admin"
+      ) {
+
+        nav("/admin");
+
+      } else {
+
+        nav("/dashboard");
+
+      }
 
     } catch (e) {
 
@@ -58,7 +102,7 @@ export default function Login() {
 
         <input
           placeholder="Email"
-          onChange={(e) =>
+          onChange={(e)=>
             setEmail(
               e.target.value
             )
@@ -68,7 +112,7 @@ export default function Login() {
         <input
           type="password"
           placeholder="Password"
-          onChange={(e) =>
+          onChange={(e)=>
             setPassword(
               e.target.value
             )

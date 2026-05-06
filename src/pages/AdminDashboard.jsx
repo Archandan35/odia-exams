@@ -130,6 +130,68 @@ export default function AdminDashboard() {
 
   }
 
+  async function editSubject(s) {
+
+  const newTitle =
+    prompt(
+      "Edit Subject",
+      s.title
+    );
+
+  if (!newTitle) return;
+
+  await updateSubject(
+    s.id,
+    {
+      title:newTitle,
+    }
+  );
+}
+
+async function editQuestion(q) {
+
+  const newQuestion =
+    prompt(
+      "Edit Question",
+      q.question
+    );
+
+  if (!newQuestion) return;
+
+  await updateQuestion(
+    q.id,
+    {
+      question:newQuestion,
+    }
+  );
+}
+
+async function handleDeleteSubject(id) {
+
+  const ok =
+    window.confirm(
+      "Delete Subject?"
+    );
+
+  if (!ok) return;
+
+  await deleteSubject(id);
+
+}
+
+async function handleDeleteQuestion(id) {
+
+  const ok =
+    window.confirm(
+      "Delete Question?"
+    );
+
+  if (!ok) return;
+
+  await deleteQuestion(id);
+
+}
+  
   async function createQuestion() {
 
     await addQuestion({
@@ -350,12 +412,20 @@ export default function AdminDashboard() {
 
             <p>{s.description}</p>
 
-            <button>Edit</button>
+            <button
+              onClick={() =>
+               editSubject(s)
+                      }
+            >
+  Edit
+</button>
 
             <button
               onClick={() =>
-                deleteSubject(s.id)
-              }
+  handleDeleteSubject(
+    s.id
+  )
+}
             >
               Delete
             </button>
@@ -383,7 +453,13 @@ export default function AdminDashboard() {
               Subject: {q.subject}
             </p>
 
-            <button>Edit</button>
+            <button
+  onClick={() =>
+    editSubject(s)
+  }
+>
+  Edit
+</button>
 
             <button
               onClick={() =>

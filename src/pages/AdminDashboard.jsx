@@ -606,21 +606,25 @@ export default function AdminDashboard() {
                 {q.question}
               </h3>
 
-              <p>
-                A) {q.options?.[0]}
-              </p>
+              <div className="option-line">
 
-              <p>
-                B) {q.options?.[1]}
-              </p>
+                <span>
+                  A) {q.options?.[0]}
+                </span>
 
-              <p>
-                C) {q.options?.[2]}
-              </p>
+                <span>
+                  B) {q.options?.[1]}
+                </span>
 
-              <p>
-                D) {q.options?.[3]}
-              </p>
+                <span>
+                  C) {q.options?.[2]}
+                </span>
+
+                <span>
+                  D) {q.options?.[3]}
+                </span>
+
+              </div>
 
               <p>
                 Answer:

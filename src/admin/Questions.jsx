@@ -10,7 +10,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
+
+import toast from "react-hot-toast";
 
 import { db } from "../firebase/config";
 
@@ -18,16 +23,20 @@ import AdminLayout from "./AdminLayout";
 
 export default function Questions() {
 
-  const [subjects, setSubjects] =
+  const [subjects,
+    setSubjects] =
     useState([]);
 
-  const [topics, setTopics] =
+  const [topics,
+    setTopics] =
     useState([]);
 
-  const [subTopics, setSubTopics] =
+  const [subTopics,
+    setSubTopics] =
     useState([]);
 
-  const [questions, setQuestions] =
+  const [questions,
+    setQuestions] =
     useState([]);
 
   const [selectedSubject,
@@ -66,6 +75,14 @@ export default function Questions() {
     setCorrectAnswer] =
     useState(0);
 
+  const [difficulty,
+    setDifficulty] =
+    useState("easy");
+
+  const [explanation,
+    setExplanation] =
+    useState("");
+
   const [showPopup,
     setShowPopup] =
     useState(false);
@@ -88,24 +105,34 @@ export default function Questions() {
 
     const unsubSubjects =
       onSnapshot(
-        collection(db, "subjects"),
-        (snapshot) => {
+        collection(db,"subjects"),
+        (snapshot)=>{
 
           const data =
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
             );
 
           setSubjects(data);
 
+          if(
+            data.length > 0 &&
+            !selectedSubject
+          ){
+
+            setSelectedSubject(
+              data[0].id
+            );
+
+          }
+
         }
       );
 
-    return () =>
-      unsubSubjects();
+    return ()=>unsubSubjects();
 
   }, []);
 
@@ -113,13 +140,13 @@ export default function Questions() {
 
     const unsubTopics =
       onSnapshot(
-        collection(db, "topics"),
-        (snapshot) => {
+        collection(db,"topics"),
+        (snapshot)=>{
 
           const data =
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
             );
@@ -129,8 +156,7 @@ export default function Questions() {
         }
       );
 
-    return () =>
-      unsubTopics();
+    return ()=>unsubTopics();
 
   }, []);
 
@@ -138,13 +164,13 @@ export default function Questions() {
 
     const unsubSubTopics =
       onSnapshot(
-        collection(db, "subtopics"),
-        (snapshot) => {
+        collection(db,"subtopics"),
+        (snapshot)=>{
 
           const data =
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
             );
@@ -154,8 +180,7 @@ export default function Questions() {
         }
       );
 
-    return () =>
-      unsubSubTopics();
+    return ()=>unsubSubTopics();
 
   }, []);
 
@@ -163,13 +188,13 @@ export default function Questions() {
 
     const unsubQuestions =
       onSnapshot(
-        collection(db, "questions"),
-        (snapshot) => {
+        collection(db,"questions"),
+        (snapshot)=>{
 
           const data =
             snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
+              (doc)=>({
+                id:doc.id,
                 ...doc.data(),
               })
             );
@@ -179,39 +204,93 @@ export default function Questions() {
         }
       );
 
-    return () =>
-      unsubQuestions();
+    return ()=>unsubQuestions();
 
   }, []);
 
   const filteredTopics =
     topics.filter(
-      (t) =>
+      (t)=>
         t.subjectId ===
         selectedSubject
     );
 
   const filteredSubTopics =
     subTopics.filter(
-      (s) =>
+      (s)=>
         s.subjectId ===
           selectedSubject &&
         s.topicId ===
           selectedTopic
     );
 
-  async function handleAddQuestion() {
+  async function handleAddQuestion(){
 
     if(
-      !questionText ||
-      !optionA ||
-      !optionB ||
-      !optionC ||
-      !optionD
+      !questionText.trim()
     ){
 
-      alert(
-        "Fill all fields"
+      toast.error(
+        "Question required"
+      );
+
+      return;
+
+    }
+
+    if(
+      !optionA.trim() ||
+      !optionB.trim() ||
+      !optionC.trim() ||
+      !optionD.trim()
+    ){
+
+      toast.error(
+        "All options required"
+      );
+
+      return;
+
+    }
+
+    if(
+      !selectedSubject ||
+      !selectedTopic ||
+      !selectedSubTopic
+    ){
+
+      toast.error(
+        "Select hierarchy"
+      );
+
+      return;
+
+    }
+
+    const duplicateQuery =
+      query(
+        collection(db,"questions"),
+        where(
+          "question",
+          "==",
+          questionText.trim()
+        ),
+        where(
+          "subTopicId",
+          "==",
+          selectedSubTopic
+        )
+      );
+
+    const duplicate =
+      await getDocs(
+        duplicateQuery
+      );
+
+    if(!duplicate.empty){
+
+      toast.error(
+        "Question already exists"
       );
 
       return;
@@ -219,7 +298,7 @@ export default function Questions() {
     }
 
     await addDoc(
-      collection(db, "questions"),
+      collection(db,"questions"),
       {
 
         subjectId:
@@ -232,17 +311,22 @@ export default function Questions() {
           selectedSubTopic,
 
         question:
-          questionText,
+          questionText.trim(),
 
-        options: [
-          optionA,
-          optionB,
-          optionC,
-          optionD,
+        options:[
+          optionA.trim(),
+          optionB.trim(),
+          optionC.trim(),
+          optionD.trim(),
         ],
 
         correctAnswer:
           Number(correctAnswer),
+
+        difficulty,
+
+        explanation:
+          explanation.trim(),
 
         createdAt:
           Date.now(),
@@ -250,11 +334,15 @@ export default function Questions() {
       }
     );
 
+    toast.success(
+      "Question Added"
+    );
+
     resetForm();
 
   }
 
-  function editQuestion(q) {
+  function editQuestion(q){
 
     setEditingId(q.id);
 
@@ -275,49 +363,50 @@ export default function Questions() {
     );
 
     setOptionA(
-      q.options[0]
+      q.options?.[0] || ""
     );
 
     setOptionB(
-      q.options[1]
+      q.options?.[1] || ""
     );
 
     setOptionC(
-      q.options[2]
+      q.options?.[2] || ""
     );
 
     setOptionD(
-      q.options[3]
+      q.options?.[3] || ""
     );
 
-    if(
-      q.correctAnswer !== undefined
-    ){
+    setCorrectAnswer(
+      q.correctAnswer || 0
+    );
 
-      setCorrectAnswer(
-        q.correctAnswer
-      );
+    setDifficulty(
+      q.difficulty || "easy"
+    );
 
-    } else {
-
-      const legacyMap = {
-        A:0,
-        B:1,
-        C:2,
-        D:3,
-      };
-
-      setCorrectAnswer(
-        legacyMap[q.answer] || 0
-      );
-
-    }
+    setExplanation(
+      q.explanation || ""
+    );
 
     setShowPopup(true);
 
   }
 
-  async function updateQuestion() {
+  async function updateQuestion(){
+
+    if(
+      !questionText.trim()
+    ){
+
+      toast.error(
+        "Question required"
+      );
+
+      return;
+
+    }
 
     await updateDoc(
       doc(
@@ -337,34 +426,43 @@ export default function Questions() {
           selectedSubTopic,
 
         question:
-          questionText,
+          questionText.trim(),
 
         options:[
-          optionA,
-          optionB,
-          optionC,
-          optionD,
+          optionA.trim(),
+          optionB.trim(),
+          optionC.trim(),
+          optionD.trim(),
         ],
 
         correctAnswer:
           Number(correctAnswer),
 
+        difficulty,
+
+        explanation:
+          explanation.trim(),
+
       }
+    );
+
+    toast.success(
+      "Question Updated"
     );
 
     resetForm();
 
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id){
 
     const confirmDelete =
       window.confirm(
         "Delete Question?"
       );
 
-    if (!confirmDelete)
-      return;
+    if(!confirmDelete)
+    return;
 
     await deleteDoc(
       doc(
@@ -374,11 +472,16 @@ export default function Questions() {
       )
     );
 
+    toast.success(
+      "Question Deleted"
+    );
+
   }
 
-  function resetForm() {
+  function resetForm(){
 
     setQuestionText("");
+
     setOptionA("");
     setOptionB("");
     setOptionC("");
@@ -386,20 +489,21 @@ export default function Questions() {
 
     setCorrectAnswer(0);
 
+    setDifficulty("easy");
+
+    setExplanation("");
+
     setEditingId(null);
 
     setShowPopup(false);
 
   }
 
-  function getName(
-    arr,
-    id
-  ) {
+  function getName(arr,id){
 
     const item =
       arr.find(
-        (x) => x.id === id
+        (x)=>x.id === id
       );
 
     return item
@@ -409,12 +513,12 @@ export default function Questions() {
   }
 
   const filteredQuestions =
-    questions.filter((q) =>
+    questions.filter((q)=>
       q.question
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+      ?.toLowerCase()
+      .includes(
+        search.toLowerCase()
+      )
     );
 
   const totalPages =
@@ -429,14 +533,10 @@ export default function Questions() {
       page * perPage
     );
 
-  const optionLabels = [
-    "A",
-    "B",
-    "C",
-    "D",
-  ];
+  const optionLabels =
+    ["A","B","C","D"];
 
-  return (
+  return(
 
     <AdminLayout>
 
@@ -459,7 +559,7 @@ export default function Questions() {
         </div>
 
         <button
-          onClick={() =>
+          onClick={()=>
             setShowPopup(true)
           }
         >
@@ -471,7 +571,9 @@ export default function Questions() {
       <div className="filter-bar">
 
         <input
-          placeholder="Search Questions..."
+          placeholder="
+Search Questions...
+"
           value={search}
           onChange={(e)=>
             setSearch(
@@ -499,6 +601,10 @@ export default function Questions() {
               </th>
 
               <th>
+                Difficulty
+              </th>
+
+              <th>
                 Answer
               </th>
 
@@ -518,7 +624,7 @@ export default function Questions() {
 
             {
               paginated.map(
-                (q,index) => (
+                (q,index)=>(
 
                 <tr key={q.id}>
 
@@ -537,19 +643,25 @@ export default function Questions() {
                   </td>
 
                   <td>
+
                     {
                       getName(
                         subjects,
                         q.subjectId
                       )
                     }
+
+                  </td>
+
+                  <td>
+                    {q.difficulty}
                   </td>
 
                   <td>
 
                     {
                       optionLabels[
-                        q.correctAnswer ?? 0
+                        q.correctAnswer || 0
                       ]
                     }
 
@@ -559,7 +671,7 @@ export default function Questions() {
 
                     <button
                       className="edit-btn"
-                      onClick={() =>
+                      onClick={()=>
                         editQuestion(q)
                       }
                     >
@@ -572,7 +684,7 @@ export default function Questions() {
 
                     <button
                       className="delete-btn"
-                      onClick={() =>
+                      onClick={()=>
                         handleDelete(
                           q.id
                         )
@@ -598,7 +710,7 @@ export default function Questions() {
 
         <button
           disabled={page === 1}
-          onClick={() =>
+          onClick={()=>
             setPage(page - 1)
           }
         >
@@ -606,14 +718,16 @@ export default function Questions() {
         </button>
 
         <span>
-          Page {page} of {totalPages}
+          Page {page}
+          {" "}of{" "}
+          {totalPages}
         </span>
 
         <button
           disabled={
             page === totalPages
           }
-          onClick={() =>
+          onClick={()=>
             setPage(page + 1)
           }
         >
@@ -625,210 +739,256 @@ export default function Questions() {
       {
         showPopup && (
 
-          <div className="popup-overlay">
+        <div className="popup-overlay">
 
-            <div className="popup large-popup">
+          <div className="
+popup
+large-popup
+">
 
-              <h3>
-
-                {
-                  editingId
-                    ? "Edit Question"
-                    : "Add Question"
-                }
-
-              </h3>
-
-              <select
-                value={
-                  selectedSubject
-                }
-                onChange={(e)=>
-                  setSelectedSubject(
-                    e.target.value
-                  )
-                }
-              >
-
-                {
-                  subjects.map(
-                    (s)=>(
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
-                  ))
-                }
-
-              </select>
-
-              <select
-                value={
-                  selectedTopic
-                }
-                onChange={(e)=>
-                  setSelectedTopic(
-                    e.target.value
-                  )
-                }
-              >
-
-                {
-                  filteredTopics.map(
-                    (t)=>(
-                    <option
-                      key={t.id}
-                      value={t.id}
-                    >
-                      {t.name}
-                    </option>
-                  ))
-                }
-
-              </select>
-
-              <select
-                value={
-                  selectedSubTopic
-                }
-                onChange={(e)=>
-                  setSelectedSubTopic(
-                    e.target.value
-                  )
-                }
-              >
-
-                {
-                  filteredSubTopics.map(
-                    (s)=>(
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
-                  ))
-                }
-
-              </select>
-
-              <textarea
-                placeholder="Question"
-                value={questionText}
-                onChange={(e)=>
-                  setQuestionText(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                placeholder="Option A"
-                value={optionA}
-                onChange={(e)=>
-                  setOptionA(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                placeholder="Option B"
-                value={optionB}
-                onChange={(e)=>
-                  setOptionB(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                placeholder="Option C"
-                value={optionC}
-                onChange={(e)=>
-                  setOptionC(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                placeholder="Option D"
-                value={optionD}
-                onChange={(e)=>
-                  setOptionD(
-                    e.target.value
-                  )
-                }
-              />
-
-              <select
-                value={
-                  correctAnswer
-                }
-                onChange={(e)=>
-                  setCorrectAnswer(
-                    e.target.value
-                  )
-                }
-              >
-
-                <option value={0}>
-                  A
-                </option>
-
-                <option value={1}>
-                  B
-                </option>
-
-                <option value={2}>
-                  C
-                </option>
-
-                <option value={3}>
-                  D
-                </option>
-
-              </select>
+            <h3>
 
               {
-                editingId ? (
-
-                  <button
-                    onClick={
-                      updateQuestion
-                    }
-                  >
-                    Update Question
-                  </button>
-
-                ) : (
-
-                  <button
-                    onClick={
-                      handleAddQuestion
-                    }
-                  >
-                    Add Question
-                  </button>
-
-                )
+                editingId
+                ?
+                "Edit Question"
+                :
+                "Add Question"
               }
 
+            </h3>
+
+            <select
+              value={
+                selectedSubject
+              }
+              onChange={(e)=>
+                setSelectedSubject(
+                  e.target.value
+                )
+              }
+            >
+
+              {
+                subjects.map((s)=>(
+
+                <option
+                  key={s.id}
+                  value={s.id}
+                >
+                  {s.name}
+                </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={
+                selectedTopic
+              }
+              onChange={(e)=>
+                setSelectedTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              {
+                filteredTopics.map((t)=>(
+
+                <option
+                  key={t.id}
+                  value={t.id}
+                >
+                  {t.name}
+                </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={
+                selectedSubTopic
+              }
+              onChange={(e)=>
+                setSelectedSubTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              {
+                filteredSubTopics.map((s)=>(
+
+                <option
+                  key={s.id}
+                  value={s.id}
+                >
+                  {s.name}
+                </option>
+
+                ))
+              }
+
+            </select>
+
+            <textarea
+              placeholder="Question"
+              value={questionText}
+              onChange={(e)=>
+                setQuestionText(
+                  e.target.value
+                )
+              }
+            />
+
+            <input
+              placeholder="Option A"
+              value={optionA}
+              onChange={(e)=>
+                setOptionA(
+                  e.target.value
+                )
+              }
+            />
+
+            <input
+              placeholder="Option B"
+              value={optionB}
+              onChange={(e)=>
+                setOptionB(
+                  e.target.value
+                )
+              }
+            />
+
+            <input
+              placeholder="Option C"
+              value={optionC}
+              onChange={(e)=>
+                setOptionC(
+                  e.target.value
+                )
+              }
+            />
+
+            <input
+              placeholder="Option D"
+              value={optionD}
+              onChange={(e)=>
+                setOptionD(
+                  e.target.value
+                )
+              }
+            />
+
+            <select
+              value={
+                correctAnswer
+              }
+              onChange={(e)=>
+                setCorrectAnswer(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value={0}>
+                Correct: A
+              </option>
+
+              <option value={1}>
+                Correct: B
+              </option>
+
+              <option value={2}>
+                Correct: C
+              </option>
+
+              <option value={3}>
+                Correct: D
+              </option>
+
+            </select>
+
+            <select
+              value={difficulty}
+              onChange={(e)=>
+                setDifficulty(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="easy">
+                Easy
+              </option>
+
+              <option value="medium">
+                Medium
+              </option>
+
+              <option value="hard">
+                Hard
+              </option>
+
+            </select>
+
+            <textarea
+              placeholder="
+Explanation
+(Optional)
+"
+              value={explanation}
+              onChange={(e)=>
+                setExplanation(
+                  e.target.value
+                )
+              }
+            />
+
+            {
+              editingId
+              ?
+              (
               <button
-                className="cancel-btn"
                 onClick={
-                  resetForm
+                  updateQuestion
                 }
               >
-                Cancel
+                Update Question
               </button>
+              )
+              :
+              (
+              <button
+                onClick={
+                  handleAddQuestion
+                }
+              >
+                Add Question
+              </button>
+              )
+            }
 
-            </div>
+            <button
+              className="
+cancel-btn
+"
+              onClick={
+                resetForm
+              }
+            >
+              Cancel
+            </button>
 
           </div>
+
+        </div>
 
         )
       }

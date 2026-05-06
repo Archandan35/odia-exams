@@ -10,7 +10,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
+
+import toast from "react-hot-toast";
 
 import { db } from "../firebase/config";
 
@@ -18,13 +23,16 @@ import AdminLayout from "./AdminLayout";
 
 export default function SubTopics() {
 
-  const [subjects, setSubjects] =
+  const [subjects,
+    setSubjects] =
     useState([]);
 
-  const [topics, setTopics] =
+  const [topics,
+    setTopics] =
     useState([]);
 
-  const [subTopics, setSubTopics] =
+  const [subTopics,
+    setSubTopics] =
     useState([]);
 
   const [selectedSubject,
@@ -35,13 +43,13 @@ export default function SubTopics() {
     setSelectedTopic] =
     useState("");
 
-  const [subTopicName,
-    setSubTopicName] =
-    useState("");
-
   const [showPopup,
     setShowPopup] =
     useState(false);
+
+  const [subTopicName,
+    setSubTopicName] =
+    useState("");
 
   const [editingId,
     setEditingId] =
@@ -68,9 +76,11 @@ export default function SubTopics() {
             data.length > 0 &&
             !selectedSubject
           ) {
+
             setSelectedSubject(
               data[0].id
             );
+
           }
 
         }
@@ -141,14 +151,20 @@ export default function SubTopics() {
   useEffect(() => {
 
     if (
-      filteredTopics.length > 0
+      filteredTopics.length > 0 &&
+      !selectedTopic
     ) {
+
       setSelectedTopic(
         filteredTopics[0].id
       );
+
     }
 
-  }, [selectedSubject]);
+  }, [
+    selectedSubject,
+    topics,
+  ]);
 
   const filteredSubTopics =
     subTopics.filter(
@@ -162,46 +178,125 @@ export default function SubTopics() {
   async function handleAddSubTopic() {
 
     if (
-      !subTopicName ||
+      !subTopicName.trim()
+    ) {
+
+      toast.error(
+        "SubTopic name required"
+      );
+
+      return;
+
+    }
+
+    if (
       !selectedSubject ||
       !selectedTopic
-    ) return;
+    ) {
+
+      toast.error(
+        "Select subject and topic"
+      );
+
+      return;
+
+    }
+
+    const duplicateQuery =
+      query(
+        collection(db, "subtopics"),
+        where(
+          "name",
+          "==",
+          subTopicName.trim()
+        ),
+        where(
+          "subjectId",
+          "==",
+          selectedSubject
+        ),
+        where(
+          "topicId",
+          "==",
+          selectedTopic
+        )
+      );
+
+    const duplicate =
+      await getDocs(
+        duplicateQuery
+      );
+
+    if (!duplicate.empty) {
+
+      toast.error(
+        "SubTopic already exists"
+      );
+
+      return;
+
+    }
 
     await addDoc(
       collection(db, "subtopics"),
       {
-        name: subTopicName,
+
+        name:
+          subTopicName.trim(),
+
         subjectId:
           selectedSubject,
+
         topicId:
           selectedTopic,
+
         createdAt:
           Date.now(),
+
       }
     );
 
-    setSubTopicName("");
-    setShowPopup(false);
+    toast.success(
+      "SubTopic Added"
+    );
+
+    resetForm();
+
   }
 
-  function editSubTopic(sub) {
+  function editSubTopic(subTopic) {
 
-    setEditingId(sub.id);
+    setEditingId(subTopic.id);
 
-    setSubTopicName(sub.name);
+    setSubTopicName(
+      subTopic.name
+    );
 
     setSelectedSubject(
-      sub.subjectId
+      subTopic.subjectId
     );
 
     setSelectedTopic(
-      sub.topicId
+      subTopic.topicId
     );
 
     setShowPopup(true);
+
   }
 
   async function updateSubTopic() {
+
+    if (
+      !subTopicName.trim()
+    ) {
+
+      toast.error(
+        "SubTopic name required"
+      );
+
+      return;
+
+    }
 
     await updateDoc(
       doc(
@@ -210,49 +305,168 @@ export default function SubTopics() {
         editingId
       ),
       {
-        name: subTopicName,
+
+        name:
+          subTopicName.trim(),
+
         subjectId:
           selectedSubject,
+
         topicId:
           selectedTopic,
+
       }
     );
 
-    setEditingId(null);
+    toast.success(
+      "SubTopic Updated"
+    );
 
-    setSubTopicName("");
+    resetForm();
 
-    setShowPopup(false);
   }
 
   async function handleDelete(id) {
 
     const confirmDelete =
       window.confirm(
-        "Delete this subtopic?"
+
+`This will permanently delete:
+
+• Questions
+• Exams
+
+Continue?`
+
       );
 
-    if (!confirmDelete) return;
+    if (!confirmDelete)
+      return;
 
-    await deleteDoc(
-      doc(
-        db,
-        "subtopics",
-        id
-      )
-    );
+    try {
+
+      /* QUESTIONS */
+
+      const questionQuery =
+        query(
+          collection(db,"questions"),
+          where(
+            "subTopicId",
+            "==",
+            id
+          )
+        );
+
+      const questionSnapshot =
+        await getDocs(
+          questionQuery
+        );
+
+      for(
+        const questionDoc
+        of questionSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "questions",
+            questionDoc.id
+          )
+        );
+
+      }
+
+      /* EXAMS */
+
+      const examQuery =
+        query(
+          collection(db,"exams"),
+          where(
+            "subTopicId",
+            "==",
+            id
+          )
+        );
+
+      const examSnapshot =
+        await getDocs(
+          examQuery
+        );
+
+      for(
+        const examDoc
+        of examSnapshot.docs
+      ){
+
+        await deleteDoc(
+          doc(
+            db,
+            "exams",
+            examDoc.id
+          )
+        );
+
+      }
+
+      /* SUBTOPIC */
+
+      await deleteDoc(
+        doc(
+          db,
+          "subtopics",
+          id
+        )
+      );
+
+      toast.success(
+        "SubTopic Cascade Deleted"
+      );
+
+    } catch(error){
+
+      toast.error(
+        "Delete failed"
+      );
+
+    }
+
+  }
+
+  function getSubjectName(id) {
+
+    const item =
+      subjects.find(
+        (s) => s.id === id
+      );
+
+    return item
+      ? item.name
+      : "Unknown";
+
   }
 
   function getTopicName(id) {
 
-    const topic =
+    const item =
       topics.find(
         (t) => t.id === id
       );
 
-    return topic
-      ? topic.name
+    return item
+      ? item.name
       : "Unknown";
+
+  }
+
+  function resetForm() {
+
+    setSubTopicName("");
+
+    setEditingId(null);
+
+    setShowPopup(false);
+
   }
 
   return (
@@ -301,7 +515,8 @@ export default function SubTopics() {
         >
 
           {
-            subjects.map((s) => (
+            subjects.map(
+              (s) => (
 
               <option
                 key={s.id}
@@ -316,7 +531,9 @@ export default function SubTopics() {
         </select>
 
         <select
-          value={selectedTopic}
+          value={
+            selectedTopic
+          }
           onChange={(e) =>
             setSelectedTopic(
               e.target.value
@@ -355,6 +572,10 @@ export default function SubTopics() {
               </th>
 
               <th>
+                Subject
+              </th>
+
+              <th>
                 Topic
               </th>
 
@@ -380,6 +601,14 @@ export default function SubTopics() {
 
                   <td>
                     {s.name}
+                  </td>
+
+                  <td>
+                    {
+                      getSubjectName(
+                        s.subjectId
+                      )
+                    }
                   </td>
 
                   <td>
@@ -537,15 +766,9 @@ export default function SubTopics() {
 
               <button
                 className="cancel-btn"
-                onClick={() => {
-
-                  setShowPopup(false);
-
-                  setEditingId(null);
-
-                  setSubTopicName("");
-
-                }}
+                onClick={
+                  resetForm
+                }
               >
                 Cancel
               </button>
@@ -558,5 +781,7 @@ export default function SubTopics() {
       }
 
     </AdminLayout>
+
   );
+
 }

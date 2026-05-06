@@ -15,9 +15,12 @@ db,
 auth,
 } from "../firebase/config";
 
-export default function Profile() {
+import TopNavbar from "../components/TopNavbar";
 
-const [results,setResults] =
+export default function Profile(){
+
+const [results,
+setResults] =
 useState([]);
 
 useEffect(()=>{
@@ -56,31 +59,39 @@ return ()=>unsub();
 const totalAttempts =
 results.length;
 
-const averageAccuracy =
+const avgAccuracy =
 results.length > 0
-? (
+?
+(
 results.reduce(
-(sum,r)=>
-sum +
-Number(r.accuracy),
+(a,b)=>
+a +
+Number(
+b.accuracy
+),
 0
 )
 /
 results.length
 ).toFixed(2)
-: 0;
+:
+0;
 
 const totalScore =
 results.reduce(
-(sum,r)=>
-sum +
-Number(r.score),
+(a,b)=>
+a +
+Number(
+b.score
+),
 0
 );
 
 return(
 
 <div className="page">
+
+<TopNavbar/>
 
 <div className="page-header">
 
@@ -91,7 +102,7 @@ Student Profile
 </h2>
 
 <p>
-Welcome back
+Performance Overview
 </p>
 
 </div>
@@ -103,7 +114,7 @@ Welcome back
 <div className="analytics-card">
 
 <h3>
-Total Attempts
+Attempts
 </h3>
 
 <h1>
@@ -115,11 +126,11 @@ Total Attempts
 <div className="analytics-card">
 
 <h3>
-Average Accuracy
+Accuracy
 </h3>
 
 <h1>
-{averageAccuracy}%
+{avgAccuracy}%
 </h1>
 
 </div>

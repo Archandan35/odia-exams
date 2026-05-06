@@ -10,7 +10,12 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
+
+import toast from "react-hot-toast";
 
 import { db } from "../firebase/config";
 
@@ -44,6 +49,7 @@ export default function Subjects() {
         );
 
         setSubjects(data);
+
       }
     );
 
@@ -53,18 +59,60 @@ export default function Subjects() {
 
   async function handleAddSubject() {
 
-    if (!subjectName) return;
+    if (!subjectName.trim()) {
+
+      toast.error(
+        "Subject name required"
+      );
+
+      return;
+
+    }
+
+    const duplicateQuery =
+      query(
+        collection(db, "subjects"),
+        where(
+          "name",
+          "==",
+          subjectName.trim()
+        )
+      );
+
+    const duplicate =
+      await getDocs(
+        duplicateQuery
+      );
+
+    if (!duplicate.empty) {
+
+      toast.error(
+        "Subject already exists"
+      );
+
+      return;
+
+    }
 
     await addDoc(
       collection(db, "subjects"),
       {
-        name: subjectName,
-        createdAt: Date.now(),
+
+        name:
+          subjectName.trim(),
+
+        createdAt:
+          Date.now(),
+
       }
     );
 
-    setSubjectName("");
-    setShowPopup(false);
+    toast.success(
+      "Subject Added"
+    );
+
+    resetForm();
+
   }
 
   function editSubject(subject) {
@@ -74,36 +122,83 @@ export default function Subjects() {
     setSubjectName(subject.name);
 
     setShowPopup(true);
+
   }
 
   async function updateSubject() {
 
+    if (!subjectName.trim()) {
+
+      toast.error(
+        "Subject name required"
+      );
+
+      return;
+
+    }
+
     await updateDoc(
-      doc(db, "subjects", editingId),
+      doc(
+        db,
+        "subjects",
+        editingId
+      ),
       {
-        name: subjectName,
+
+        name:
+          subjectName.trim(),
+
       }
     );
 
-    setEditingId(null);
+    toast.success(
+      "Subject Updated"
+    );
 
-    setSubjectName("");
+    resetForm();
 
-    setShowPopup(false);
   }
 
   async function handleDelete(id) {
 
     const confirmDelete =
       window.confirm(
-        "Delete this subject?"
+
+`Deleting this subject may affect:
+• Topics
+• SubTopics
+• Questions
+• Exams
+
+Continue?`
+
       );
 
-    if (!confirmDelete) return;
+    if (!confirmDelete)
+      return;
 
     await deleteDoc(
-      doc(db, "subjects", id)
+      doc(
+        db,
+        "subjects",
+        id
+      )
     );
+
+    toast.success(
+      "Subject Deleted"
+    );
+
+  }
+
+  function resetForm() {
+
+    setSubjectName("");
+
+    setEditingId(null);
+
+    setShowPopup(false);
+
   }
 
   return (
@@ -262,15 +357,9 @@ export default function Subjects() {
 
               <button
                 className="cancel-btn"
-                onClick={() => {
-
-                  setShowPopup(false);
-
-                  setEditingId(null);
-
-                  setSubjectName("");
-
-                }}
+                onClick={
+                  resetForm
+                }
               >
                 Cancel
               </button>
@@ -283,5 +372,7 @@ export default function Subjects() {
       }
 
     </AdminLayout>
+
   );
+
 }

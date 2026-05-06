@@ -18,6 +18,8 @@ import AdminPage from "./pages/AdminPage";
 
 import Subjects from "./admin/Subjects";
 
+import Topics from "./admin/Topics";
+
 export default function App() {
 
   return (
@@ -53,6 +55,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+  path="/admin/topics"
+  element={
+    <AdminRoute>
+      <Topics />
+    </AdminRoute>
+  }
+/>
+        
 <Route
   path="/admin/subjects"
   element={

@@ -36,16 +36,13 @@ from "./AdminLayout";
 
 export default function BulkImport(){
 
-const [subjects,
-setSubjects] =
+const [subjects,setSubjects] =
 useState([]);
 
-const [topics,
-setTopics] =
+const [topics,setTopics] =
 useState([]);
 
-const [subTopics,
-setSubTopics] =
+const [subTopics,setSubTopics] =
 useState([]);
 
 const [selectedSubject,
@@ -75,26 +72,14 @@ onSnapshot(
 collection(db,"subjects"),
 (snapshot)=>{
 
-const data =
+setSubjects(
 snapshot.docs.map(
 (doc)=>({
 id:doc.id,
 ...doc.data(),
 })
+)
 );
-
-setSubjects(data);
-
-if(
-data.length > 0 &&
-!selectedSubject
-){
-
-setSelectedSubject(
-data[0].id
-);
-
-}
 
 }
 );
@@ -104,15 +89,14 @@ onSnapshot(
 collection(db,"topics"),
 (snapshot)=>{
 
-const data =
+setTopics(
 snapshot.docs.map(
 (doc)=>({
 id:doc.id,
 ...doc.data(),
 })
+)
 );
-
-setTopics(data);
 
 }
 );
@@ -122,15 +106,14 @@ onSnapshot(
 collection(db,"subtopics"),
 (snapshot)=>{
 
-const data =
+setSubTopics(
 snapshot.docs.map(
 (doc)=>({
 id:doc.id,
 ...doc.data(),
 })
+)
 );
-
-setSubTopics(data);
 
 }
 );
@@ -161,7 +144,134 @@ s.topicId ===
 selectedTopic
 );
 
-/* CSV IMPORT */
+/* OCR IMAGE */
+
+async function handleImageOCR(e){
+
+const file =
+e.target.files[0];
+
+if(!file) return;
+
+try{
+
+setLoading(true);
+
+toast.loading(
+"Scanning Image OCR..."
+);
+
+const result =
+await Tesseract.recognize(
+file,
+"eng"
+);
+
+const parsed =
+parseMCQ(
+result.data.text
+);
+
+setPreviewQuestions(parsed);
+
+toast.dismiss();
+
+toast.success(
+`${parsed.length}
+Questions Parsed`
+);
+
+}catch{
+
+toast.dismiss();
+
+toast.error(
+"OCR Failed"
+);
+
+}
+
+setLoading(false);
+
+}
+
+/* PDF OCR */
+
+async function handlePDFOCR(e){
+
+const file =
+e.target.files[0];
+
+if(!file) return;
+
+try{
+
+setLoading(true);
+
+toast.loading(
+"Reading PDF..."
+);
+
+const arrayBuffer =
+await file.arrayBuffer();
+
+const pdf =
+await pdfjsLib.getDocument({
+data:arrayBuffer,
+}).promise;
+
+let fullText = "";
+
+for(
+let pageNum = 1;
+pageNum <= pdf.numPages;
+pageNum++
+){
+
+const page =
+await pdf.getPage(pageNum);
+
+const content =
+await page.getTextContent();
+
+const strings =
+content.items.map(
+(item)=>item.str
+);
+
+fullText +=
+"\n" +
+strings.join(" ");
+
+}
+
+const parsed =
+parseMCQ(fullText);
+
+setPreviewQuestions(parsed);
+
+toast.dismiss();
+
+toast.success(
+`${parsed.length}
+Questions Parsed`
+);
+
+}catch{
+
+toast.dismiss();
+
+toast.error(
+"PDF OCR Failed"
+);
+
+}
+
+setLoading(false);
+
+}
+
+/* CSV */
 
 function handleCSVUpload(e){
 
@@ -185,10 +295,12 @@ question:
 q.question || "",
 
 options:[
+
 q.optionA || "",
 q.optionB || "",
 q.optionC || "",
 q.optionD || "",
+
 ],
 
 correctAnswer:
@@ -209,7 +321,7 @@ q.explanation ||
 setPreviewQuestions(parsed);
 
 toast.success(
-"CSV Parsed Successfully"
+"CSV Imported"
 );
 
 },
@@ -218,7 +330,7 @@ toast.success(
 
 }
 
-/* JSON IMPORT */
+/* JSON */
 
 function handleJSONUpload(e){
 
@@ -243,7 +355,7 @@ event.target.result
 setPreviewQuestions(json);
 
 toast.success(
-"JSON Loaded"
+"JSON Imported"
 );
 
 }catch{
@@ -260,7 +372,7 @@ reader.readAsText(file);
 
 }
 
-/* SAVE QUESTIONS */
+/* SAVE */
 
 async function handleSaveQuestions(){
 
@@ -269,7 +381,7 @@ previewQuestions.length === 0
 ){
 
 toast.error(
-"No questions to save"
+"No Questions"
 );
 
 return;
@@ -283,7 +395,7 @@ if(
 ){
 
 toast.error(
-"Select hierarchy"
+"Select Subject Hierarchy"
 );
 
 return;
@@ -346,133 +458,7 @@ setPreviewQuestions([]);
 }catch{
 
 toast.error(
-"Import failed"
-);
-
-}
-
-setLoading(false);
-
-}
-/* IMAGE OCR */
-
-async function handleImageOCR(e){
-
-const file =
-e.target.files[0];
-
-if(!file) return;
-
-try{
-
-setLoading(true);
-
-toast.loading(
-"Processing OCR..."
-);
-
-const result =
-await Tesseract.recognize(
-file,
-"eng"
-);
-
-const text =
-result.data.text;
-
-const parsed =
-parseMCQ(text);
-
-setPreviewQuestions(parsed);
-
-toast.dismiss();
-
-toast.success(
-`${parsed.length}
-Questions Detected`
-);
-
-}catch{
-
-toast.dismiss();
-
-toast.error(
-"OCR Failed"
-);
-
-}
-
-setLoading(false);
-
-}
-
-/* PDF OCR */
-
-async function handlePDFOCR(e){
-
-const file =
-e.target.files[0];
-
-if(!file) return;
-
-try{
-
-setLoading(true);
-
-toast.loading(
-"Reading PDF..."
-);
-
-const arrayBuffer =
-await file.arrayBuffer();
-
-const pdf =
-await pdfjsLib.getDocument({
-data:arrayBuffer,
-}).promise;
-
-let fullText = "";
-
-for(
-let pageNum = 1;
-pageNum <= pdf.numPages;
-pageNum++
-){
-
-const page =
-await pdf.getPage(pageNum);
-
-const content =
-await page.getTextContent();
-
-const strings =
-content.items.map(
-(item)=>item.str
-);
-
-fullText +=
-strings.join(" ");
-
-}
-
-const parsed =
-parseMCQ(fullText);
-
-setPreviewQuestions(parsed);
-
-toast.dismiss();
-
-toast.success(
-`${parsed.length}
-Questions Parsed`
-);
-
-}catch{
-
-toast.dismiss();
-
-toast.error(
-"PDF OCR Failed"
+"Import Failed"
 );
 
 }
@@ -514,18 +500,16 @@ blob,
 
 function exportCSV(){
 
-const rows = [
+const rows = [[
 
-[
 "question",
 "optionA",
 "optionB",
 "optionC",
 "optionD",
 "correctAnswer",
-],
 
-];
+]];
 
 previewQuestions.forEach((q)=>{
 
@@ -566,28 +550,120 @@ blob,
 );
 
 }
-  
+
 return(
 
 <AdminLayout>
+
+<div className="page">
 
 <div className="page-header">
 
 <div>
 
 <h2>
-Bulk Import System
+Advanced OCR Import
 </h2>
 
 <p>
-CSV / JSON / OCR Import
+PDF / Image / CSV / JSON
+Bulk Question System
 </p>
 
 </div>
 
 </div>
 
-<div className="glass-card">
+<div className="import-grid">
+
+<div className="import-card">
+
+<h3>
+Image OCR
+</h3>
+
+<p>
+Upload scanned images
+</p>
+
+<input
+type="file"
+accept="image/*"
+onChange={
+handleImageOCR
+}
+/>
+
+</div>
+
+<div className="import-card">
+
+<h3>
+PDF OCR
+</h3>
+
+<p>
+Upload PDF Question Papers
+</p>
+
+<input
+type="file"
+accept=".pdf"
+onChange={
+handlePDFOCR
+}
+/>
+
+</div>
+
+<div className="import-card">
+
+<h3>
+CSV Upload
+</h3>
+
+<p>
+Bulk CSV Questions
+</p>
+
+<input
+type="file"
+accept=".csv"
+onChange={
+handleCSVUpload
+}
+/>
+
+</div>
+
+<div className="import-card">
+
+<h3>
+JSON Upload
+</h3>
+
+<p>
+Bulk JSON Questions
+</p>
+
+<input
+type="file"
+accept=".json"
+onChange={
+handleJSONUpload
+}
+/>
+
+</div>
+
+</div>
+
+<div className="glass-card"
+style={{
+padding:"25px",
+marginTop:"25px",
+}}
+>
 
 <h3>
 Select Hierarchy
@@ -603,6 +679,10 @@ e.target.value
 )
 }
 >
+
+<option value="">
+Subject
+</option>
 
 {
 subjects.map((s)=>(
@@ -631,7 +711,7 @@ e.target.value
 >
 
 <option value="">
-Select Topic
+Topic
 </option>
 
 {
@@ -661,7 +741,7 @@ e.target.value
 >
 
 <option value="">
-Select SubTopic
+SubTopic
 </option>
 
 {
@@ -685,90 +765,34 @@ value={s.id}
 
 </div>
 
-<div className="dashboard-grid">
-
-<div className="analytics-card">
-
-<h3>
-Upload CSV
-</h3>
-
-<input
-type="file"
-accept=".csv"
-onChange={
-handleCSVUpload
-}
-/>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
-Upload JSON
-</h3>
-
-<input
-type="file"
-accept=".json"
-onChange={
-handleJSONUpload
-}
-/>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
-OCR Import
-</h3>
-
-<input
-type="file"
-accept="image/*"
-onChange={
-handleImageOCR
-}
-/>
-
-<input
-type="file"
-accept=".pdf"
-onChange={
-handlePDFOCR
-}
-/>
-
-</div>
-
-</div>
-
 {
 previewQuestions.length > 0 && (
 
-<div className="table-card">
-
-<div className="page-header">
-
 <div
+className="table-card"
 style={{
-display:"flex",
-justifyContent:
-"space-between",
-alignItems:"center",
+marginTop:"25px",
 }}
 >
 
-<h3>
+<div className="page-header">
+
+<div>
+
+<h2>
 Preview Questions
-</h3>
+</h2>
+
+<p>
+Verify Before Import
+</p>
+
+</div>
 
 <div
 style={{
 display:"flex",
-gap:"10px",
+gap:"12px",
 }}
 >
 
@@ -788,11 +812,8 @@ exportCSV
 Export CSV
 </button>
 
-</div>
-
-</div>
-
 <button
+className="submit-btn"
 onClick={
 handleSaveQuestions
 }
@@ -811,76 +832,105 @@ loading
 
 </div>
 
-<table>
+</div>
 
-<thead>
-
-<tr>
-
-<th>
-Question
-</th>
-
-<th>
-Options
-</th>
-
-<th>
-Answer
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
+<div
+style={{
+display:"flex",
+flexDirection:"column",
+gap:"20px",
+}}
+>
 
 {
 previewQuestions.map(
 (q,index)=>(
 
-<tr key={index}>
+<div
+key={index}
+className="
+question-review-card
+"
+>
 
-<td>
+<h3>
+
+Q{index + 1}.
+
+{" "}
+
 {q.question}
-</td>
 
-<td>
+</h3>
+
+<div
+className="
+review-options
+"
+>
 
 {
 q.options?.map(
 (op,i)=>(
-<div key={i}>
-{op}
-</div>
-))
-}
 
-</td>
+<div
+key={i}
+className="
+review-option
+"
+>
 
-<td>
+<b>
 
 {
-["A","B","C","D"][
-q.correctAnswer || 0
-]
-}
+String.fromCharCode(
+65 + i
+)
+}) 
 
-</td>
+</b>
 
-</tr>
+{op}
+
+</div>
 
 ))
 }
 
-</tbody>
+</div>
 
-</table>
+<p>
+
+<b>
+Correct:
+</b>
+
+{" "}
+
+{
+String.fromCharCode(
+65 +
+(
+q.correctAnswer || 0
+)
+)
+}
+
+</p>
+
+</div>
+
+))
+}
+
+</div>
 
 </div>
 
 )
 }
+
+</div>
 
 </AdminLayout>
 

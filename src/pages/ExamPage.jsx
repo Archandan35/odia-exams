@@ -24,6 +24,14 @@ export default function ExamPage() {
     setAnswers] =
     useState({});
 
+  const [review,
+    setReview] =
+    useState({});
+
+  const [current,
+    setCurrent] =
+    useState(0);
+
   const [timeLeft,
     setTimeLeft] =
     useState(1800);
@@ -60,27 +68,25 @@ export default function ExamPage() {
     const interval =
       setInterval(() => {
 
-        setTimeLeft(
-          (prev) => {
+        setTimeLeft((prev)=>{
 
-            if (prev <= 1) {
+          if (prev <= 1) {
 
-              clearInterval(
-                interval
-              );
+            clearInterval(
+              interval
+            );
 
-              submitExam();
+            submitExam();
 
-              return 0;
-
-            }
-
-            return prev - 1;
+            return 0;
 
           }
-        );
 
-      }, 1000);
+          return prev - 1;
+
+        });
+
+      },1000);
 
     return () =>
       clearInterval(
@@ -104,6 +110,45 @@ export default function ExamPage() {
 
   }
 
+  function markReview(qid) {
+
+    setReview((prev)=>({
+
+      ...prev,
+
+      [qid]:!prev[qid],
+
+    }));
+
+  }
+
+  function saveNext() {
+
+    if (
+      current <
+      questions.length - 1
+    ) {
+
+      setCurrent(
+        current + 1
+      );
+
+    }
+
+  }
+
+  function previousQuestion() {
+
+    if (current > 0) {
+
+      setCurrent(
+        current - 1
+      );
+
+    }
+
+  }
+
   function submitExam() {
 
     let total = 0;
@@ -117,7 +162,9 @@ export default function ExamPage() {
 
         total += 1;
 
-      } else if (
+      }
+
+      else if (
         answers[q.id]
       ) {
 
@@ -138,135 +185,244 @@ export default function ExamPage() {
       answers
     ).length;
 
+  const q =
+    questions[current];
+
+  function getColor(id) {
+
+    if (review[id]) {
+
+      return "#f59e0b";
+
+    }
+
+    if (answers[id]) {
+
+      return "#16a34a";
+
+    }
+
+    return "#334155";
+
+  }
+
   return (
 
-    <div className="page">
+    <div className="exam-layout">
 
-      <div className="topbar">
+      <div className="exam-main">
 
-        <h1>{subject}</h1>
+        <div className="topbar">
 
-        <h2>
-          Timer:
-          {timeLeft}s
-        </h2>
-
-      </div>
-
-      <div
-        style={{
-          marginBottom:20,
-        }}
-      >
-
-        Progress:
-        {" "}
-        {answered}
-        /
-        {questions.length}
-
-      </div>
-
-      {questions.length === 0 && (
-
-        <h3>
-          No Questions Found
-        </h3>
-
-      )}
-
-      {questions.map((q,index)=>(
-
-        <div
-          key={q.id}
-          className="card"
-        >
+          <h2>
+            {subject}
+          </h2>
 
           <h3>
-
-            {index + 1}.
-            {" "}
-            {q.question}
-
+            ⏳ {timeLeft}s
           </h3>
 
-          {q.options.map((o,i)=>(
+        </div>
 
-            <label
-              key={i}
-              className="option"
+        <div className="progress-box">
+
+          Progress:
+          {" "}
+          {answered}
+          /
+          {questions.length}
+
+        </div>
+
+        {questions.length > 0 && q && (
+
+          <div className="card">
+
+            <h3>
+
+              Question
+              {" "}
+              {current + 1}
+
+            </h3>
+
+            <h2>
+              {q.question}
+            </h2>
+
+            {q.options.map((o,i)=>(
+
+              <label
+                key={i}
+                className="option"
+              >
+
+                <input
+                  type="radio"
+                  checked={
+                    answers[q.id]
+                    === o
+                  }
+                  onChange={() =>
+                    selectAnswer(
+                      q.id,
+                      o
+                    )
+                  }
+                />
+
+                {o}
+
+              </label>
+
+            ))}
+
+            <div
+              style={{
+                display:"flex",
+                gap:"10px",
+                marginTop:"20px",
+                flexWrap:"wrap",
+              }}
             >
 
-              <input
-                type="radio"
-                checked={
-                  answers[q.id]
-                  === o
+              <button
+                onClick={
+                  previousQuestion
                 }
-                onChange={() =>
-                  selectAnswer(
-                    q.id,
-                    o
+              >
+                Previous
+              </button>
+
+              <button
+                onClick={
+                  saveNext
+                }
+              >
+                Save & Next
+              </button>
+
+              <button
+                onClick={() =>
+                  markReview(
+                    q.id
                   )
                 }
-              />
+              >
+                Mark Review
+              </button>
 
-              {o}
+              <button
+                onClick={
+                  submitExam
+                }
+              >
+                Submit
+              </button>
 
-            </label>
+            </div>
+
+          </div>
+
+        )}
+
+        {submitted && (
+
+          <div className="card">
+
+            <h2>
+              Exam Submitted
+            </h2>
+
+            <h3>
+              Score:
+              {" "}
+              {score}
+            </h3>
+
+            <p>
+
+              Accuracy:
+              {" "}
+
+              {
+                questions.length
+                ?
+
+                (
+                  (score /
+                  questions.length)
+                  *100
+                ).toFixed(2)
+
+                :
+
+                0
+              }
+
+              %
+
+            </p>
+
+          </div>
+
+        )}
+
+      </div>
+
+      <div className="navigator">
+
+        <h3>
+          Question Palette
+        </h3>
+
+        <div className="palette-grid">
+
+          {questions.map((item,index)=>(
+
+            <button
+              key={item.id}
+              className="palette-btn"
+              style={{
+                background:
+                  getColor(
+                    item.id
+                  ),
+              }}
+              onClick={() =>
+                setCurrent(index)
+              }
+            >
+
+              {index + 1}
+
+            </button>
 
           ))}
 
         </div>
 
-      ))}
-
-      {!submitted && (
-
-        <button
-          onClick={
-            submitExam
-          }
+        <div
+          style={{
+            marginTop:"20px",
+          }}
         >
-          Submit Exam
-        </button>
-
-      )}
-
-      {submitted && (
-
-        <div className="card">
-
-          <h2>
-            Exam Submitted
-          </h2>
-
-          <h3>
-            Score:
-            {" "}
-            {score}
-          </h3>
 
           <p>
-            Accuracy:
-            {" "}
-            {
-              questions.length
-              ?
-              (
-                (score /
-                questions.length)
-                *100
-              ).toFixed(2)
-              :
-              0
-            }
-            %
+            🟩 Answered
+          </p>
+
+          <p>
+            🟨 Review
+          </p>
+
+          <p>
+            ⬛ Not Answered
           </p>
 
         </div>
 
-      )}
+      </div>
 
     </div>
   );

@@ -718,3 +718,9 @@ left:0;
 }
 
 }
+
+
+table tr:hover{
+background:#111827;
+transition:0.3s;
+}

@@ -1,1 +1,6 @@
-export default function Component(){return <div className='card'>Component</div>}
+export default function ProtectedRoute({
+  children,
+}) {
+
+  return children;
+}

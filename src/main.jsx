@@ -16,7 +16,7 @@ document.getElementById("root")
 
 <React.StrictMode>
 
-<App/>
+<App />
 
 <Toaster
 position="top-right"
@@ -25,15 +25,17 @@ toastOptions={{
 style:{
 
 background:"#111827",
-color:"#fff",
-border:"1px solid #334155",
+
+color:"#f8fafc",
+
+border:
+"1px solid #1e293b",
 
 },
 
-},
+}}
 
-}
-/>
+ />
 
 </React.StrictMode>
 

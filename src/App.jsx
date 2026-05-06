@@ -22,6 +22,8 @@ import Topics from "./admin/Topics";
 
 import SubTopics from "./admin/SubTopics";
 
+import Questions from "./admin/Questions";
+
 export default function App() {
 
   return (
@@ -81,6 +83,15 @@ export default function App() {
   element={
     <AdminRoute>
       <SubTopics />
+    </AdminRoute>
+  }
+/>
+
+        <Route
+  path="/admin/questions"
+  element={
+    <AdminRoute>
+      <Questions />
     </AdminRoute>
   }
 />

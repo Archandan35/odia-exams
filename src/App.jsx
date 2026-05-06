@@ -16,6 +16,8 @@ import AdminRoute from "./routes/AdminRoute";
 
 import AdminPage from "./pages/AdminPage";
 
+import Subjects from "./admin/Subjects";
+
 export default function App() {
 
   return (
@@ -51,7 +53,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
+<Route
+  path="/admin/subjects"
+  element={
+    <AdminRoute>
+      <Subjects />
+    </AdminRoute>
+  }
+/>
         <Route
           path="/admin"
           element={

@@ -1,93 +1,164 @@
 import {
-  useEffect,
-  useState,
+useEffect,
+useState,
 } from "react";
 
 import {
-  signOut,
-} from "firebase/auth";
+collection,
+onSnapshot,
+} from "firebase/firestore";
 
 import {
-  auth,
+db,
 } from "../firebase/config";
 
 import {
-  useNavigate,
+useNavigate,
 } from "react-router-dom";
 
-import {
-  listenSubjects,
-} from "../services/subjectService";
+export default function StudentDashboard(){
 
-export default function StudentDashboard() {
+const nav = useNavigate();
 
-  const nav = useNavigate();
+const [questions,
+setQuestions] =
+useState([]);
 
-  const [subjects, setSubjects] = useState([]);
+const [subjects,
+setSubjects] =
+useState([]);
 
-  useEffect(() => {
+const [questionCount,
+setQuestionCount] =
+useState(10);
 
-    const unsub = listenSubjects(setSubjects);
+useEffect(()=>{
 
-    return () => unsub();
+const unsub = onSnapshot(
+collection(db,"questions"),
+(snapshot)=>{
 
-  }, []);
+const data =
+snapshot.docs.map((d)=>(
+{
+id:d.id,
+...d.data(),
+}
+));
 
-  async function logout() {
+setQuestions(data);
 
-    await signOut(auth);
+const grouped = {};
 
-    nav("/");
+data.forEach((q)=>{
 
-  }
+if(!grouped[q.subject]){
 
-  return (
+grouped[q.subject]={
+questions:0,
+topics:new Set(),
+};
 
-    <div className="page">
+}
 
-      <div className="topbar">
+grouped[q.subject]
+.questions++;
 
-        <h1>Student Dashboard</h1>
+grouped[q.subject]
+.topics.add(q.topic);
 
-        <button onClick={logout}>
-          Logout
-        </button>
+});
 
-      </div>
+const arr =
+Object.entries(grouped)
+.map(([subject,val])=>(
+{
+subject,
+questions:val.questions,
+topics:val.topics.size,
+}
+));
 
-      <div className="grid">
+setSubjects(arr);
 
-        {subjects.map((s) => (
+}
+);
 
-          <div
-            key={s.id}
-            className="subject-card"
-          >
+return ()=>unsub();
 
-            <h2>{s.title}</h2>
+},[]);
 
-            <p>{s.description}</p>
+function openSubject(subject){
 
-            <p>
-              Duration: {s.duration} mins
-            </p>
+nav(
+`/subject/${encodeURIComponent(subject)}`
+);
 
-            <button
-              onClick={() =>
-                nav(
-                  `/exam/${encodeURIComponent(s.title)}`
-                )
-              }
-            >
-              Start Test
-            </button>
+}
 
-          </div>
+return(
 
-        ))}
+<div className="page">
 
-      </div>
+<h1>
+Mock Test Dashboard
+</h1>
 
-    </div>
-  );
+<div className="card">
+
+<h3>
+Choose Question Count
+</h3>
+
+<input
+value={questionCount}
+type="number"
+onChange={(e)=>
+setQuestionCount(
+e.target.value
+)
+}
+/>
+
+</div>
+
+<div className="grid">
+
+{subjects.map((s,index)=>(
+
+<div
+key={index}
+className="subject-card"
+>
+
+<h2>
+{s.subject}
+</h2>
+
+<p>
+Topics: {s.topics}
+</p>
+
+<p>
+Questions: {s.questions}
+</p>
+
+<button
+onClick={()=>
+openSubject(
+s.subject
+)
+}
+>
+Open Subject
+</button>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+);
 }

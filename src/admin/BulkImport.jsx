@@ -174,8 +174,18 @@ export default function BulkImport() {
     answer
   ) {
 
+    if (
+      answer === undefined ||
+      answer === null ||
+      answer === ""
+    ) {
+
+      return null;
+
+    }
+
     const ans =
-      String(answer || "")
+      String(answer)
         .trim()
         .toUpperCase();
 
@@ -191,18 +201,19 @@ export default function BulkImport() {
     if (ans === "D")
       return 3;
 
-    if (
-      ans === "0" ||
-      ans === "1" ||
-      ans === "2" ||
-      ans === "3"
-    ) {
+    if (ans === "0")
+      return 0;
 
-      return Number(ans);
+    if (ans === "1")
+      return 1;
 
-    }
+    if (ans === "2")
+      return 2;
 
-    return 0;
+    if (ans === "3")
+      return 3;
+
+    return null;
 
   }
 
@@ -319,16 +330,13 @@ export default function BulkImport() {
                 ),
 
               difficulty:
-                q.difficulty ||
-                "Easy",
+                q.difficulty || "",
 
               language:
-                q.language ||
-                "English",
+                q.language || "",
 
               explanation:
-                q.explanation ||
-                "",
+                q.explanation || "",
 
             })
           );
@@ -387,16 +395,13 @@ export default function BulkImport() {
                   ),
 
                 difficulty:
-                  q.difficulty ||
-                  "Easy",
+                  q.difficulty || "",
 
                 language:
-                  q.language ||
-                  "English",
+                  q.language || "",
 
                 explanation:
-                  q.explanation ||
-                  "",
+                  q.explanation || "",
 
               })
             );
@@ -483,16 +488,13 @@ export default function BulkImport() {
                 ),
 
               difficulty:
-                q.difficulty ||
-                "Easy",
+                q.difficulty || "",
 
               language:
-                q.language ||
-                "English",
+                q.language || "",
 
               explanation:
-                q.explanation ||
-                "",
+                q.explanation || "",
 
             })
           );
@@ -505,113 +507,6 @@ export default function BulkImport() {
 
     reader.readAsArrayBuffer(
       file
-    );
-
-  }
-
-  async function handlePDFUpload(
-    e
-  ) {
-
-    const file =
-      e.target.files[0];
-
-    if (!file)
-      return;
-
-    try {
-
-      toast.loading(
-        "Reading PDF..."
-      );
-
-      const arrayBuffer =
-        await file.arrayBuffer();
-
-      const pdf =
-        await pdfjsLib
-          .getDocument({
-            data:
-              arrayBuffer,
-          }).promise;
-
-      let fullText =
-        "";
-
-      for (
-        let pageNum = 1;
-        pageNum <=
-        pdf.numPages;
-        pageNum++
-      ) {
-
-        const page =
-          await pdf.getPage(
-            pageNum
-          );
-
-        const content =
-          await page.getTextContent();
-
-        const strings =
-          content.items.map(
-            (item) =>
-              item.str
-          );
-
-        fullText +=
-          "\n" +
-          strings.join(
-            " "
-          );
-
-      }
-
-      console.log(
-        fullText
-      );
-
-      toast.dismiss();
-
-      toast.success(
-        "PDF Uploaded"
-      );
-
-    } catch (error) {
-
-      console.log(
-        error
-      );
-
-      toast.dismiss();
-
-      toast.error(
-        "PDF Upload Failed"
-      );
-
-    }
-
-  }
-
-  async function handleImageUpload(
-    e
-  ) {
-
-    const files =
-      Array.from(
-        e.target.files
-      );
-
-    if (
-      !files.length
-    ) {
-
-      return;
-
-    }
-
-    toast.success(
-      `${files.length} Images Uploaded`
     );
 
   }
@@ -654,47 +549,14 @@ export default function BulkImport() {
 
   }
 
-  function deleteQuestion(
-    index
-  ) {
-
-    const updated =
-      [...questions];
-
-    updated.splice(
-      index,
-      1
-    );
-
-    setQuestions(
-      updated
-    );
-
-  }
-
   async function importQuestions() {
 
     if (
-      questions.length ===
-      0
+      questions.length === 0
     ) {
 
       toast.error(
         "No Questions"
-      );
-
-      return;
-
-    }
-
-    if (
-      !selectedSubject ||
-      !selectedTopic ||
-      !selectedSubTopic
-    ) {
-
-      toast.error(
-        "Select Subject Hierarchy"
       );
 
       return;
@@ -707,9 +569,6 @@ export default function BulkImport() {
 
       setProgress(0);
 
-      const failed =
-        [];
-
       const chunkSize =
         400;
 
@@ -720,6 +579,11 @@ export default function BulkImport() {
         i += chunkSize
       ) {
 
+        const batch =
+          writeBatch(
+            db
+          );
+
         const chunk =
           questions.slice(
             i,
@@ -727,77 +591,61 @@ export default function BulkImport() {
               chunkSize
           );
 
-        const batch =
-          writeBatch(
-            db
-          );
-
         chunk.forEach(
           (q) => {
 
-            try {
-
-              const ref =
-                doc(
-                  collection(
-                    db,
-                    "questions"
-                  )
-                );
-
-              batch.set(
-                ref,
-                {
-
-                  subjectId:
-                    selectedSubject,
-
-                  topicId:
-                    selectedTopic,
-
-                  subTopicId:
-                    selectedSubTopic,
-
-                  question:
-                    q.question,
-
-                  options:
-                    q.options,
-
-                  correctAnswer:
-                    Number(
-                      q.correctAnswer
-                    ),
-
-                  difficulty:
-                    q.difficulty,
-
-                  language:
-                    q.language,
-
-                  explanation:
-                    q.explanation,
-
-                  createdAt:
-                    Date.now(),
-
-                }
+            const ref =
+              doc(
+                collection(
+                  db,
+                  "questions"
+                )
               );
 
-            } catch (error) {
+            batch.set(
+              ref,
+              {
 
-              failed.push(
-                q
-              );
+                subjectId:
+                  selectedSubject,
 
-            }
+                topicId:
+                  selectedTopic,
+
+                subTopicId:
+                  selectedSubTopic,
+
+                question:
+                  q.question,
+
+                options:
+                  q.options,
+
+                correctAnswer:
+                  q.correctAnswer,
+
+                difficulty:
+                  q.difficulty,
+
+                language:
+                  q.language,
+
+                explanation:
+                  q.explanation,
+
+                createdAt:
+                  Date.now(),
+
+              }
+            );
 
           }
         );
 
         await batch.commit();
 
-        const percent =
+        setProgress(
+
           Math.round(
 
             ((i +
@@ -805,20 +653,14 @@ export default function BulkImport() {
               questions.length) *
               100
 
-          );
+          )
 
-        setProgress(
-          percent
         );
 
       }
 
-      setFailedImports(
-        failed
-      );
-
       toast.success(
-        `${questions.length} Questions Imported`
+        "Questions Imported"
       );
 
     } catch (error) {
@@ -859,12 +701,10 @@ export default function BulkImport() {
             q.options[3],
 
           correctAnswer:
-            [
-              "A",
+            ["A",
               "B",
               "C",
-              "D",
-            ][
+              "D"][
               q.correctAnswer
             ],
 
@@ -923,12 +763,10 @@ export default function BulkImport() {
             q.options[3],
 
           correctAnswer:
-            [
-              "A",
+            ["A",
               "B",
               "C",
-              "D",
-            ][
+              "D"][
               q.correctAnswer
             ],
 
@@ -1036,661 +874,6 @@ export default function BulkImport() {
           </button>
 
         </div>
-
-        <div className="upload-grid">
-
-          <div className="upload-card">
-
-            <h3>
-              CSV Upload
-            </h3>
-
-            <p>
-              Upload .csv file
-            </p>
-
-            <small>
-
-              Hint:
-              question,
-              optionA,
-              optionB,
-              optionC,
-              optionD,
-              correctAnswer
-              (A/B/C/D or 0/1/2/3),
-              difficulty,
-              language,
-              explanation
-
-            </small>
-
-            <input
-              type="file"
-              accept=".csv"
-              onChange={
-                handleCSVUpload
-              }
-            />
-
-          </div>
-
-          <div className="upload-card">
-
-            <h3>
-              Excel Upload
-            </h3>
-
-            <p>
-              Upload .xlsx file
-            </p>
-
-            <small>
-              Hint:
-              Same format as CSV
-            </small>
-
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={
-                handleExcelUpload
-              }
-            />
-
-          </div>
-
-          <div className="upload-card">
-
-            <h3>
-              JSON Upload
-            </h3>
-
-            <p>
-              Upload .json file
-            </p>
-
-            <small>
-              Hint:
-              Array of question objects
-            </small>
-
-            <input
-              type="file"
-              accept=".json"
-              onChange={
-                handleJSONUpload
-              }
-            />
-
-          </div>
-
-          <div className="upload-card">
-
-            <h3>
-              PDF Upload (OCR)
-            </h3>
-
-            <p>
-              Extract questions from PDF
-            </p>
-
-            <small>
-              Auto detect questions & options
-            </small>
-
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={
-                handlePDFUpload
-              }
-            />
-
-          </div>
-
-          <div className="upload-card">
-
-            <h3>
-              Image Upload (OCR)
-            </h3>
-
-            <p>
-              Upload image (JPG, PNG)
-            </p>
-
-            <small>
-              Auto detect questions & options
-            </small>
-
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={
-                handleImageUpload
-              }
-            />
-
-          </div>
-
-        </div>
-
-        <div className="hierarchy-bar">
-
-          <select
-            value={
-              selectedSubject
-            }
-            onChange={(e) =>
-              setSelectedSubject(
-                e.target.value
-              )
-            }
-          >
-
-            <option value="">
-              Select Subject
-            </option>
-
-            {
-              subjects.map(
-                (s) => (
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                )
-              )
-            }
-
-          </select>
-
-          <select
-            value={
-              selectedTopic
-            }
-            onChange={(e) =>
-              setSelectedTopic(
-                e.target.value
-              )
-            }
-          >
-
-            <option value="">
-              Select Topic
-            </option>
-
-            {
-              filteredTopics.map(
-                (t) => (
-
-                  <option
-                    key={t.id}
-                    value={t.id}
-                  >
-                    {t.name}
-                  </option>
-
-                )
-              )
-            }
-
-          </select>
-
-          <select
-            value={
-              selectedSubTopic
-            }
-            onChange={(e) =>
-              setSelectedSubTopic(
-                e.target.value
-              )
-            }
-          >
-
-            <option value="">
-              Select Sub Topic
-            </option>
-
-            {
-              filteredSubTopics.map(
-                (s) => (
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                )
-              )
-            }
-
-          </select>
-
-          <button
-            className="danger-btn"
-            onClick={() =>
-              setQuestions([])
-            }
-          >
-
-            Clear All
-
-          </button>
-
-        </div>
-
-        <div className="stats-grid">
-
-          <div className="stat-card">
-
-            <h2>
-              {
-                validation.total
-              }
-            </h2>
-
-            <p>
-              Total Questions
-            </p>
-
-          </div>
-
-          <div className="stat-card">
-
-            <h2>
-              {
-                validation.valid
-              }
-            </h2>
-
-            <p>
-              Valid Questions
-            </p>
-
-          </div>
-
-          <div className="stat-card">
-
-            <h2>
-              {
-                validation.duplicates
-              }
-            </h2>
-
-            <p>
-              Duplicates Removed
-            </p>
-
-          </div>
-
-          <div className="stat-card">
-
-            <h2>
-              {
-                failedImports.length
-              }
-            </h2>
-
-            <p>
-              Failed Imports
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="toolbar">
-
-          <input
-            type="text"
-            placeholder="Search Question..."
-            value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-          />
-
-          <button
-            className="blue-btn"
-            onClick={
-              exportCSV
-            }
-          >
-
-            Export CSV
-
-          </button>
-
-          <button
-            className="green-btn"
-            onClick={
-              exportExcel
-            }
-          >
-
-            Export Excel
-
-          </button>
-
-          <button
-            className="import-btn"
-            onClick={
-              importQuestions
-            }
-          >
-
-            Import to Firestore
-
-          </button>
-
-        </div>
-
-        {
-          loading && (
-
-            <div className="progress-wrap">
-
-              <div
-                className="progress-bar"
-                style={{
-                  width:
-                    `${progress}%`,
-                }}
-              />
-
-            </div>
-
-          )
-        }
-
-        <div className="question-table">
-
-          <div className="table-header">
-
-            <div>#</div>
-            <div>Question</div>
-            <div>Option A</div>
-            <div>Option B</div>
-            <div>Option C</div>
-            <div>Option D</div>
-            <div>Correct Answer</div>
-            <div>Difficulty</div>
-            <div>Language</div>
-            <div>Explanation</div>
-            <div>Action</div>
-
-          </div>
-
-          {
-            filteredQuestions.map(
-              (
-                q,
-                index
-              ) => (
-
-                <div
-                  key={index}
-                  className="table-row"
-                >
-
-                  <div>
-                    {index + 1}
-                  </div>
-
-                  <textarea
-                    value={
-                      q.question
-                    }
-                    onChange={(e) =>
-                      updateQuestion(
-                        index,
-                        "question",
-                        e.target.value
-                      )
-                    }
-                  />
-
-                  {
-                    q.options.map(
-                      (
-                        op,
-                        opIndex
-                      ) => (
-
-                        <input
-                          key={
-                            opIndex
-                          }
-                          type="text"
-                          value={op}
-                          onChange={(e) =>
-                            updateOption(
-                              index,
-                              opIndex,
-                              e.target.value
-                            )
-                          }
-                        />
-
-                      )
-                    )
-                  }
-
-                  <div className="answer-column">
-
-                    {
-                      ["A",
-                        "B",
-                        "C",
-                        "D"]
-                        .map(
-                          (
-                            label,
-                            answerIndex
-                          ) => (
-
-                            <label
-                              key={
-                                answerIndex
-                              }
-                              className="radio-item"
-                            >
-
-                              <input
-                                type="radio"
-                                name={`answer-${index}`}
-                                checked={
-                                  Number(
-                                    q.correctAnswer
-                                  ) ===
-                                  answerIndex
-                                }
-                                onChange={() =>
-                                  updateQuestion(
-                                    index,
-                                    "correctAnswer",
-                                    answerIndex
-                                  )
-                                }
-                              />
-
-                              <span>
-                                {
-                                  label
-                                }
-                              </span>
-
-                            </label>
-
-                          )
-                        )
-                    }
-
-                  </div>
-
-                  <select
-                    value={
-                      q.difficulty
-                    }
-                    onChange={(e) =>
-                      updateQuestion(
-                        index,
-                        "difficulty",
-                        e.target.value
-                      )
-                    }
-                  >
-
-                    <option>
-                      Easy
-                    </option>
-
-                    <option>
-                      Medium
-                    </option>
-
-                    <option>
-                      Hard
-                    </option>
-
-                  </select>
-
-                  <select
-                    value={
-                      q.language
-                    }
-                    onChange={(e) =>
-                      updateQuestion(
-                        index,
-                        "language",
-                        e.target.value
-                      )
-                    }
-                  >
-
-                    <option>
-                      English
-                    </option>
-
-                    <option>
-                      Odia
-                    </option>
-
-                    <option>
-                      Hindi
-                    </option>
-
-                  </select>
-
-                  <textarea
-                    value={
-                      q.explanation
-                    }
-                    onChange={(e) =>
-                      updateQuestion(
-                        index,
-                        "explanation",
-                        e.target.value
-                      )
-                    }
-                  />
-
-                  <button
-                    className="delete-btn"
-                    onClick={() =>
-                      deleteQuestion(
-                        index
-                      )
-                    }
-                  >
-
-                    🗑
-
-                  </button>
-
-                </div>
-
-              )
-            )
-          }
-
-        </div>
-
-        {
-          showGuide && (
-
-            <div className="guide-overlay">
-
-              <div className="guide-modal">
-
-                <div className="guide-header">
-
-                  <h2>
-                    Import Format Guide
-                  </h2>
-
-                  <button
-                    className="guide-close"
-                    onClick={() =>
-                      setShowGuide(
-                        false
-                      )
-                    }
-                  >
-
-                    ✕
-
-                  </button>
-
-                </div>
-
-                <div className="guide-content">
-
-                  <h3>
-                    CSV / Excel Format
-                  </h3>
-
-                  <pre>
-{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
-
-What is 2+2?,1,2,4,5,C,Easy,English,2+2=4`}
-                  </pre>
-
-                  <h3>
-                    JSON Format
-                  </h3>
-
-                  <pre>
-{`[
-  {
-    "question":"What is 2+2?",
-    "options":["1","2","4","5"],
-    "correctAnswer":"C",
-    "difficulty":"Easy",
-    "language":"English",
-    "explanation":"2+2=4"
-  }
-]`}
-                  </pre>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )
-        }
 
       </div>
 

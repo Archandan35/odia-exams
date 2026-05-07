@@ -1,18 +1,18 @@
-import React,{
-useEffect,
-useMemo,
-useState,
+import React, {
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 
 import {
-collection,
-onSnapshot,
-writeBatch,
-doc,
+  collection,
+  onSnapshot,
+  writeBatch,
+  doc,
 } from "firebase/firestore";
 
 import {
-db,
+  db,
 } from "../firebase/config";
 
 import Papa from "papaparse";
@@ -28,1471 +28,1674 @@ import * as pdfjsLib from "pdfjs-dist";
 import AdminLayout from "./AdminLayout";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-
-export default function BulkImport(){
-
-const [subjects,setSubjects] =
-useState([]);
-
-const [topics,setTopics] =
-useState([]);
-
-const [subTopics,setSubTopics] =
-useState([]);
-
-const [selectedSubject,
-setSelectedSubject] =
-useState("");
-
-const [selectedTopic,
-setSelectedTopic] =
-useState("");
-
-const [selectedSubTopic,
-setSelectedSubTopic] =
-useState("");
-
-const [questions,
-setQuestions] =
-useState([]);
-
-const [loading,
-setLoading] =
-useState(false);
-
-const [progress,
-setProgress] =
-useState(0);
-
-const [search,
-setSearch] =
-useState("");
-
-const [failedImports,
-setFailedImports] =
-useState([]);
-
-const [validation,
-setValidation] =
-useState({
-total:0,
-valid:0,
-duplicates:0,
-invalid:0,
-});
-
-useEffect(()=>{
-
-const unsubSubjects =
-onSnapshot(
-collection(db,"subjects"),
-(snapshot)=>{
-
-setSubjects(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
-
-}
-);
+  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+export default function BulkImport() {
+
+  const [subjects,
+    setSubjects] =
+    useState([]);
+
+  const [topics,
+    setTopics] =
+    useState([]);
+
+  const [subTopics,
+    setSubTopics] =
+    useState([]);
+
+  const [selectedSubject,
+    setSelectedSubject] =
+    useState("");
+
+  const [selectedTopic,
+    setSelectedTopic] =
+    useState("");
+
+  const [selectedSubTopic,
+    setSelectedSubTopic] =
+    useState("");
+
+  const [questions,
+    setQuestions] =
+    useState([]);
+
+  const [loading,
+    setLoading] =
+    useState(false);
+
+  const [progress,
+    setProgress] =
+    useState(0);
+
+  const [search,
+    setSearch] =
+    useState("");
+
+  const [showGuide,
+    setShowGuide] =
+    useState(false);
+
+  const [failedImports,
+    setFailedImports] =
+    useState([]);
+
+  const [validation,
+    setValidation] =
+    useState({
+
+      total: 0,
+      valid: 0,
+      duplicates: 0,
+      invalid: 0,
+
+    });
+
+  useEffect(() => {
+
+    const unsubSubjects =
+      onSnapshot(
+        collection(db, "subjects"),
+        (snapshot) => {
+
+          setSubjects(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
+
+        }
+      );
+
+    const unsubTopics =
+      onSnapshot(
+        collection(db, "topics"),
+        (snapshot) => {
+
+          setTopics(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
+
+        }
+      );
 
-const unsubTopics =
-onSnapshot(
-collection(db,"topics"),
-(snapshot)=>{
+    const unsubSubTopics =
+      onSnapshot(
+        collection(db, "subtopics"),
+        (snapshot) => {
 
-setTopics(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
+          setSubTopics(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
 
-}
-);
+        }
+      );
 
-const unsubSubTopics =
-onSnapshot(
-collection(db,"subtopics"),
-(snapshot)=>{
+    return () => {
 
-setSubTopics(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
+      unsubSubjects();
+      unsubTopics();
+      unsubSubTopics();
 
-}
-);
+    };
 
-return ()=>{
+  }, []);
 
-unsubSubjects();
-unsubTopics();
-unsubSubTopics();
+  const filteredTopics =
+    topics.filter(
+      (t) =>
+        t.subjectId ===
+        selectedSubject
+    );
 
-};
+  const filteredSubTopics =
+    subTopics.filter(
+      (s) =>
+        s.subjectId ===
+          selectedSubject &&
+        s.topicId ===
+          selectedTopic
+    );
 
-},[]);
+  function normalizeAnswer(
+    answer
+  ) {
 
-const filteredTopics =
-topics.filter(
-(t)=>
-t.subjectId ===
-selectedSubject
-);
+    const ans =
+      String(answer || "")
+        .trim()
+        .toUpperCase();
 
-const filteredSubTopics =
-subTopics.filter(
-(s)=>
-s.subjectId ===
-selectedSubject &&
-s.topicId ===
-selectedTopic
-);
+    if (ans === "A")
+      return 0;
 
-function normalizeAnswer(answer){
+    if (ans === "B")
+      return 1;
 
-const ans =
-String(answer || "")
-.trim()
-.toUpperCase();
+    if (ans === "C")
+      return 2;
 
-if(ans === "A")
-return 0;
+    if (ans === "D")
+      return 3;
 
-if(ans === "B")
-return 1;
+    if (
+      ans === "0" ||
+      ans === "1" ||
+      ans === "2" ||
+      ans === "3"
+    ) {
 
-if(ans === "C")
-return 2;
+      return Number(ans);
 
-if(ans === "D")
-return 3;
+    }
 
-if(
-ans === "0" ||
-ans === "1" ||
-ans === "2" ||
-ans === "3"
-){
+    return 0;
 
-return Number(ans);
+  }
 
-}
+  function processQuestions(
+    data
+  ) {
 
-return 0;
+    const seen =
+      new Set();
 
-}
+    let duplicates =
+      0;
 
-function processQuestions(data){
+    const cleaned =
+      data.filter(
+        (q) => {
 
-const seen =
-new Set();
+          if (
+            !q.question
+          ) {
 
-let duplicates = 0;
+            return false;
 
-const cleaned =
-data.filter((q)=>{
+          }
 
-if(
-!q.question ||
-!q.options
-){
+          const key =
+            q.question
+              .trim()
+              .toLowerCase();
 
-return false;
+          if (
+            seen.has(key)
+          ) {
 
-}
+            duplicates++;
 
-const key =
-q.question
-.trim()
-.toLowerCase();
+            return false;
 
-if(seen.has(key)){
+          }
 
-duplicates++;
+          seen.add(key);
 
-return false;
+          return true;
 
-}
+        }
+      );
 
-seen.add(key);
+    setValidation({
 
-return true;
+      total:
+        data.length,
 
-});
+      valid:
+        cleaned.length,
 
-setValidation({
-total:data.length,
-valid:cleaned.length,
-duplicates,
-invalid:
-data.length -
-cleaned.length -
-duplicates,
-});
+      duplicates,
 
-setQuestions(cleaned);
+      invalid:
+        data.length -
+        cleaned.length -
+        duplicates,
 
-toast.success(
-`${cleaned.length} Questions Loaded`
-);
+    });
 
-}
+    setQuestions(
+      cleaned
+    );
 
-function handleCSVUpload(e){
+    toast.success(
+      `${cleaned.length} Questions Loaded`
+    );
 
-const file =
-e.target.files[0];
+  }
 
-if(!file)
-return;
+  function handleCSVUpload(
+    e
+  ) {
 
-Papa.parse(file,{
+    const file =
+      e.target.files[0];
 
-header:true,
+    if (!file)
+      return;
 
-skipEmptyLines:true,
+    Papa.parse(file, {
 
-complete:(results)=>{
+      header: true,
 
-const parsed =
-results.data.map((q)=>({
+      skipEmptyLines: true,
 
-question:
-q.question || "",
+      complete: (
+        results
+      ) => {
 
-options:[
+        const parsed =
+          results.data.map(
+            (q) => ({
 
-q.optionA || "",
-q.optionB || "",
-q.optionC || "",
-q.optionD || "",
+              question:
+                q.question || "",
 
-],
+              options: [
 
-correctAnswer:
-normalizeAnswer(
-q.correctAnswer
-),
+                q.optionA || "",
+                q.optionB || "",
+                q.optionC || "",
+                q.optionD || "",
 
-difficulty:
-q.difficulty ||
-"Easy",
+              ],
 
-language:
-q.language ||
-"English",
+              correctAnswer:
+                normalizeAnswer(
+                  q.correctAnswer
+                ),
 
-explanation:
-q.explanation ||
-"",
+              difficulty:
+                q.difficulty ||
+                "Easy",
 
-}));
+              language:
+                q.language ||
+                "English",
 
-processQuestions(parsed);
+              explanation:
+                q.explanation ||
+                "",
 
-},
+            })
+          );
 
-});
+        processQuestions(
+          parsed
+        );
 
-}
+      },
 
-function handleJSONUpload(e){
+    });
 
-const file =
-e.target.files[0];
+  }
 
-if(!file)
-return;
+  function handleJSONUpload(
+    e
+  ) {
 
-const reader =
-new FileReader();
+    const file =
+      e.target.files[0];
 
-reader.onload =
-(event)=>{
+    if (!file)
+      return;
 
-try{
+    const reader =
+      new FileReader();
 
-const json =
-JSON.parse(
-event.target.result
-);
+    reader.onload =
+      (event) => {
 
-const parsed =
-json.map((q)=>({
+        try {
 
-question:
-q.question || "",
+          const json =
+            JSON.parse(
+              event.target.result
+            );
 
-options:
-q.options || [
-"",
-"",
-"",
-"",
-],
+          const parsed =
+            json.map(
+              (q) => ({
 
-correctAnswer:
-normalizeAnswer(
-q.correctAnswer
-),
+                question:
+                  q.question || "",
 
-difficulty:
-q.difficulty ||
-"Easy",
+                options:
+                  q.options || [
+                    "",
+                    "",
+                    "",
+                    "",
+                  ],
 
-language:
-q.language ||
-"English",
+                correctAnswer:
+                  normalizeAnswer(
+                    q.correctAnswer
+                  ),
 
-explanation:
-q.explanation ||
-"",
+                difficulty:
+                  q.difficulty ||
+                  "Easy",
 
-}));
+                language:
+                  q.language ||
+                  "English",
 
-processQuestions(parsed);
+                explanation:
+                  q.explanation ||
+                  "",
 
-}catch(error){
+              })
+            );
 
-console.log(error);
+          processQuestions(
+            parsed
+          );
 
-toast.error(
-"Invalid JSON"
-);
+        } catch (error) {
 
-}
+          console.log(
+            error
+          );
 
-};
+          toast.error(
+            "Invalid JSON"
+          );
 
-reader.readAsText(file);
+        }
 
-}
+      };
 
-function handleExcelUpload(e){
+    reader.readAsText(
+      file
+    );
 
-const file =
-e.target.files[0];
+  }
 
-if(!file)
-return;
+  function handleExcelUpload(
+    e
+  ) {
 
-const reader =
-new FileReader();
+    const file =
+      e.target.files[0];
 
-reader.onload =
-(evt)=>{
+    if (!file)
+      return;
 
-const data =
-new Uint8Array(
-evt.target.result
-);
+    const reader =
+      new FileReader();
 
-const workbook =
-XLSX.read(data,{
-type:"array",
-});
+    reader.onload =
+      (evt) => {
 
-const sheet =
-workbook.Sheets[
-workbook.SheetNames[0]
-];
+        const data =
+          new Uint8Array(
+            evt.target.result
+          );
 
-const json =
-XLSX.utils.sheet_to_json(
-sheet
-);
+        const workbook =
+          XLSX.read(data, {
+            type: "array",
+          });
 
-const parsed =
-json.map((q)=>({
+        const sheet =
+          workbook.Sheets[
+            workbook.SheetNames[0]
+          ];
 
-question:
-q.question || "",
+        const json =
+          XLSX.utils.sheet_to_json(
+            sheet
+          );
 
-options:[
+        const parsed =
+          json.map(
+            (q) => ({
 
-q.optionA || "",
-q.optionB || "",
-q.optionC || "",
-q.optionD || "",
+              question:
+                q.question || "",
 
-],
+              options: [
 
-correctAnswer:
-normalizeAnswer(
-q.correctAnswer
-),
+                q.optionA || "",
+                q.optionB || "",
+                q.optionC || "",
+                q.optionD || "",
 
-difficulty:
-q.difficulty ||
-"Easy",
+              ],
 
-language:
-q.language ||
-"English",
+              correctAnswer:
+                normalizeAnswer(
+                  q.correctAnswer
+                ),
 
-explanation:
-q.explanation ||
-"",
+              difficulty:
+                q.difficulty ||
+                "Easy",
 
-}));
+              language:
+                q.language ||
+                "English",
 
-processQuestions(parsed);
+              explanation:
+                q.explanation ||
+                "",
 
-};
+            })
+          );
 
-reader.readAsArrayBuffer(file);
+        processQuestions(
+          parsed
+        );
 
-}
+      };
 
-async function handlePDFUpload(e){
+    reader.readAsArrayBuffer(
+      file
+    );
 
-const file =
-e.target.files[0];
+  }
 
-if(!file)
-return;
+  async function handlePDFUpload(
+    e
+  ) {
 
-try{
+    const file =
+      e.target.files[0];
 
-toast.loading(
-"Reading PDF..."
-);
+    if (!file)
+      return;
 
-const arrayBuffer =
-await file.arrayBuffer();
+    try {
 
-const pdf =
-await pdfjsLib
-.getDocument({
-data:arrayBuffer,
-}).promise;
+      toast.loading(
+        "Reading PDF..."
+      );
 
-let fullText = "";
+      const arrayBuffer =
+        await file.arrayBuffer();
 
-for(
-let pageNum = 1;
-pageNum <= pdf.numPages;
-pageNum++
-){
+      const pdf =
+        await pdfjsLib
+          .getDocument({
+            data:
+              arrayBuffer,
+          }).promise;
 
-const page =
-await pdf.getPage(
-pageNum
-);
+      let fullText =
+        "";
 
-const content =
-await page.getTextContent();
+      for (
+        let pageNum = 1;
+        pageNum <=
+        pdf.numPages;
+        pageNum++
+      ) {
 
-const strings =
-content.items.map(
-(item)=>item.str
-);
+        const page =
+          await pdf.getPage(
+            pageNum
+          );
 
-fullText +=
-"\n" +
-strings.join(" ");
+        const content =
+          await page.getTextContent();
 
-}
+        const strings =
+          content.items.map(
+            (item) =>
+              item.str
+          );
 
-toast.dismiss();
+        fullText +=
+          "\n" +
+          strings.join(
+            " "
+          );
 
-toast.success(
-"PDF Uploaded"
-);
+      }
 
-console.log(fullText);
+      console.log(
+        fullText
+      );
 
-}catch(error){
+      toast.dismiss();
 
-console.log(error);
+      toast.success(
+        "PDF Uploaded"
+      );
 
-toast.dismiss();
+    } catch (error) {
 
-toast.error(
-"PDF Failed"
-);
+      console.log(
+        error
+      );
 
-}
+      toast.dismiss();
 
-}
+      toast.error(
+        "PDF Upload Failed"
+      );
 
-async function handleImageUpload(e){
+    }
 
-const files =
-Array.from(
-e.target.files
-);
+  }
 
-if(!files.length)
-return;
+  async function handleImageUpload(
+    e
+  ) {
 
-toast.success(
-`${files.length} Images Uploaded`
-);
+    const files =
+      Array.from(
+        e.target.files
+      );
 
-}
+    if (
+      !files.length
+    ) {
 
-function updateQuestion(
-index,
-field,
-value
-){
+      return;
 
-const updated =
-[...questions];
+    }
 
-updated[index][field] =
-value;
+    toast.success(
+      `${files.length} Images Uploaded`
+    );
 
-setQuestions(updated);
+  }
 
-}
+  function updateQuestion(
+    index,
+    field,
+    value
+  ) {
 
-function updateOption(
-qIndex,
-opIndex,
-value
-){
+    const updated =
+      [...questions];
 
-const updated =
-[...questions];
+    updated[index][field] =
+      value;
 
-updated[qIndex]
-.options[opIndex] =
-value;
+    setQuestions(
+      updated
+    );
 
-setQuestions(updated);
+  }
 
-}
+  function updateOption(
+    qIndex,
+    opIndex,
+    value
+  ) {
 
-function deleteQuestion(index){
+    const updated =
+      [...questions];
 
-const updated =
-[...questions];
+    updated[qIndex]
+      .options[
+        opIndex
+      ] = value;
 
-updated.splice(index,1);
+    setQuestions(
+      updated
+    );
 
-setQuestions(updated);
+  }
 
-}
+  function deleteQuestion(
+    index
+  ) {
 
-async function importQuestions(){
+    const updated =
+      [...questions];
 
-if(
-questions.length === 0
-){
+    updated.splice(
+      index,
+      1
+    );
 
-toast.error(
-"No Questions"
-);
+    setQuestions(
+      updated
+    );
 
-return;
+  }
 
-}
+  async function importQuestions() {
 
-if(
-!selectedSubject ||
-!selectedTopic ||
-!selectedSubTopic
-){
+    if (
+      questions.length ===
+      0
+    ) {
 
-toast.error(
-"Select Subject Hierarchy"
-);
+      toast.error(
+        "No Questions"
+      );
 
-return;
+      return;
 
-}
+    }
 
-try{
+    if (
+      !selectedSubject ||
+      !selectedTopic ||
+      !selectedSubTopic
+    ) {
 
-setLoading(true);
+      toast.error(
+        "Select Subject Hierarchy"
+      );
 
-setProgress(0);
+      return;
 
-const failed = [];
+    }
 
-const chunkSize = 400;
+    try {
 
-for(
-let i = 0;
-i < questions.length;
-i += chunkSize
-){
+      setLoading(true);
 
-const chunk =
-questions.slice(
-i,
-i + chunkSize
-);
+      setProgress(0);
 
-const batch =
-writeBatch(db);
+      const failed =
+        [];
 
-chunk.forEach((q)=>{
+      const chunkSize =
+        400;
 
-try{
+      for (
+        let i = 0;
+        i <
+        questions.length;
+        i += chunkSize
+      ) {
 
-const ref =
-doc(
-collection(
-db,
-"questions"
-)
-);
+        const chunk =
+          questions.slice(
+            i,
+            i +
+              chunkSize
+          );
 
-batch.set(ref,{
+        const batch =
+          writeBatch(
+            db
+          );
 
-subjectId:
-selectedSubject,
+        chunk.forEach(
+          (q) => {
 
-topicId:
-selectedTopic,
+            try {
 
-subTopicId:
-selectedSubTopic,
+              const ref =
+                doc(
+                  collection(
+                    db,
+                    "questions"
+                  )
+                );
 
-question:
-q.question,
+              batch.set(
+                ref,
+                {
 
-options:
-q.options,
+                  subjectId:
+                    selectedSubject,
 
-correctAnswer:
-Number(
-q.correctAnswer
-),
+                  topicId:
+                    selectedTopic,
 
-difficulty:
-q.difficulty,
+                  subTopicId:
+                    selectedSubTopic,
 
-language:
-q.language,
+                  question:
+                    q.question,
 
-explanation:
-q.explanation,
+                  options:
+                    q.options,
 
-createdAt:
-Date.now(),
+                  correctAnswer:
+                    Number(
+                      q.correctAnswer
+                    ),
 
-});
+                  difficulty:
+                    q.difficulty,
 
-}catch(error){
+                  language:
+                    q.language,
 
-failed.push(q);
+                  explanation:
+                    q.explanation,
 
-}
+                  createdAt:
+                    Date.now(),
 
-});
+                }
+              );
 
-await batch.commit();
+            } catch (error) {
 
-const percent =
-Math.round(
-(
-(i + chunk.length) /
-questions.length
-) * 100
-);
+              failed.push(
+                q
+              );
 
-setProgress(percent);
+            }
 
-}
+          }
+        );
 
-setFailedImports(
-failed
-);
+        await batch.commit();
 
-toast.success(
-`${questions.length} Questions Imported`
-);
+        const percent =
+          Math.round(
 
-}catch(error){
+            ((i +
+              chunk.length) /
+              questions.length) *
+              100
 
-console.log(error);
+          );
 
-toast.error(
-"Import Failed"
-);
+        setProgress(
+          percent
+        );
 
-}
+      }
 
-setLoading(false);
+      setFailedImports(
+        failed
+      );
 
-}
+      toast.success(
+        `${questions.length} Questions Imported`
+      );
 
-function exportCSV(){
+    } catch (error) {
 
-const rows =
-questions.map((q)=>({
+      console.log(
+        error
+      );
 
-question:
-q.question,
+      toast.error(
+        "Import Failed"
+      );
 
-optionA:
-q.options[0],
+    }
 
-optionB:
-q.options[1],
+    setLoading(false);
 
-optionC:
-q.options[2],
+  }
 
-optionD:
-q.options[3],
+  function exportCSV() {
 
-correctAnswer:
-[
-"A",
-"B",
-"C",
-"D",
-][
-q.correctAnswer
-],
+    const rows =
+      questions.map(
+        (q) => ({
 
-difficulty:
-q.difficulty,
+          question:
+            q.question,
 
-language:
-q.language,
+          optionA:
+            q.options[0],
 
-explanation:
-q.explanation,
+          optionB:
+            q.options[1],
 
-}));
+          optionC:
+            q.options[2],
 
-const csv =
-Papa.unparse(rows);
+          optionD:
+            q.options[3],
 
-const blob =
-new Blob(
-[csv],
-{
-type:
-"text/csv;charset=utf-8;",
-}
-);
+          correctAnswer:
+            [
+              "A",
+              "B",
+              "C",
+              "D",
+            ][
+              q.correctAnswer
+            ],
 
-saveAs(
-blob,
-"questions.csv"
-);
+          difficulty:
+            q.difficulty,
 
-}
+          language:
+            q.language,
 
-function exportExcel(){
+          explanation:
+            q.explanation,
 
-const rows =
-questions.map((q)=>({
+        })
+      );
 
-question:
-q.question,
+    const csv =
+      Papa.unparse(
+        rows
+      );
 
-optionA:
-q.options[0],
+    const blob =
+      new Blob(
+        [csv],
+        {
+          type:
+            "text/csv;charset=utf-8;",
+        }
+      );
 
-optionB:
-q.options[1],
+    saveAs(
+      blob,
+      "questions.csv"
+    );
 
-optionC:
-q.options[2],
+  }
 
-optionD:
-q.options[3],
+  function exportExcel() {
 
-correctAnswer:
-[
-"A",
-"B",
-"C",
-"D",
-][
-q.correctAnswer
-],
+    const rows =
+      questions.map(
+        (q) => ({
 
-difficulty:
-q.difficulty,
+          question:
+            q.question,
 
-language:
-q.language,
+          optionA:
+            q.options[0],
 
-explanation:
-q.explanation,
+          optionB:
+            q.options[1],
 
-}));
+          optionC:
+            q.options[2],
 
-const worksheet =
-XLSX.utils.json_to_sheet(
-rows
-);
+          optionD:
+            q.options[3],
 
-const workbook =
-XLSX.utils.book_new();
+          correctAnswer:
+            [
+              "A",
+              "B",
+              "C",
+              "D",
+            ][
+              q.correctAnswer
+            ],
 
-XLSX.utils.book_append_sheet(
-workbook,
-worksheet,
-"Questions"
-);
+          difficulty:
+            q.difficulty,
 
-const excelBuffer =
-XLSX.write(
-workbook,
-{
-bookType:"xlsx",
-type:"array",
-}
-);
+          language:
+            q.language,
 
-const blob =
-new Blob(
-[excelBuffer],
-{
-type:
-"application/octet-stream",
-}
-);
+          explanation:
+            q.explanation,
 
-saveAs(
-blob,
-"questions.xlsx"
-);
+        })
+      );
 
-}
+    const worksheet =
+      XLSX.utils.json_to_sheet(
+        rows
+      );
 
-const filteredQuestions =
-useMemo(()=>{
+    const workbook =
+      XLSX.utils.book_new();
 
-return questions.filter(
-(q)=>
-q.question
-?.toLowerCase()
-.includes(
-search.toLowerCase()
-)
-);
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Questions"
+    );
 
-},[
-questions,
-search,
-]);
+    const excelBuffer =
+      XLSX.write(
+        workbook,
+        {
+          bookType:
+            "xlsx",
+          type:
+            "array",
+        }
+      );
 
-return(
+    const blob =
+      new Blob(
+        [excelBuffer],
+        {
+          type:
+            "application/octet-stream",
+        }
+      );
 
-<AdminLayout>
+    saveAs(
+      blob,
+      "questions.xlsx"
+    );
 
-<div className="bulk-page">
+  }
 
-<div className="bulk-topbar">
+  const filteredQuestions =
+    useMemo(() => {
 
-<div>
+      return questions.filter(
+        (q) =>
+          q.question
+            ?.toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+      );
 
-<h1>
-Bulk Import
-</h1>
+    }, [
+      questions,
+      search,
+    ]);
 
-<p>
-Import questions from CSV, Excel, JSON, PDF or Image
-</p>
+  return (
 
-</div>
+    <AdminLayout>
 
-<button className="help-btn">
+      <div className="bulk-page">
 
-? Help & Format Guide
+        <div className="bulk-topbar">
 
-</button>
+          <div>
 
-</div>
+            <h1>
+              Bulk Import
+            </h1>
 
-<div className="upload-grid">
+            <p>
+              Import questions from CSV, Excel, JSON, PDF or Image
+            </p>
 
-<div className="upload-card">
+          </div>
 
-<h3>
-CSV Upload
-</h3>
+          <button
+            className="help-btn"
+            onClick={() =>
+              setShowGuide(
+                true
+              )
+            }
+          >
 
-<p>
-Upload .csv file
-</p>
+            ? Help & Format Guide
 
-<small>
+          </button>
 
-Hint:
-question,
-optionA,
-optionB,
-optionC,
-optionD,
-correctAnswer
-(A/B/C/D or 0/1/2/3),
-difficulty,
-language,
-explanation
+        </div>
 
-</small>
+        <div className="upload-grid">
 
-<input
-type="file"
-accept=".csv"
-onChange={
-handleCSVUpload
-}
-/>
+          <div className="upload-card">
 
-</div>
+            <h3>
+              CSV Upload
+            </h3>
 
-<div className="upload-card">
+            <p>
+              Upload .csv file
+            </p>
 
-<h3>
-Excel Upload
-</h3>
+            <small>
 
-<p>
-Upload .xlsx file
-</p>
+              Hint:
+              question,
+              optionA,
+              optionB,
+              optionC,
+              optionD,
+              correctAnswer
+              (A/B/C/D or 0/1/2/3),
+              difficulty,
+              language,
+              explanation
 
-<small>
-Hint:
-Same format as CSV
-</small>
+            </small>
 
-<input
-type="file"
-accept=".xlsx,.xls"
-onChange={
-handleExcelUpload
-}
-/>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={
+                handleCSVUpload
+              }
+            />
 
-</div>
+          </div>
 
-<div className="upload-card">
+          <div className="upload-card">
 
-<h3>
-JSON Upload
-</h3>
+            <h3>
+              Excel Upload
+            </h3>
 
-<p>
-Upload .json file
-</p>
+            <p>
+              Upload .xlsx file
+            </p>
 
-<small>
-Hint:
-Array of question objects
-</small>
+            <small>
+              Hint:
+              Same format as CSV
+            </small>
 
-<input
-type="file"
-accept=".json"
-onChange={
-handleJSONUpload
-}
-/>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={
+                handleExcelUpload
+              }
+            />
 
-</div>
+          </div>
 
-<div className="upload-card">
+          <div className="upload-card">
 
-<h3>
-PDF Upload (OCR)
-</h3>
+            <h3>
+              JSON Upload
+            </h3>
 
-<p>
-Extract questions from PDF
-</p>
+            <p>
+              Upload .json file
+            </p>
 
-<small>
-Auto detect questions & options
-</small>
+            <small>
+              Hint:
+              Array of question objects
+            </small>
 
-<input
-type="file"
-accept=".pdf"
-onChange={
-handlePDFUpload
-}
-/>
+            <input
+              type="file"
+              accept=".json"
+              onChange={
+                handleJSONUpload
+              }
+            />
 
-</div>
+          </div>
 
-<div className="upload-card">
+          <div className="upload-card">
 
-<h3>
-Image Upload (OCR)
-</h3>
+            <h3>
+              PDF Upload (OCR)
+            </h3>
 
-<p>
-Upload image (JPG, PNG)
-</p>
+            <p>
+              Extract questions from PDF
+            </p>
 
-<small>
-Auto detect questions & options
-</small>
+            <small>
+              Auto detect questions & options
+            </small>
 
-<input
-type="file"
-accept="image/*"
-multiple
-onChange={
-handleImageUpload
-}
-/>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={
+                handlePDFUpload
+              }
+            />
 
-</div>
+          </div>
 
-</div>
+          <div className="upload-card">
 
-<div className="hierarchy-bar">
+            <h3>
+              Image Upload (OCR)
+            </h3>
 
-<select
-value={
-selectedSubject
-}
-onChange={(e)=>
-setSelectedSubject(
-e.target.value
-)
-}
->
+            <p>
+              Upload image (JPG, PNG)
+            </p>
 
-<option value="">
-Select Subject
-</option>
+            <small>
+              Auto detect questions & options
+            </small>
 
-{
-subjects.map((s)=>(
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={
+                handleImageUpload
+              }
+            />
 
-<option
-key={s.id}
-value={s.id}
->
-{s.name}
-</option>
+          </div>
 
-))
-}
+        </div>
 
-</select>
+        <div className="hierarchy-bar">
 
-<select
-value={
-selectedTopic
-}
-onChange={(e)=>
-setSelectedTopic(
-e.target.value
-)
-}
->
+          <select
+            value={
+              selectedSubject
+            }
+            onChange={(e) =>
+              setSelectedSubject(
+                e.target.value
+              )
+            }
+          >
 
-<option value="">
-Select Topic
-</option>
+            <option value="">
+              Select Subject
+            </option>
 
-{
-filteredTopics.map((t)=>(
+            {
+              subjects.map(
+                (s) => (
 
-<option
-key={t.id}
-value={t.id}
->
-{t.name}
-</option>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
 
-))
-}
+                )
+              )
+            }
 
-</select>
+          </select>
 
-<select
-value={
-selectedSubTopic
-}
-onChange={(e)=>
-setSelectedSubTopic(
-e.target.value
-)
-}
->
+          <select
+            value={
+              selectedTopic
+            }
+            onChange={(e) =>
+              setSelectedTopic(
+                e.target.value
+              )
+            }
+          >
 
-<option value="">
-Select Sub Topic
-</option>
+            <option value="">
+              Select Topic
+            </option>
 
-{
-filteredSubTopics.map((s)=>(
+            {
+              filteredTopics.map(
+                (t) => (
 
-<option
-key={s.id}
-value={s.id}
->
-{s.name}
-</option>
+                  <option
+                    key={t.id}
+                    value={t.id}
+                  >
+                    {t.name}
+                  </option>
 
-))
-}
+                )
+              )
+            }
 
-</select>
+          </select>
 
-<button
-className="danger-btn"
-onClick={()=>
-setQuestions([])
-}
->
+          <select
+            value={
+              selectedSubTopic
+            }
+            onChange={(e) =>
+              setSelectedSubTopic(
+                e.target.value
+              )
+            }
+          >
 
-Clear All
+            <option value="">
+              Select Sub Topic
+            </option>
 
-</button>
+            {
+              filteredSubTopics.map(
+                (s) => (
 
-</div>
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
 
-<div className="stats-grid">
+                )
+              )
+            }
 
-<div className="stat-card">
+          </select>
 
-<h2>
-{
-validation.total
-}
-</h2>
+          <button
+            className="danger-btn"
+            onClick={() =>
+              setQuestions([])
+            }
+          >
 
-<p>
-Total Questions
-</p>
+            Clear All
 
-</div>
+          </button>
 
-<div className="stat-card">
+        </div>
 
-<h2>
-{
-validation.valid
-}
-</h2>
+        <div className="stats-grid">
 
-<p>
-Valid Questions
-</p>
+          <div className="stat-card">
 
-</div>
+            <h2>
+              {
+                validation.total
+              }
+            </h2>
 
-<div className="stat-card">
+            <p>
+              Total Questions
+            </p>
 
-<h2>
-{
-validation.duplicates
-}
-</h2>
+          </div>
 
-<p>
-Duplicates Removed
-</p>
+          <div className="stat-card">
 
-</div>
+            <h2>
+              {
+                validation.valid
+              }
+            </h2>
 
-<div className="stat-card">
+            <p>
+              Valid Questions
+            </p>
 
-<h2>
-{
-failedImports.length
-}
-</h2>
+          </div>
 
-<p>
-Failed Imports
-</p>
+          <div className="stat-card">
 
-</div>
+            <h2>
+              {
+                validation.duplicates
+              }
+            </h2>
 
-</div>
+            <p>
+              Duplicates Removed
+            </p>
 
-<div className="toolbar">
+          </div>
 
-<input
-type="text"
-placeholder="Search Question..."
-value={search}
-onChange={(e)=>
-setSearch(
-e.target.value
-)
-}
-/>
+          <div className="stat-card">
 
-<button
-className="blue-btn"
-onClick={
-exportCSV
-}
->
+            <h2>
+              {
+                failedImports.length
+              }
+            </h2>
 
-Export CSV
+            <p>
+              Failed Imports
+            </p>
 
-</button>
+          </div>
 
-<button
-className="green-btn"
-onClick={
-exportExcel
-}
->
+        </div>
 
-Export Excel
+        <div className="toolbar">
 
-</button>
+          <input
+            type="text"
+            placeholder="Search Question..."
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+          />
 
-<button
-className="import-btn"
-onClick={
-importQuestions
-}
->
+          <button
+            className="blue-btn"
+            onClick={
+              exportCSV
+            }
+          >
 
-Import to Firestore
+            Export CSV
 
-</button>
+          </button>
 
-</div>
+          <button
+            className="green-btn"
+            onClick={
+              exportExcel
+            }
+          >
 
-{
-loading && (
+            Export Excel
 
-<div className="progress-wrap">
+          </button>
 
-<div
-className="progress-bar"
-style={{
-width:
-`${progress}%`,
-}}
-/>
+          <button
+            className="import-btn"
+            onClick={
+              importQuestions
+            }
+          >
 
-</div>
+            Import to Firestore
 
-)
-}
+          </button>
 
-<div className="question-table">
+        </div>
 
-<div className="table-header">
+        {
+          loading && (
 
-<div>#</div>
-<div>Question</div>
-<div>Option A</div>
-<div>Option B</div>
-<div>Option C</div>
-<div>Option D</div>
-<div>Correct Answer</div>
-<div>Difficulty</div>
-<div>Language</div>
-<div>Explanation</div>
-<div>Action</div>
+            <div className="progress-wrap">
 
-</div>
+              <div
+                className="progress-bar"
+                style={{
+                  width:
+                    `${progress}%`,
+                }}
+              />
 
-{
-filteredQuestions.map(
-(q,index)=>(
+            </div>
 
-<div
-key={index}
-className="table-row"
->
+          )
+        }
 
-<div>
-{index + 1}
-</div>
+        <div className="question-table">
 
-<textarea
-value={
-q.question
-}
-onChange={(e)=>
-updateQuestion(
-index,
-"question",
-e.target.value
-)
-}
-/>
+          <div className="table-header">
 
-{
-q.options.map(
-(op,opIndex)=>(
+            <div>#</div>
+            <div>Question</div>
+            <div>Option A</div>
+            <div>Option B</div>
+            <div>Option C</div>
+            <div>Option D</div>
+            <div>Correct Answer</div>
+            <div>Difficulty</div>
+            <div>Language</div>
+            <div>Explanation</div>
+            <div>Action</div>
 
-<input
-key={opIndex}
-type="text"
-value={op}
-onChange={(e)=>
-updateOption(
-index,
-opIndex,
-e.target.value
-)
-}
-/>
+          </div>
 
-)
-)
-}
+          {
+            filteredQuestions.map(
+              (
+                q,
+                index
+              ) => (
 
-<div className="answer-column">
+                <div
+                  key={index}
+                  className="table-row"
+                >
 
-{
-["A","B","C","D"]
-.map(
-(
-label,
-answerIndex
-)=>(
+                  <div>
+                    {index + 1}
+                  </div>
 
-<label
-key={
-answerIndex
-}
-className="radio-item"
->
+                  <textarea
+                    value={
+                      q.question
+                    }
+                    onChange={(e) =>
+                      updateQuestion(
+                        index,
+                        "question",
+                        e.target.value
+                      )
+                    }
+                  />
 
-<input
-type="radio"
-name={`answer-${index}`}
-checked={
-Number(
-q.correctAnswer
-) ===
-answerIndex
-}
-onChange={()=>
-updateQuestion(
-index,
-"correctAnswer",
-answerIndex
-)
-}
-/>
+                  {
+                    q.options.map(
+                      (
+                        op,
+                        opIndex
+                      ) => (
 
-<span>
-{label}
-</span>
+                        <input
+                          key={
+                            opIndex
+                          }
+                          type="text"
+                          value={op}
+                          onChange={(e) =>
+                            updateOption(
+                              index,
+                              opIndex,
+                              e.target.value
+                            )
+                          }
+                        />
 
-</label>
+                      )
+                    )
+                  }
 
-)
-)
-}
+                  <div className="answer-column">
 
-</div>
+                    {
+                      ["A",
+                        "B",
+                        "C",
+                        "D"]
+                        .map(
+                          (
+                            label,
+                            answerIndex
+                          ) => (
 
-<select
-value={
-q.difficulty
-}
-onChange={(e)=>
-updateQuestion(
-index,
-"difficulty",
-e.target.value
-)
-}
->
+                            <label
+                              key={
+                                answerIndex
+                              }
+                              className="radio-item"
+                            >
 
-<option>
-Easy
-</option>
+                              <input
+                                type="radio"
+                                name={`answer-${index}`}
+                                checked={
+                                  Number(
+                                    q.correctAnswer
+                                  ) ===
+                                  answerIndex
+                                }
+                                onChange={() =>
+                                  updateQuestion(
+                                    index,
+                                    "correctAnswer",
+                                    answerIndex
+                                  )
+                                }
+                              />
 
-<option>
-Medium
-</option>
+                              <span>
+                                {
+                                  label
+                                }
+                              </span>
 
-<option>
-Hard
-</option>
+                            </label>
 
-</select>
+                          )
+                        )
+                    }
 
-<select
-value={
-q.language
-}
-onChange={(e)=>
-updateQuestion(
-index,
-"language",
-e.target.value
-)
-}
->
+                  </div>
 
-<option>
-English
-</option>
+                  <select
+                    value={
+                      q.difficulty
+                    }
+                    onChange={(e) =>
+                      updateQuestion(
+                        index,
+                        "difficulty",
+                        e.target.value
+                      )
+                    }
+                  >
 
-<option>
-Odia
-</option>
+                    <option>
+                      Easy
+                    </option>
 
-<option>
-Hindi
-</option>
+                    <option>
+                      Medium
+                    </option>
 
-</select>
+                    <option>
+                      Hard
+                    </option>
 
-<textarea
-value={
-q.explanation
-}
-onChange={(e)=>
-updateQuestion(
-index,
-"explanation",
-e.target.value
-)
-}
-/>
+                  </select>
 
-<button
-className="delete-btn"
-onClick={()=>
-deleteQuestion(
-index
-)
-}
->
+                  <select
+                    value={
+                      q.language
+                    }
+                    onChange={(e) =>
+                      updateQuestion(
+                        index,
+                        "language",
+                        e.target.value
+                      )
+                    }
+                  >
 
-🗑
+                    <option>
+                      English
+                    </option>
 
-</button>
+                    <option>
+                      Odia
+                    </option>
 
-</div>
+                    <option>
+                      Hindi
+                    </option>
 
-)
-)
-}
+                  </select>
 
-</div>
+                  <textarea
+                    value={
+                      q.explanation
+                    }
+                    onChange={(e) =>
+                      updateQuestion(
+                        index,
+                        "explanation",
+                        e.target.value
+                      )
+                    }
+                  />
 
-</div>
+                  <button
+                    className="delete-btn"
+                    onClick={() =>
+                      deleteQuestion(
+                        index
+                      )
+                    }
+                  >
 
-</AdminLayout>
+                    🗑
 
-);
+                  </button>
+
+                </div>
+
+              )
+            )
+          }
+
+        </div>
+
+        {
+          showGuide && (
+
+            <div className="guide-overlay">
+
+              <div className="guide-modal">
+
+                <div className="guide-header">
+
+                  <h2>
+                    Import Format Guide
+                  </h2>
+
+                  <button
+                    className="guide-close"
+                    onClick={() =>
+                      setShowGuide(
+                        false
+                      )
+                    }
+                  >
+
+                    ✕
+
+                  </button>
+
+                </div>
+
+                <div className="guide-content">
+
+                  <h3>
+                    CSV / Excel Format
+                  </h3>
+
+                  <pre>
+{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
+
+What is 2+2?,1,2,4,5,C,Easy,English,2+2=4`}
+                  </pre>
+
+                  <h3>
+                    JSON Format
+                  </h3>
+
+                  <pre>
+{`[
+  {
+    "question":"What is 2+2?",
+    "options":["1","2","4","5"],
+    "correctAnswer":"C",
+    "difficulty":"Easy",
+    "language":"English",
+    "explanation":"2+2=4"
+  }
+]`}
+                  </pre>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )
+        }
+
+      </div>
+
+    </AdminLayout>
+
+  );
 
 }

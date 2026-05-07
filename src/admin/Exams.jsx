@@ -686,41 +686,43 @@ large-popup
 
               )
             }
+            
+{
+  (examType === "topic" ||
+   examType === "subtopic") &&
 
-            {
-              examType === "topic" &&
-              (
-              <select
-                value={
-                  selectedTopic
-                }
-                onChange={(e)=>
-                  setSelectedTopic(
-                    e.target.value
-                  )
-                }
-              >
+  (
+  <select
+    value={
+      selectedTopic
+    }
+    onChange={(e)=>
+      setSelectedTopic(
+        e.target.value
+      )
+    }
+  >
 
-                <option value="">
-                  Select Topic
-                </option>
+    <option value="">
+      Select Topic
+    </option>
 
-                {
-                  filteredTopics.map((t)=>(
+    {
+      filteredTopics.map((t)=>(
 
-                  <option
-                    key={t.id}
-                    value={t.id}
-                  >
-                    {t.name}
-                  </option>
+      <option
+        key={t.id}
+        value={t.id}
+      >
+        {t.name}
+      </option>
 
-                  ))
-                }
+      ))
+    }
 
-              </select>
-              )
-            }
+  </select>
+  )
+}
 
             {
               examType === "subtopic" &&

@@ -111,8 +111,13 @@ const json = JSON.parse(event.target.result)
 const formatted = json.map(q=>(
 {
 question:q.question || "",
-options:q.options || ["","","",""] ,
-correctAnswer:q.correctAnswer || 0,
+options:q.options || ["","","",""],
+
+correctAnswer:
+typeof q.correctAnswer === "string"
+? q.correctAnswer.trim().toUpperCase()
+: q.correctAnswer,
+
 difficulty:q.difficulty || "Easy",
 language:q.language || "English",
 explanation:q.explanation || "",
@@ -152,7 +157,10 @@ q.optionB || "",
 q.optionC || "",
 q.optionD || "",
 ],
-correctAnswer:Number(q.correctAnswer || 0),
+correctAnswer:
+String(q.correctAnswer)
+.trim()
+.toUpperCase(),
 difficulty:q.difficulty || "Easy",
 language:q.language || "English",
 explanation:q.explanation || "",
@@ -248,7 +256,10 @@ topicId:selectedTopic,
 subTopicId:selectedSubTopic,
 question:q.question,
 options:q.options,
-correctAnswer:q.correctAnswer,
+correctAnswer:
+typeof q.correctAnswer === "number"
+? ["A","B","C","D"][q.correctAnswer]
+: q.correctAnswer,
 difficulty:q.difficulty,
 language:q.language,
 explanation:q.explanation,

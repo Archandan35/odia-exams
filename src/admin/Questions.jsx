@@ -477,7 +477,7 @@ export default function Questions() {
             >
 
               <option value="">
-                Subject
+                All Subject
               </option>
 
               {
@@ -509,7 +509,7 @@ export default function Questions() {
             >
 
               <option value="">
-                Topic
+                All Topic
               </option>
 
               {
@@ -543,38 +543,48 @@ export default function Questions() {
             >
 
               <option value="">
-                SubTopic
+                All SubTopic
               </option>
 
-              {
-                subTopics
-                .filter((st)=>{
+             {
+subTopics
+.filter((st)=>{
 
-                  const sameSubject =
-                    !filterSubject ||
-                    st.subjectId === filterSubject;
+// normalize ids
+const subSubject =
+String(st.subjectId || "").trim();
 
-                  const sameTopic =
-                    !filterTopic ||
-                    st.topicId === filterTopic;
+const subTopic =
+String(st.topicId || "").trim();
 
-                  return (
-                    sameSubject &&
-                    sameTopic
-                  );
+const currentSubject =
+String(filterSubject || "").trim();
 
-                })
-                .map((st)=>(
+const currentTopic =
+String(filterTopic || "").trim();
 
-                <option
-                  key={st.id}
-                  value={st.id}
-                >
-                  {st.name}
-                </option>
+const sameSubject =
+!currentSubject ||
+subSubject === currentSubject;
 
-                ))
-              }
+const sameTopic =
+!currentTopic ||
+subTopic === currentTopic;
+
+return sameSubject && sameTopic;
+
+})
+.map((st)=>(
+
+<option
+key={st.id}
+value={st.id}
+>
+{st.name}
+</option>
+
+))
+}
 
             </select>
 

@@ -234,18 +234,6 @@ q.id
 
 let correctIndex = 0;
 
-if(
-q.correctAnswer !==
-undefined
-){
-
-correctIndex =
-Number(
-q.correctAnswer
-);
-
-}else{
-
 const map = {
 
 A:0,
@@ -254,6 +242,30 @@ C:2,
 D:3,
 
 };
+
+if(
+typeof q.correctAnswer ===
+"number"
+){
+
+correctIndex =
+q.correctAnswer;
+
+}
+else if(
+typeof q.correctAnswer ===
+"string"
+){
+
+correctIndex =
+map[
+q.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+else{
 
 correctIndex =
 map[q.answer] || 0;

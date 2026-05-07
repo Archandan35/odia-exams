@@ -1,4 +1,4 @@
-import {
+import React, {
   useState,
   useEffect,
 } from "react";
@@ -6,20 +6,23 @@ import {
 import {
   collection,
   onSnapshot,
-  addDoc,
+  writeBatch,
+  doc,
 } from "firebase/firestore";
-
-import Papa from "papaparse";
-
-import toast from "react-hot-toast";
 
 import {
   db,
 } from "../firebase/config";
 
-import * as pdfjsLib from "pdfjs-dist";
+import Papa from "papaparse";
+
+import * as XLSX from "xlsx";
+
+import toast from "react-hot-toast";
 
 import { saveAs } from "file-saver";
+
+import * as pdfjsLib from "pdfjs-dist";
 
 import AdminLayout from "./AdminLayout";
 
@@ -53,9 +56,25 @@ export default function BulkImport() {
     setPreviewQuestions] =
     useState([]);
 
+  const [failedQuestions,
+    setFailedQuestions] =
+    useState([]);
+
   const [loading,
     setLoading] =
     useState(false);
+
+  const [progress,
+    setProgress] =
+    useState(0);
+
+  const [search,
+    setSearch] =
+    useState("");
+
+  const [validationReport,
+    setValidationReport] =
+    useState(null);
 
   useEffect(() => {
 
@@ -130,190 +149,98 @@ export default function BulkImport() {
   const filteredSubTopics =
     subTopics.filter(
       (s) =>
-        s.subjectId === selectedSubject &&
-        s.topicId === selectedTopic
+        s.subjectId ===
+        selectedSubject &&
+        s.topicId ===
+        selectedTopic
     );
 
-  async function handleImageOCR(e) {
+  function normalizeAnswer(ans) {
 
-    const files = Array.from(
-      e.target.files
-    );
+    const value =
+      String(ans || "")
+        .trim()
+        .toUpperCase();
 
-    if (!files.length) return;
+    if (value === "A")
+      return 0;
 
-    try {
+    if (value === "B")
+      return 1;
 
-      setLoading(true);
+    if (value === "C")
+      return 2;
 
-      toast.loading(
-        `Uploading ${files.length} image(s)...`
-      );
+    if (value === "D")
+      return 3;
 
-      let allQuestions = [];
+    if (
+      value === "0" ||
+      value === "1" ||
+      value === "2" ||
+      value === "3"
+    ) {
 
-      for (const file of files) {
-
-        const base64Image =
-          await new Promise(
-            (resolve, reject) => {
-
-              const reader =
-                new FileReader();
-
-              reader.readAsDataURL(file);
-
-              reader.onload = () =>
-                resolve(reader.result);
-
-              reader.onerror = (
-                error
-              ) =>
-                reject(error);
-
-            }
-          );
-
-        const response =
-          await fetch(
-            "https://odia-exam.up.railway.app/api/gemini-ocr",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body: JSON.stringify({
-                image: base64Image,
-              }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        console.log(data);
-
-        const questions =
-          data.questions || [];
-
-        allQuestions = [
-          ...allQuestions,
-          ...questions,
-        ];
-
-      }
-
-      setPreviewQuestions(
-        allQuestions
-      );
-
-      toast.dismiss();
-
-      if (
-        allQuestions.length === 0
-      ) {
-
-        toast.error(
-          "No Questions Parsed"
-        );
-
-      } else {
-
-        toast.success(
-          `${allQuestions.length} Questions Parsed`
-        );
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-      toast.dismiss();
-
-      toast.error(
-        "Gemini OCR Failed"
-      );
+      return Number(value);
 
     }
 
-    setLoading(false);
+    return 0;
 
   }
 
-  async function handlePDFOCR(e) {
+  function validateQuestions(data) {
 
-    const file =
-      e.target.files[0];
+    let valid = 0;
 
-    if (!file) return;
+    let invalid = 0;
 
-    try {
+    const duplicateMap = {};
 
-      setLoading(true);
+    const cleaned =
+      data.filter((q) => {
 
-      toast.loading(
-        "Reading PDF..."
-      );
+        const key =
+          q.question
+            ?.trim()
+            ?.toLowerCase();
 
-      const arrayBuffer =
-        await file.arrayBuffer();
+        if (!key)
+          return false;
 
-      const pdf =
-        await pdfjsLib
-          .getDocument({
-            data: arrayBuffer,
-          }).promise;
+        if (
+          duplicateMap[key]
+        ) {
 
-      let fullText = "";
+          invalid++;
 
-      for (
-        let pageNum = 1;
-        pageNum <= pdf.numPages;
-        pageNum++
-      ) {
+          return false;
 
-        const page =
-          await pdf.getPage(pageNum);
+        }
 
-        const content =
-          await page.getTextContent();
+        duplicateMap[key] =
+          true;
 
-        const strings =
-          content.items.map(
-            (item) => item.str
-          );
+        valid++;
 
-        fullText +=
-          "\n" +
-          strings.join(" ");
+        return true;
 
-      }
+      });
 
-      toast.dismiss();
+    setValidationReport({
+      total:
+        data.length,
 
-      toast.success(
-        "PDF Text Extracted"
-      );
+      valid,
 
-      console.log(fullText);
+      invalid,
 
-    } catch (error) {
+      duplicates:
+        data.length -
+        cleaned.length,
+    });
 
-      console.log(error);
-
-      toast.dismiss();
-
-      toast.error(
-        "PDF Import Failed"
-      );
-
-    }
-
-    setLoading(false);
+    return cleaned;
 
   }
 
@@ -330,7 +257,9 @@ export default function BulkImport() {
 
       skipEmptyLines: true,
 
-      complete: (results) => {
+      complete: (
+        results
+      ) => {
 
         const parsed =
           results.data.map(
@@ -349,23 +278,33 @@ export default function BulkImport() {
               ],
 
               correctAnswer:
-                Number(
-                  q.correctAnswer || 0
+                normalizeAnswer(
+                  q.correctAnswer
                 ),
 
               difficulty:
-                q.difficulty || "easy",
+                q.difficulty ||
+                "easy",
 
               language:
-                q.language || "english",
+                q.language ||
+                "english",
 
               explanation:
-                q.explanation || "",
+                q.explanation ||
+                "",
 
             })
           );
 
-        setPreviewQuestions(parsed);
+        const cleaned =
+          validateQuestions(
+            parsed
+          );
+
+        setPreviewQuestions(
+          cleaned
+        );
 
         toast.success(
           "CSV Imported"
@@ -397,7 +336,28 @@ export default function BulkImport() {
               event.target.result
             );
 
-          setPreviewQuestions(json);
+          const parsed =
+            json.map(
+              (q) => ({
+
+                ...q,
+
+                correctAnswer:
+                  normalizeAnswer(
+                    q.correctAnswer
+                  ),
+
+              })
+            );
+
+          const cleaned =
+            validateQuestions(
+              parsed
+            );
+
+          setPreviewQuestions(
+            cleaned
+          );
 
           toast.success(
             "JSON Imported"
@@ -416,6 +376,135 @@ export default function BulkImport() {
       };
 
     reader.readAsText(file);
+
+  }
+
+  function handleExcelUpload(e) {
+
+    const file =
+      e.target.files[0];
+
+    if (!file) return;
+
+    const reader =
+      new FileReader();
+
+    reader.onload =
+      (evt) => {
+
+        const data =
+          new Uint8Array(
+            evt.target.result
+          );
+
+        const workbook =
+          XLSX.read(data, {
+            type: "array",
+          });
+
+        const sheet =
+          workbook.Sheets[
+            workbook.SheetNames[0]
+          ];
+
+        const json =
+          XLSX.utils.sheet_to_json(
+            sheet
+          );
+
+        const parsed =
+          json.map(
+            (q) => ({
+
+              question:
+                q.question || "",
+
+              options: [
+
+                q.optionA || "",
+                q.optionB || "",
+                q.optionC || "",
+                q.optionD || "",
+
+              ],
+
+              correctAnswer:
+                normalizeAnswer(
+                  q.correctAnswer
+                ),
+
+              difficulty:
+                q.difficulty ||
+                "easy",
+
+              language:
+                q.language ||
+                "english",
+
+              explanation:
+                q.explanation ||
+                "",
+
+            })
+          );
+
+        const cleaned =
+          validateQuestions(
+            parsed
+          );
+
+        setPreviewQuestions(
+          cleaned
+        );
+
+        toast.success(
+          "Excel Imported"
+        );
+
+      };
+
+    reader.readAsArrayBuffer(
+      file
+    );
+
+  }
+
+  function updateQuestion(
+    index,
+    field,
+    value
+  ) {
+
+    const updated = [
+      ...previewQuestions,
+    ];
+
+    updated[index][field] =
+      value;
+
+    setPreviewQuestions(
+      updated
+    );
+
+  }
+
+  function updateOption(
+    qIndex,
+    opIndex,
+    value
+  ) {
+
+    const updated = [
+      ...previewQuestions,
+    ];
+
+    updated[qIndex]
+      .options[opIndex] =
+      value;
+
+    setPreviewQuestions(
+      updated
+    );
 
   }
 
@@ -451,57 +540,111 @@ export default function BulkImport() {
 
       setLoading(true);
 
-      for (const q of previewQuestions) {
+      setProgress(0);
 
-        await addDoc(
-          collection(
-            db,
-            "questions"
-          ),
-          {
+      const failed = [];
 
-            subjectId:
-              selectedSubject,
+      const chunkSize = 400;
 
-            topicId:
-              selectedTopic,
+      for (
+        let i = 0;
+        i <
+        previewQuestions.length;
+        i += chunkSize
+      ) {
 
-            subTopicId:
-              selectedSubTopic,
+        const chunk =
+          previewQuestions.slice(
+            i,
+            i + chunkSize
+          );
 
-            question:
-              q.question,
+        const batch =
+          writeBatch(db);
 
-            options:
-              q.options,
+        chunk.forEach(
+          (q) => {
 
-            correctAnswer:
-              Number(
-                q.correctAnswer || 0
-              ),
+            try {
 
-            difficulty:
-              q.difficulty || "easy",
+              const ref =
+                doc(
+                  collection(
+                    db,
+                    "questions"
+                  )
+                );
 
-            language:
-              q.language || "english",
+              batch.set(ref, {
 
-            explanation:
-              q.explanation || "",
+                subjectId:
+                  selectedSubject,
 
-            createdAt:
-              Date.now(),
+                topicId:
+                  selectedTopic,
+
+                subTopicId:
+                  selectedSubTopic,
+
+                question:
+                  q.question,
+
+                options:
+                  q.options,
+
+                correctAnswer:
+                  Number(
+                    q.correctAnswer
+                  ),
+
+                difficulty:
+                  q.difficulty,
+
+                language:
+                  q.language,
+
+                explanation:
+                  q.explanation,
+
+                createdAt:
+                  Date.now(),
+
+              });
+
+            } catch (error) {
+
+              failed.push(q);
+
+            }
 
           }
         );
 
+        await batch.commit();
+
+        const percent =
+          Math.round(
+
+            ((i +
+              chunk.length) /
+              previewQuestions.length) *
+            100
+
+          );
+
+        setProgress(
+          percent
+        );
+
       }
+
+      setFailedQuestions(
+        failed
+      );
 
       toast.success(
         `${previewQuestions.length} Questions Imported`
       );
-
-      setPreviewQuestions([]);
 
     } catch (error) {
 
@@ -517,6 +660,162 @@ export default function BulkImport() {
 
   }
 
+  function retryFailedImports() {
+
+    setPreviewQuestions(
+      failedQuestions
+    );
+
+    toast.success(
+      "Retry Queue Loaded"
+    );
+
+  }
+
+  function exportCSV() {
+
+    const rows =
+      previewQuestions.map(
+        (q) => ({
+
+          question:
+            q.question,
+
+          optionA:
+            q.options[0],
+
+          optionB:
+            q.options[1],
+
+          optionC:
+            q.options[2],
+
+          optionD:
+            q.options[3],
+
+          correctAnswer:
+            ["A", "B", "C", "D"][
+              q.correctAnswer
+            ],
+
+          difficulty:
+            q.difficulty,
+
+          language:
+            q.language,
+
+          explanation:
+            q.explanation,
+
+        })
+      );
+
+    const csv =
+      Papa.unparse(rows);
+
+    const blob =
+      new Blob(
+        [csv],
+        {
+          type:
+            "text/csv;charset=utf-8;",
+        }
+      );
+
+    saveAs(
+      blob,
+      "questions.csv"
+    );
+
+  }
+
+  function exportExcel() {
+
+    const rows =
+      previewQuestions.map(
+        (q) => ({
+
+          question:
+            q.question,
+
+          optionA:
+            q.options[0],
+
+          optionB:
+            q.options[1],
+
+          optionC:
+            q.options[2],
+
+          optionD:
+            q.options[3],
+
+          correctAnswer:
+            ["A", "B", "C", "D"][
+              q.correctAnswer
+            ],
+
+          difficulty:
+            q.difficulty,
+
+          language:
+            q.language,
+
+          explanation:
+            q.explanation,
+
+        })
+      );
+
+    const worksheet =
+      XLSX.utils.json_to_sheet(
+        rows
+      );
+
+    const workbook =
+      XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Questions"
+    );
+
+    const excelBuffer =
+      XLSX.write(
+        workbook,
+        {
+          bookType: "xlsx",
+          type: "array",
+        }
+      );
+
+    const blob =
+      new Blob(
+        [excelBuffer],
+        {
+          type:
+            "application/octet-stream",
+        }
+      );
+
+    saveAs(
+      blob,
+      "questions.xlsx"
+    );
+
+  }
+
+  const filteredQuestions =
+    previewQuestions.filter(
+      (q) =>
+        q.question
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+    );
+
   return (
 
     <AdminLayout>
@@ -528,11 +827,11 @@ export default function BulkImport() {
           <div>
 
             <h2>
-              Gemini OCR Bulk Import
+              Advanced Bulk Import
             </h2>
 
             <p>
-              Image + PDF + CSV + JSON Import
+              CSV + JSON + Excel + OCR
             </p>
 
           </div>
@@ -540,39 +839,6 @@ export default function BulkImport() {
         </div>
 
         <div className="import-grid">
-
-          <div className="import-card">
-
-            <h3>
-              Bulk Image OCR
-            </h3>
-
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={
-                handleImageOCR
-              }
-            />
-
-          </div>
-
-          <div className="import-card">
-
-            <h3>
-              PDF OCR
-            </h3>
-
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={
-                handlePDFOCR
-              }
-            />
-
-          </div>
 
           <div className="import-card">
 
@@ -606,18 +872,34 @@ export default function BulkImport() {
 
           </div>
 
+          <div className="import-card">
+
+            <h3>
+              Excel Upload
+            </h3>
+
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={
+                handleExcelUpload
+              }
+            />
+
+          </div>
+
         </div>
 
         <div
           className="glass-card"
           style={{
-            marginTop: "25px",
-            padding: "25px",
+            marginTop: 20,
+            padding: 20,
           }}
         >
 
           <h3>
-            Select Subject Hierarchy
+            Subject Hierarchy
           </h3>
 
           <div className="filter-bar">
@@ -636,16 +918,18 @@ export default function BulkImport() {
               </option>
 
               {
-                subjects.map((s) => (
+                subjects.map(
+                  (s) => (
 
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
+                    <option
+                      key={s.id}
+                      value={s.id}
+                    >
+                      {s.name}
+                    </option>
 
-                ))
+                  )
+                )
               }
 
             </select>
@@ -664,16 +948,18 @@ export default function BulkImport() {
               </option>
 
               {
-                filteredTopics.map((t) => (
+                filteredTopics.map(
+                  (t) => (
 
-                  <option
-                    key={t.id}
-                    value={t.id}
-                  >
-                    {t.name}
-                  </option>
+                    <option
+                      key={t.id}
+                      value={t.id}
+                    >
+                      {t.name}
+                    </option>
 
-                ))
+                  )
+                )
               }
 
             </select>
@@ -692,16 +978,18 @@ export default function BulkImport() {
               </option>
 
               {
-                filteredSubTopics.map((s) => (
+                filteredSubTopics.map(
+                  (s) => (
 
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
+                    <option
+                      key={s.id}
+                      value={s.id}
+                    >
+                      {s.name}
+                    </option>
 
-                ))
+                  )
+                )
               }
 
             </select>
@@ -710,50 +998,91 @@ export default function BulkImport() {
 
         </div>
 
-        <div
-          className="glass-card"
-          style={{
-            marginTop: "25px",
-            padding: "25px",
-          }}
-        >
+        {
+          validationReport && (
 
-          <h3>
-            CSV Upload Format
-          </h3>
+            <div
+              className="glass-card"
+              style={{
+                marginTop: 20,
+                padding: 20,
+              }}
+            >
 
-          <pre>
+              <h3>
+                Validation Report
+              </h3>
 
-{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
+              <p>
+                Total:
+                {" "}
+                {validationReport.total}
+              </p>
 
-What is 2+2?,2,3,4,5,2,easy,english,2+2=4`}
+              <p>
+                Valid:
+                {" "}
+                {validationReport.valid}
+              </p>
 
-          </pre>
+              <p>
+                Invalid:
+                {" "}
+                {validationReport.invalid}
+              </p>
 
-          <h3
-            style={{
-              marginTop: "30px",
-            }}
-          >
-            JSON Upload Format
-          </h3>
+              <p>
+                Duplicates Removed:
+                {" "}
+                {validationReport.duplicates}
+              </p>
 
-          <pre>
+            </div>
 
-{`[
-  {
-    "question":"What is 2+2?",
-    "options":["2","3","4","5"],
-    "correctAnswer":2,
-    "difficulty":"easy",
-    "language":"english",
-    "explanation":"2+2 = 4"
-  }
-]`}
+          )
+        }
 
-          </pre>
+        {
+          loading && (
 
-        </div>
+            <div
+              style={{
+                marginTop: 20,
+              }}
+            >
+
+              <div
+                style={{
+                  width: "100%",
+                  height: 20,
+                  background: "#ddd",
+                  borderRadius: 10,
+                }}
+              >
+
+                <div
+                  style={{
+                    width:
+                      `${progress}%`,
+                    height: "100%",
+                    background:
+                      "#22c55e",
+                    borderRadius: 10,
+                    transition:
+                      "0.3s",
+                  }}
+                />
+
+              </div>
+
+              <p>
+                {progress}%
+              </p>
+
+            </div>
+
+          )
+        }
 
         {
           previewQuestions.length > 0 && (
@@ -761,97 +1090,197 @@ What is 2+2?,2,3,4,5,2,easy,english,2+2=4`}
             <div
               className="table-card"
               style={{
-                marginTop: "25px",
+                marginTop: 20,
               }}
             >
 
-              <div className="page-header">
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  marginBottom: 20,
+                }}
+              >
 
-                <div>
+                <input
+                  type="text"
+                  placeholder="Search Questions"
+                  value={search}
+                  onChange={(e) =>
+                    setSearch(
+                      e.target.value
+                    )
+                  }
+                />
 
-                  <h2>
-                    Parsed Questions
-                  </h2>
+                <button
+                  className="submit-btn"
+                  onClick={
+                    exportCSV
+                  }
+                >
+                  Export CSV
+                </button>
 
-                </div>
+                <button
+                  className="submit-btn"
+                  onClick={
+                    exportExcel
+                  }
+                >
+                  Export Excel
+                </button>
+
+                <button
+                  className="submit-btn"
+                  onClick={() =>
+                    setPreviewQuestions(
+                      []
+                    )
+                  }
+                >
+                  Clear
+                </button>
 
                 <button
                   className="submit-btn"
                   onClick={
                     handleSaveQuestions
                   }
-                  disabled={loading}
                 >
-
-                  {
-                    loading
-                      ? "Importing..."
-                      : "Confirm Import"
-                  }
-
+                  Import
                 </button>
 
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  marginTop: "20px",
-                }}
-              >
-
                 {
-                  previewQuestions.map(
-                    (q, index) => (
+                  failedQuestions.length >
+                    0 && (
 
-                      <div
-                        key={index}
-                        className="question-review-card"
-                      >
+                    <button
+                      className="submit-btn"
+                      onClick={
+                        retryFailedImports
+                      }
+                    >
+                      Retry Failed
+                    </button>
 
-                        <h3>
-
-                          Q{index + 1}.
-                          {" "}
-                          {q.question}
-
-                        </h3>
-
-                        {
-                          q.options?.map(
-                            (op, i) => (
-
-                              <div
-                                key={i}
-                              >
-
-                                <b>
-                                  {
-                                    String.fromCharCode(
-                                      65 + i
-                                    )
-                                  }
-                                  )
-                                </b>
-
-                                {" "}
-                                {op}
-
-                              </div>
-
-                            )
-                          )
-                        }
-
-                      </div>
-
-                    )
                   )
                 }
 
               </div>
+
+              {
+                filteredQuestions.map(
+                  (
+                    q,
+                    index
+                  ) => (
+
+                    <div
+                      key={index}
+                      className="question-review-card"
+                      style={{
+                        marginBottom: 20,
+                        padding: 20,
+                        border:
+                          "1px solid #ddd",
+                        borderRadius: 10,
+                      }}
+                    >
+
+                      <textarea
+                        value={
+                          q.question
+                        }
+                        onChange={(e) =>
+                          updateQuestion(
+                            index,
+                            "question",
+                            e.target.value
+                          )
+                        }
+                        style={{
+                          width: "100%",
+                          minHeight: 80,
+                        }}
+                      />
+
+                      {
+                        q.options.map(
+                          (
+                            op,
+                            opIndex
+                          ) => (
+
+                            <div
+                              key={
+                                opIndex
+                              }
+                              style={{
+                                marginTop: 10,
+                              }}
+                            >
+
+                              <input
+                                type="text"
+                                value={op}
+                                onChange={(e) =>
+                                  updateOption(
+                                    index,
+                                    opIndex,
+                                    e.target.value
+                                  )
+                                }
+                                style={{
+                                  width:
+                                    "80%",
+                                }}
+                              />
+
+                              <input
+                                type="radio"
+                                checked={
+                                  q.correctAnswer ===
+                                  opIndex
+                                }
+                                onChange={() =>
+                                  updateQuestion(
+                                    index,
+                                    "correctAnswer",
+                                    opIndex
+                                  )
+                                }
+                              />
+
+                            </div>
+
+                          )
+                        )
+                      }
+
+                      <textarea
+                        value={
+                          q.explanation
+                        }
+                        onChange={(e) =>
+                          updateQuestion(
+                            index,
+                            "explanation",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Explanation"
+                        style={{
+                          width: "100%",
+                          marginTop: 10,
+                        }}
+                      />
+
+                    </div>
+
+                  )
+                )
+              }
 
             </div>
 

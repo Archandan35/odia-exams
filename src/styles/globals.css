@@ -1,3 +1,8 @@
+html{
+zoom:0.90;
+font-size:14px;
+}
+
 *{
 margin:0;
 padding:0;
@@ -39,13 +44,13 @@ input,
 select,
 textarea{
 width:100%;
-padding:14px;
+padding:10px 12px;
 border:none;
 outline:none;
 border-radius:12px;
 background:#1e293b;
 color:white;
-font-size:15px;
+font-size:14px;
 }
 
 textarea{
@@ -59,7 +64,7 @@ button{
 border:none;
 outline:none;
 cursor:pointer;
-padding:12px 18px;
+padding:10px 16px;
 border-radius:12px;
 background:#2563eb;
 color:white;
@@ -129,7 +134,8 @@ background:#020617;
 /* SIDEBAR */
 
 .sidebar{
-width:270px;
+width:235px;
+min-width:235px;
 background:#0f172a;
 padding:25px;
 border-right:1px solid #1e293b;
@@ -174,7 +180,7 @@ background:#1e293b;
 
 .admin-content{
 flex:1;
-padding:30px;
+padding:20px;
 overflow:auto;
 }
 
@@ -203,7 +209,7 @@ flex-wrap:wrap;
 }
 
 .page-header h2{
-font-size:34px;
+font-size:28px;
 margin-bottom:8px;
 }
 
@@ -281,17 +287,18 @@ border-collapse:collapse;
 }
 
 th{
-padding:16px;
+padding:12px;
 text-align:left;
 background:#111827;
 color:white;
-font-size:14px;
+font-size:13px;
 }
 
 td{
-padding:16px;
+padding:10px;
 border-bottom:
 1px solid #1e293b;
+font-size:13px;
 color:#e2e8f0;
 }
 
@@ -610,7 +617,7 @@ transparent;
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:18px 25px;
+padding:14px 18px;
 background:#0f172a;
 border-radius:18px;
 margin-bottom:25px;
@@ -812,7 +819,7 @@ margin-top:25px;
 
 .import-card{
 background:#0f172a;
-padding:25px;
+padding:18px;
 border-radius:20px;
 border:1px solid #1e293b;
 display:flex;

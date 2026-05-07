@@ -659,15 +659,21 @@ Search Questions...
 
                   <td>
 
-                    {
-                      optionLabels[
-                        q.correctAnswer || 0
-                      ]
-                    }
+{
+typeof q.correctAnswer === "number"
 
-                  </td>
+? q.options?.[
+    q.correctAnswer
+  ]
 
-                  <td>
+: q.options?.[
+    optionLabels.indexOf(
+      q.correctAnswer
+    )
+  ]
+}
+
+</td>
 
                     <button
                       className="edit-btn"

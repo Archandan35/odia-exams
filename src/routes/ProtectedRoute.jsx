@@ -3,45 +3,17 @@ import {
 } from "react-router-dom";
 
 import {
-  onAuthStateChanged,
-} from "firebase/auth";
-
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import {
-  auth,
-} from "../firebase/config";
+  useAuth,
+} from "../context/AuthContext";
 
 export default function ProtectedRoute({
   children,
 }) {
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [user, setUser] =
-    useState(null);
-
-  useEffect(() => {
-
-    const unsubscribe =
-      onAuthStateChanged(
-        auth,
-        (u) => {
-
-          setUser(u);
-
-          setLoading(false);
-
-        }
-      );
-
-    return () => unsubscribe();
-
-  }, []);
+  const {
+    user,
+    loading,
+  } = useAuth();
 
   if (loading) {
 
@@ -50,13 +22,17 @@ export default function ProtectedRoute({
         Loading...
       </div>
     );
+
   }
 
   if (!user) {
 
-    return <Navigate to="/" />;
+    return (
+      <Navigate to="/login" />
+    );
 
   }
 
   return children;
+
 }

@@ -1,12 +1,13 @@
-html{
-zoom:0.90;
-font-size:14px;
-}
-
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
+}
+
+html{
+zoom:0.90;
+font-size:14px;
+scroll-behavior:smooth;
 }
 
 body{

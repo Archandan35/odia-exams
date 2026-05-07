@@ -1399,24 +1399,73 @@ cursor:pointer;
 @media(max-width:1200px){
 
 .questions-toolbar{
-flex-direction:column;
-align-items:stretch;
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+gap:20px;
+margin-bottom:20px;
+flex-wrap:nowrap;
 }
 
-.questions-toolbar-right{
-justify-content:flex-start;
+.questions-toolbar-left{
+flex:1;
+display:flex;
+flex-direction:column;
+gap:14px;
+}
+
+.question-search{
+width:100%;
+max-width:600px;
 }
 
 .inline-filters{
+display:flex;
+align-items:center;
+gap:12px;
 width:100%;
+flex-wrap:nowrap;
 }
 
 .inline-filters select{
 flex:1;
-min-width:180px;
+min-width:0;
+height:48px;
+}
+
+.questions-toolbar-right{
+display:flex;
+align-items:center;
+gap:12px;
+flex-shrink:0;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.questions-toolbar{
+flex-direction:column;
+}
+
+.inline-filters{
+flex-direction:column;
+}
+
+.inline-filters select{
+width:100%;
+}
+
+.questions-toolbar-right{
+width:100%;
+}
+
+.questions-toolbar-right button{
+width:100%;
 }
 
 }
+   
 
 @media(max-width:768px){
 

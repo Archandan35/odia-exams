@@ -1,867 +1,243 @@
-import {
-  useState,
-  useEffect,
-} from "react";
-
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-} from "firebase/firestore";
-
-import Papa from "papaparse";
-
-import toast from "react-hot-toast";
-
-import {
-  db,
-} from "../firebase/config";
-
-import * as pdfjsLib from "pdfjs-dist";
-
-import { saveAs } from "file-saver";
+import { useState } from "react";
 
 import AdminLayout from "./AdminLayout";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-
-export default function BulkImport() {
-
-  const [subjects, setSubjects] =
-    useState([]);
-
-  const [topics, setTopics] =
-    useState([]);
-
-  const [subTopics, setSubTopics] =
-    useState([]);
-
-  const [selectedSubject,
-    setSelectedSubject] =
-    useState("");
-
-  const [selectedTopic,
-    setSelectedTopic] =
-    useState("");
-
-  const [selectedSubTopic,
-    setSelectedSubTopic] =
-    useState("");
-
-  const [previewQuestions,
-    setPreviewQuestions] =
-    useState([]);
+export default function BulkImport(){
 
-  const [loading,
-    setLoading] =
-    useState(false);
+const [loading] = useState(false);
 
-  useEffect(() => {
+return(
 
-    const unsubSubjects =
-      onSnapshot(
-        collection(db, "subjects"),
-        (snapshot) => {
+<AdminLayout>
 
-          setSubjects(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+<div className="page">
 
-        }
-      );
+<div className="page-header">
 
-    const unsubTopics =
-      onSnapshot(
-        collection(db, "topics"),
-        (snapshot) => {
+<div>
 
-          setTopics(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+<h2>Bulk Import</h2>
 
-        }
-      );
+<p>
+Import questions from CSV, Excel,
+JSON, PDF or Image
+</p>
 
-    const unsubSubTopics =
-      onSnapshot(
-        collection(db, "subtopics"),
-        (snapshot) => {
+</div>
 
-          setSubTopics(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+<button>
+Help & Format Guide
+</button>
 
-        }
-      );
+</div>
 
-    return () => {
+<div className="import-grid">
 
-      unsubSubjects();
-      unsubTopics();
-      unsubSubTopics();
+<div className="import-card">
 
-    };
+<div>
 
-  }, []);
+<h3>CSV Upload</h3>
 
-  const filteredTopics =
-    topics.filter(
-      (t) =>
-        t.subjectId ===
-        selectedSubject
-    );
+<p>
+Upload .csv file
+<br />
+Hint: question, optionA, optionB...
+</p>
 
-  const filteredSubTopics =
-    subTopics.filter(
-      (s) =>
-        s.subjectId === selectedSubject &&
-        s.topicId === selectedTopic
-    );
+</div>
 
-  async function handleImageOCR(e) {
+<input
+type="file"
+accept=".csv"
+/>
 
-    const files = Array.from(
-      e.target.files
-    );
+</div>
 
-    if (!files.length) return;
+<div className="import-card">
 
-    try {
+<div>
 
-      setLoading(true);
+<h3>Excel Upload</h3>
 
-      toast.loading(
-        `Uploading ${files.length} image(s)...`
-      );
+<p>
+Upload .xlsx or .xls file
+<br />
+Same format as CSV
+</p>
 
-      let allQuestions = [];
+</div>
 
-      for (const file of files) {
+<input
+type="file"
+accept=".xlsx,.xls"
+/>
 
-        const base64Image =
-          await new Promise(
-            (resolve, reject) => {
+</div>
 
-              const reader =
-                new FileReader();
+<div className="import-card">
 
-              reader.readAsDataURL(file);
+<div>
 
-              reader.onload = () =>
-                resolve(reader.result);
+<h3>JSON Upload</h3>
 
-              reader.onerror = (
-                error
-              ) =>
-                reject(error);
+<p>
+Upload .json file
+<br />
+Array of questions format
+</p>
 
-            }
-          );
+</div>
 
-        const response =
-          await fetch(
-            "https://odia-exam.up.railway.app/api/gemini-ocr",
-            {
-              method: "POST",
+<input
+type="file"
+accept=".json"
+/>
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
+</div>
 
-              body: JSON.stringify({
-                image: base64Image,
-              }),
-            }
-          );
+<div className="import-card">
 
-        const data =
-          await response.json();
+<div>
 
-        console.log(data);
+<h3>PDF Upload (OCR)</h3>
 
-        const questions =
-          data.questions || [];
+<p>
+Extract questions from PDF
+<br />
+Auto detect questions
+</p>
 
-        allQuestions = [
-          ...allQuestions,
-          ...questions,
-        ];
+</div>
 
-      }
+<input
+type="file"
+accept=".pdf"
+/>
 
-      setPreviewQuestions(
-        allQuestions
-      );
+</div>
 
-      toast.dismiss();
+<div className="import-card">
 
-      if (
-        allQuestions.length === 0
-      ) {
+<div>
 
-        toast.error(
-          "No Questions Parsed"
-        );
+<h3>Image Upload (OCR)</h3>
 
-      } else {
+<p>
+Upload JPG or PNG image
+<br />
+Auto detect questions
+</p>
 
-        toast.success(
-          `${allQuestions.length} Questions Parsed`
-        );
+</div>
 
-      }
+<input
+type="file"
+accept="image/*"
+/>
 
-    } catch (error) {
+</div>
 
-      console.log(error);
+</div>
 
-      toast.dismiss();
+<div className="glass-card">
 
-      toast.error(
-        "Gemini OCR Failed"
-      );
+<div className="filter-bar">
 
-    }
+<select>
+<option>Select Subject</option>
+</select>
 
-    setLoading(false);
+<select>
+<option>Select Topic</option>
+</select>
 
-  }
+<select>
+<option>Select Sub Topic</option>
+</select>
 
-  async function handlePDFOCR(e) {
+</div>
 
-    const file =
-      e.target.files[0];
+</div>
 
-    if (!file) return;
+<div
+className="table-card"
+style={{marginTop:"18px"}}
+>
 
-    try {
+<div className="page-header">
 
-      setLoading(true);
+<h2>Parsed Questions</h2>
 
-      toast.loading(
-        "Reading PDF..."
-      );
+<button
+className="submit-btn"
+disabled={loading}
+>
 
-      const arrayBuffer =
-        await file.arrayBuffer();
+Import to Firestore
 
-      const pdf =
-        await pdfjsLib
-          .getDocument({
-            data: arrayBuffer,
-          }).promise;
+</button>
 
-      let fullText = "";
+</div>
 
-      for (
-        let pageNum = 1;
-        pageNum <= pdf.numPages;
-        pageNum++
-      ) {
+<table>
 
-        const page =
-          await pdf.getPage(pageNum);
+<thead>
 
-        const content =
-          await page.getTextContent();
+<tr>
 
-        const strings =
-          content.items.map(
-            (item) => item.str
-          );
+<th>#</th>
+<th>Question</th>
+<th>Option A</th>
+<th>Option B</th>
+<th>Option C</th>
+<th>Option D</th>
+<th>Correct</th>
+<th>Difficulty</th>
+<th>Language</th>
+<th>Explanation</th>
 
-        fullText +=
-          "\n" +
-          strings.join(" ");
+</tr>
 
-      }
+</thead>
 
-      toast.dismiss();
+<tbody>
 
-      toast.success(
-        "PDF Text Extracted"
-      );
+<tr>
 
-      console.log(fullText);
+<td>1</td>
 
-    } catch (error) {
+<td>
+What is 5 + 7 ?
+</td>
 
-      console.log(error);
+<td>10</td>
+<td>11</td>
+<td>12</td>
+<td>13</td>
 
-      toast.dismiss();
+<td>C</td>
 
-      toast.error(
-        "PDF Import Failed"
-      );
+<td>Easy</td>
 
-    }
+<td>English</td>
 
-    setLoading(false);
+<td>
+5 + 7 = 12
+</td>
 
-  }
+</tr>
 
-  function handleCSVUpload(e) {
+</tbody>
 
-    const file =
-      e.target.files[0];
+</table>
 
-    if (!file) return;
+</div>
 
-    Papa.parse(file, {
+</div>
 
-      header: true,
+</AdminLayout>
 
-      skipEmptyLines: true,
-
-      complete: (results) => {
-
-        const parsed =
-          results.data.map(
-            (q) => ({
-
-              question:
-                q.question || "",
-
-              options: [
-
-                q.optionA || "",
-                q.optionB || "",
-                q.optionC || "",
-                q.optionD || "",
-
-              ],
-
-              correctAnswer:
-                Number(
-                  q.correctAnswer || 0
-                ),
-
-              difficulty:
-                q.difficulty || "easy",
-
-              language:
-                q.language || "english",
-
-              explanation:
-                q.explanation || "",
-
-            })
-          );
-
-        setPreviewQuestions(parsed);
-
-        toast.success(
-          "CSV Imported"
-        );
-
-      },
-
-    });
-
-  }
-
-  function handleJSONUpload(e) {
-
-    const file =
-      e.target.files[0];
-
-    if (!file) return;
-
-    const reader =
-      new FileReader();
-
-    reader.onload =
-      (event) => {
-
-        try {
-
-          const json =
-            JSON.parse(
-              event.target.result
-            );
-
-          setPreviewQuestions(json);
-
-          toast.success(
-            "JSON Imported"
-          );
-
-        } catch (error) {
-
-          console.log(error);
-
-          toast.error(
-            "Invalid JSON"
-          );
-
-        }
-
-      };
-
-    reader.readAsText(file);
-
-  }
-
-  async function handleSaveQuestions() {
-
-    if (
-      previewQuestions.length === 0
-    ) {
-
-      toast.error(
-        "No Questions"
-      );
-
-      return;
-
-    }
-
-    if (
-      !selectedSubject ||
-      !selectedTopic ||
-      !selectedSubTopic
-    ) {
-
-      toast.error(
-        "Select Subject Hierarchy"
-      );
-
-      return;
-
-    }
-
-    try {
-
-      setLoading(true);
-
-      for (const q of previewQuestions) {
-
-        await addDoc(
-          collection(
-            db,
-            "questions"
-          ),
-          {
-
-            subjectId:
-              selectedSubject,
-
-            topicId:
-              selectedTopic,
-
-            subTopicId:
-              selectedSubTopic,
-
-            question:
-              q.question,
-
-            options:
-              q.options,
-
-            correctAnswer:
-              Number(
-                q.correctAnswer || 0
-              ),
-
-            difficulty:
-              q.difficulty || "easy",
-
-            language:
-              q.language || "english",
-
-            explanation:
-              q.explanation || "",
-
-            createdAt:
-              Date.now(),
-
-          }
-        );
-
-      }
-
-      toast.success(
-        `${previewQuestions.length} Questions Imported`
-      );
-
-      setPreviewQuestions([]);
-
-    } catch (error) {
-
-      console.log(error);
-
-      toast.error(
-        "Import Failed"
-      );
-
-    }
-
-    setLoading(false);
-
-  }
-
-  return (
-
-    <AdminLayout>
-
-      <div className="page">
-
-        <div className="page-header">
-
-          <div>
-
-            <h2>
-              Gemini OCR Bulk Import
-            </h2>
-
-            <p>
-              Image + PDF + CSV + JSON Import
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="import-grid">
-
-          <div className="import-card">
-
-            <h3>
-              Bulk Image OCR
-            </h3>
-
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={
-                handleImageOCR
-              }
-            />
-
-          </div>
-
-          <div className="import-card">
-
-            <h3>
-              PDF OCR
-            </h3>
-
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={
-                handlePDFOCR
-              }
-            />
-
-          </div>
-
-          <div className="import-card">
-
-            <h3>
-              CSV Upload
-            </h3>
-
-            <input
-              type="file"
-              accept=".csv"
-              onChange={
-                handleCSVUpload
-              }
-            />
-
-          </div>
-
-          <div className="import-card">
-
-            <h3>
-              JSON Upload
-            </h3>
-
-            <input
-              type="file"
-              accept=".json"
-              onChange={
-                handleJSONUpload
-              }
-            />
-
-          </div>
-
-        </div>
-
-        <div
-          className="glass-card"
-          style={{
-            marginTop: "25px",
-            padding: "25px",
-          }}
-        >
-
-          <h3>
-            Select Subject Hierarchy
-          </h3>
-
-          <div className="filter-bar">
-
-            <select
-              value={selectedSubject}
-              onChange={(e) =>
-                setSelectedSubject(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="">
-                Subject
-              </option>
-
-              {
-                subjects.map((s) => (
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                ))
-              }
-
-            </select>
-
-            <select
-              value={selectedTopic}
-              onChange={(e) =>
-                setSelectedTopic(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="">
-                Topic
-              </option>
-
-              {
-                filteredTopics.map((t) => (
-
-                  <option
-                    key={t.id}
-                    value={t.id}
-                  >
-                    {t.name}
-                  </option>
-
-                ))
-              }
-
-            </select>
-
-            <select
-              value={selectedSubTopic}
-              onChange={(e) =>
-                setSelectedSubTopic(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="">
-                SubTopic
-              </option>
-
-              {
-                filteredSubTopics.map((s) => (
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                ))
-              }
-
-            </select>
-
-          </div>
-
-        </div>
-
-        <div
-          className="glass-card"
-          style={{
-            marginTop: "25px",
-            padding: "25px",
-          }}
-        >
-
-          <h3>
-            CSV Upload Format
-          </h3>
-
-          <pre>
-
-{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
-
-What is 2+2?,2,3,4,5,2,easy,english,2+2=4`}
-
-          </pre>
-
-          <h3
-            style={{
-              marginTop: "30px",
-            }}
-          >
-            JSON Upload Format
-          </h3>
-
-          <pre>
-
-{`[
-  {
-    "question":"What is 2+2?",
-    "options":["2","3","4","5"],
-    "correctAnswer":2,
-    "difficulty":"easy",
-    "language":"english",
-    "explanation":"2+2 = 4"
-  }
-]`}
-
-          </pre>
-
-        </div>
-
-        {
-          previewQuestions.length > 0 && (
-
-            <div
-              className="table-card"
-              style={{
-                marginTop: "25px",
-              }}
-            >
-
-              <div className="page-header">
-
-                <div>
-
-                  <h2>
-                    Parsed Questions
-                  </h2>
-
-                </div>
-
-                <button
-                  className="submit-btn"
-                  onClick={
-                    handleSaveQuestions
-                  }
-                  disabled={loading}
-                >
-
-                  {
-                    loading
-                      ? "Importing..."
-                      : "Confirm Import"
-                  }
-
-                </button>
-
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  marginTop: "20px",
-                }}
-              >
-
-                {
-                  previewQuestions.map(
-                    (q, index) => (
-
-                      <div
-                        key={index}
-                        className="question-review-card"
-                      >
-
-                        <h3>
-
-                          Q{index + 1}.
-                          {" "}
-                          {q.question}
-
-                        </h3>
-
-                        {
-                          q.options?.map(
-                            (op, i) => (
-
-                              <div
-                                key={i}
-                              >
-
-                                <b>
-                                  {
-                                    String.fromCharCode(
-                                      65 + i
-                                    )
-                                  }
-                                  )
-                                </b>
-
-                                {" "}
-                                {op}
-
-                              </div>
-
-                            )
-                          )
-                        }
-
-                      </div>
-
-                    )
-                  )
-                }
-
-              </div>
-
-            </div>
-
-          )
-        }
-
-      </div>
-
-    </AdminLayout>
-
-  );
+);
 
 }

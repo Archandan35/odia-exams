@@ -419,89 +419,6 @@ export default function BulkImport() {
 
   }
 
-  function exportJSON() {
-
-    const blob =
-      new Blob(
-        [
-          JSON.stringify(
-            previewQuestions,
-            null,
-            2
-          ),
-        ],
-        {
-          type:
-            "application/json",
-        }
-      );
-
-    saveAs(
-      blob,
-      "questions.json"
-    );
-
-  }
-
-  function exportCSV() {
-
-    const rows = [[
-
-      "question",
-      "optionA",
-      "optionB",
-      "optionC",
-      "optionD",
-      "correctAnswer",
-      "difficulty",
-      "language",
-      "explanation",
-
-    ]];
-
-    previewQuestions.forEach((q) => {
-
-      rows.push([
-
-        q.question,
-
-        q.options?.[0] || "",
-        q.options?.[1] || "",
-        q.options?.[2] || "",
-        q.options?.[3] || "",
-
-        q.correctAnswer,
-
-        q.difficulty || "",
-
-        q.language || "",
-
-        q.explanation || "",
-
-      ]);
-
-    });
-
-    const csv =
-      rows.map(
-        (r) => r.join(",")
-      ).join("\n");
-
-    const blob =
-      new Blob(
-        [csv],
-        {
-          type: "text/csv",
-        }
-      );
-
-    saveAs(
-      blob,
-      "questions.csv"
-    );
-
-  }
-
   async function handleSaveQuestions() {
 
     if (
@@ -615,7 +532,7 @@ export default function BulkImport() {
             </h2>
 
             <p>
-              Image + PDF + CSV + JSON Question Import
+              Image + PDF + CSV + JSON Import
             </p>
 
           </div>
@@ -690,6 +607,256 @@ export default function BulkImport() {
           </div>
 
         </div>
+
+        <div
+          className="glass-card"
+          style={{
+            marginTop: "25px",
+            padding: "25px",
+          }}
+        >
+
+          <h3>
+            Select Subject Hierarchy
+          </h3>
+
+          <div className="filter-bar">
+
+            <select
+              value={selectedSubject}
+              onChange={(e) =>
+                setSelectedSubject(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                Subject
+              </option>
+
+              {
+                subjects.map((s) => (
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={selectedTopic}
+              onChange={(e) =>
+                setSelectedTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                Topic
+              </option>
+
+              {
+                filteredTopics.map((t) => (
+
+                  <option
+                    key={t.id}
+                    value={t.id}
+                  >
+                    {t.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={selectedSubTopic}
+              onChange={(e) =>
+                setSelectedSubTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                SubTopic
+              </option>
+
+              {
+                filteredSubTopics.map((s) => (
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+          </div>
+
+        </div>
+
+        <div
+          className="glass-card"
+          style={{
+            marginTop: "25px",
+            padding: "25px",
+          }}
+        >
+
+          <h3>
+            CSV Upload Format
+          </h3>
+
+          <pre>
+
+{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
+
+What is 2+2?,2,3,4,5,2,easy,english,2+2=4`}
+
+          </pre>
+
+          <h3
+            style={{
+              marginTop: "30px",
+            }}
+          >
+            JSON Upload Format
+          </h3>
+
+          <pre>
+
+{`[
+  {
+    "question":"What is 2+2?",
+    "options":["2","3","4","5"],
+    "correctAnswer":2,
+    "difficulty":"easy",
+    "language":"english",
+    "explanation":"2+2 = 4"
+  }
+]`}
+
+          </pre>
+
+        </div>
+
+        {
+          previewQuestions.length > 0 && (
+
+            <div
+              className="table-card"
+              style={{
+                marginTop: "25px",
+              }}
+            >
+
+              <div className="page-header">
+
+                <div>
+
+                  <h2>
+                    Parsed Questions
+                  </h2>
+
+                </div>
+
+                <button
+                  className="submit-btn"
+                  onClick={
+                    handleSaveQuestions
+                  }
+                  disabled={loading}
+                >
+
+                  {
+                    loading
+                      ? "Importing..."
+                      : "Confirm Import"
+                  }
+
+                </button>
+
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  marginTop: "20px",
+                }}
+              >
+
+                {
+                  previewQuestions.map(
+                    (q, index) => (
+
+                      <div
+                        key={index}
+                        className="question-review-card"
+                      >
+
+                        <h3>
+
+                          Q{index + 1}.
+                          {" "}
+                          {q.question}
+
+                        </h3>
+
+                        {
+                          q.options?.map(
+                            (op, i) => (
+
+                              <div
+                                key={i}
+                              >
+
+                                <b>
+                                  {
+                                    String.fromCharCode(
+                                      65 + i
+                                    )
+                                  }
+                                  )
+                                </b>
+
+                                {" "}
+                                {op}
+
+                              </div>
+
+                            )
+                          )
+                        }
+
+                      </div>
+
+                    )
+                  )
+                }
+
+              </div>
+
+            </div>
+
+          )
+        }
 
       </div>
 

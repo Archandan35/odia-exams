@@ -923,7 +923,7 @@ large-popup
 <option value="D">
   Correct: D
 </option>
-
+</select>
             <select
               value={difficulty}
               onChange={(e)=>

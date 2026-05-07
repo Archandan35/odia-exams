@@ -657,7 +657,7 @@ Search Questions...
                     {q.difficulty}
                   </td>
 
-                  <td>
+<td>
 
 {
 typeof q.correctAnswer === "number"
@@ -675,16 +675,18 @@ typeof q.correctAnswer === "number"
 
 </td>
 
-                    <button
-                      className="edit-btn"
-                      onClick={()=>
-                        editQuestion(q)
-                      }
-                    >
-                      Edit
-                    </button>
+<td>
 
-                  </td>
+<button
+  className="edit-btn"
+  onClick={()=>
+    editQuestion(q)
+  }
+>
+  Edit
+</button>
+
+</td>
 
                   <td>
 

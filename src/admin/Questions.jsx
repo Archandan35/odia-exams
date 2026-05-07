@@ -73,7 +73,7 @@ export default function Questions() {
 
   const [correctAnswer,
     setCorrectAnswer] =
-    useState(0);
+      useState("A");
 
   const [difficulty,
     setDifficulty] =
@@ -321,7 +321,9 @@ export default function Questions() {
         ],
 
         correctAnswer:
-          Number(correctAnswer),
+  typeof correctAnswer === "number"
+  ? optionLabels[correctAnswer]
+  : correctAnswer,
 
         difficulty,
 
@@ -435,9 +437,10 @@ export default function Questions() {
           optionD.trim(),
         ],
 
-        correctAnswer:
-          Number(correctAnswer),
-
+      correctAnswer:
+  typeof correctAnswer === "number"
+  ? optionLabels[correctAnswer]
+  : correctAnswer,
         difficulty,
 
         explanation:
@@ -487,7 +490,7 @@ export default function Questions() {
     setOptionC("");
     setOptionD("");
 
-    setCorrectAnswer(0);
+   setCorrectAnswer("A");
 
     setDifficulty("easy");
 
@@ -905,23 +908,21 @@ large-popup
               }
             >
 
-              <option value={0}>
-                Correct: A
-              </option>
+              <option value="A">
+  Correct: A
+</option>
 
-              <option value={1}>
-                Correct: B
-              </option>
+<option value="B">
+  Correct: B
+</option>
 
-              <option value={2}>
-                Correct: C
-              </option>
+<option value="C">
+  Correct: C
+</option>
 
-              <option value={3}>
-                Correct: D
-              </option>
-
-            </select>
+<option value="D">
+  Correct: D
+</option>
 
             <select
               value={difficulty}

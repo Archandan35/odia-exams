@@ -95,6 +95,34 @@ export default function Questions() {
     setSearch] =
     useState("");
 
+  const [selectedSubject,
+setSelectedSubject] =
+useState("");
+
+const [selectedTopic,
+setSelectedTopic] =
+useState("");
+
+const [selectedSubTopic,
+setSelectedSubTopic] =
+useState("");
+
+const [selectedQuestions,
+setSelectedQuestions] =
+useState([]);
+
+const [subjects,
+setSubjects] =
+useState([]);
+
+const [topics,
+setTopics] =
+useState([]);
+
+const [subTopics,
+setSubTopics] =
+useState([]);
+
   const [page,
     setPage] =
     useState(1);
@@ -115,7 +143,53 @@ export default function Questions() {
                 ...doc.data(),
               })
             );
+onSnapshot(
+collection(db,"subjects"),
+(snapshot)=>{
 
+setSubjects(
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+)
+);
+
+}
+);
+
+onSnapshot(
+collection(db,"topics"),
+(snapshot)=>{
+
+setTopics(
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+)
+);
+
+}
+);
+
+onSnapshot(
+collection(db,"subTopics"),
+(snapshot)=>{
+
+setSubTopics(
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+)
+);
+
+}
+);
           setSubjects(data);
 
           if(
@@ -516,13 +590,45 @@ export default function Questions() {
   }
 
   const filteredQuestions =
-    questions.filter((q)=>
-      q.question
-      ?.toLowerCase()
-      .includes(
-        search.toLowerCase()
-      )
-    );
+questions.filter((q)=>{
+
+const matchesSearch =
+
+q.question
+?.toLowerCase()
+.includes(
+search.toLowerCase()
+);
+
+const matchesSubject =
+
+selectedSubject
+? q.subjectId ===
+selectedSubject
+: true;
+
+const matchesTopic =
+
+selectedTopic
+? q.topicId ===
+selectedTopic
+: true;
+
+const matchesSubTopic =
+
+selectedSubTopic
+? q.subTopicId ===
+selectedSubTopic
+: true;
+
+return (
+matchesSearch &&
+matchesSubject &&
+matchesTopic &&
+matchesSubTopic
+);
+
+});
 
   const totalPages =
     Math.ceil(
@@ -539,6 +645,39 @@ export default function Questions() {
   const optionLabels =
     ["A","B","C","D"];
 
+async function bulkDeleteQuestions(){
+
+const confirmDelete =
+window.confirm(
+
+`Delete
+${selectedQuestions.length}
+questions?`
+
+);
+
+if(!confirmDelete)
+return;
+
+for(
+const id of
+selectedQuestions
+){
+
+await deleteDoc(
+doc(
+db,
+"questions",
+id
+)
+);
+
+}
+
+setSelectedQuestions([]);
+
+}
+  
   return(
 
     <AdminLayout>
@@ -551,6 +690,26 @@ export default function Questions() {
             Questions Management
           </h2>
 
+{
+selectedQuestions.length > 0 && (
+
+<button
+className="delete-btn"
+onClick={
+bulkDeleteQuestions
+}
+>
+
+Delete Selected
+(
+{selectedQuestions.length}
+)
+
+</button>
+
+)
+}
+          
           <p>
             Total Questions:
             {" "}
@@ -573,18 +732,130 @@ export default function Questions() {
 
       <div className="filter-bar">
 
-        <input
-          placeholder="
-Search Questions...
-"
-          value={search}
-          onChange={(e)=>
-            setSearch(
-              e.target.value
-            )
-          }
-        />
+       <div className="question-filters">
 
+<input
+placeholder="Search Questions..."
+value={search}
+onChange={(e)=>
+setSearch(e.target.value)
+}
+/>
+
+<select
+value={selectedSubject}
+onChange={(e)=>{
+
+setSelectedSubject(
+e.target.value
+);
+
+setSelectedTopic("");
+setSelectedSubTopic("");
+
+}}
+>
+
+<option value="">
+All Subjects
+</option>
+
+{
+subjects.map((s)=>(
+
+<option
+key={s.id}
+value={s.id}
+>
+
+{s.name}
+
+</option>
+
+))
+}
+
+</select>
+
+<select
+value={selectedTopic}
+onChange={(e)=>{
+
+setSelectedTopic(
+e.target.value
+);
+
+setSelectedSubTopic("");
+
+}}
+>
+
+<option value="">
+All Topics
+</option>
+
+{
+topics
+.filter(
+(t)=>
+!selectedSubject ||
+t.subjectId ===
+selectedSubject
+)
+.map((t)=>(
+
+<option
+key={t.id}
+value={t.id}
+>
+
+{t.name}
+
+</option>
+
+))
+}
+
+</select>
+
+<select
+value={selectedSubTopic}
+onChange={(e)=>
+setSelectedSubTopic(
+e.target.value
+)
+}
+>
+
+<option value="">
+All SubTopics
+</option>
+
+{
+subTopics
+.filter(
+(st)=>
+!selectedTopic ||
+st.topicId ===
+selectedTopic
+)
+.map((st)=>(
+
+<option
+key={st.id}
+value={st.id}
+>
+
+{st.name}
+
+</option>
+
+))
+}
+
+</select>
+
+</div>
       </div>
 
       <div className="table-card">
@@ -594,7 +865,40 @@ Search Questions...
           <thead>
 
             <tr>
+<th>
 
+<input
+type="checkbox"
+
+checked={
+selectedQuestions.length
+===
+filteredQuestions.length
+&&
+filteredQuestions.length > 0
+}
+
+onChange={(e)=>{
+
+if(e.target.checked){
+
+setSelectedQuestions(
+filteredQuestions.map(
+(q)=>q.id
+)
+);
+
+}else{
+
+setSelectedQuestions([]);
+
+}
+
+}}
+/>
+
+</th>
+              
               <th>
                 Question
               </th>
@@ -630,7 +934,43 @@ Search Questions...
                 (q,index)=>(
 
                 <tr key={q.id}>
+<td>
 
+<input
+type="checkbox"
+
+checked={
+selectedQuestions.includes(
+q.id
+)
+}
+
+onChange={(e)=>{
+
+if(e.target.checked){
+
+setSelectedQuestions(
+(prev)=>[
+...prev,
+q.id
+]
+);
+
+}else{
+
+setSelectedQuestions(
+(prev)=>
+prev.filter(
+(id)=>id !== q.id
+)
+);
+
+}
+
+}}
+/>
+
+</td>
                   <td>
 
                     {

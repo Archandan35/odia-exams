@@ -568,16 +568,16 @@ What is 2+2?,2,3,4,5,3,Easy,English,2+2 = 4
 <h2>JSON Format</h2>
 
 <pre>
-[
-{
-"question":"What is 2+2?",
-"options":["2","3","4","5"],
-"correctAnswer":3,
-"difficulty":"Easy",
-"language":"English",
-"explanation":"2+2 = 4"
-}
-]
+{`[
+  {
+    "question":"What is 2+2?",
+    "options":["2","3","4","5"],
+    "correctAnswer":3,
+    "difficulty":"Easy",
+    "language":"English",
+    "explanation":"2+2 = 4"
+  }
+]`}
 </pre>
 
 <button onClick={()=>setShowHelp(false)}>

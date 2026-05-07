@@ -532,18 +532,7 @@ ans === undefined
 
 let correctIndex = 0;
 
-if(
-q.correctAnswer !== undefined
-){
-
-correctIndex =
-Number(
-q.correctAnswer
-);
-
-}else{
-
-const legacyMap = {
+const answerMap = {
 
 A:0,
 B:1,
@@ -552,11 +541,34 @@ D:3,
 
 };
 
+if(
+typeof q.correctAnswer ===
+"number"
+){
+
 correctIndex =
-legacyMap[q.answer] || 0;
+q.correctAnswer;
 
 }
+else if(
+typeof q.correctAnswer ===
+"string"
+){
 
+correctIndex =
+answerMap[
+q.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+else{
+
+correctIndex =
+answerMap[q.answer] || 0;
+
+}
 if(
 correctIndex === ans
 ){

@@ -561,8 +561,8 @@ showHelp && (
 <h2>CSV Format</h2>
 
 <pre>
-question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
-What is 2+2?,2,3,4,5,3,Easy,English,2+2 = 4
+{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
+What is 2+2?,2,3,4,5,3,Easy,English,2+2 = 4`}
 </pre>
 
 <h2>JSON Format</h2>

@@ -23,293 +23,170 @@ import AdminLayout from "./AdminLayout";
 
 export default function Questions() {
 
-  const [subjects,
-    setSubjects] =
-    useState([]);
+  const [subjects,setSubjects] = useState([]);
+  const [topics,setTopics] = useState([]);
+  const [subTopics,setSubTopics] = useState([]);
+  const [questions,setQuestions] = useState([]);
 
-  const [topics,
-    setTopics] =
-    useState([]);
+  /* POPUP STATES */
 
-  const [subTopics,
-    setSubTopics] =
-    useState([]);
+  const [selectedSubject,setSelectedSubject] = useState("");
+  const [selectedTopic,setSelectedTopic] = useState("");
+  const [selectedSubTopic,setSelectedSubTopic] = useState("");
 
-  const [questions,
-    setQuestions] =
-    useState([]);
+  /* FILTER STATES */
 
-  const [selectedSubject,
-    setSelectedSubject] =
-    useState("");
+  const [filterSubject,setFilterSubject] = useState("");
+  const [filterTopic,setFilterTopic] = useState("");
+  const [filterSubTopic,setFilterSubTopic] = useState("");
 
-  const [selectedTopic,
-    setSelectedTopic] =
-    useState("");
+  const [questionText,setQuestionText] = useState("");
 
-  const [selectedSubTopic,
-    setSelectedSubTopic] =
-    useState("");
+  const [optionA,setOptionA] = useState("");
+  const [optionB,setOptionB] = useState("");
+  const [optionC,setOptionC] = useState("");
+  const [optionD,setOptionD] = useState("");
 
-  const [questionText,
-    setQuestionText] =
-    useState("");
+  const [correctAnswer,setCorrectAnswer] = useState("A");
 
-  const [optionA,
-    setOptionA] =
-    useState("");
+  const [difficulty,setDifficulty] = useState("easy");
 
-  const [optionB,
-    setOptionB] =
-    useState("");
+  const [explanation,setExplanation] = useState("");
 
-  const [optionC,
-    setOptionC] =
-    useState("");
+  const [showPopup,setShowPopup] = useState(false);
 
-  const [optionD,
-    setOptionD] =
-    useState("");
+  const [editingId,setEditingId] = useState(null);
 
-  const [correctAnswer,
-    setCorrectAnswer] =
-      useState("A");
+  const [search,setSearch] = useState("");
 
-  const [difficulty,
-    setDifficulty] =
-    useState("easy");
+  const [selectedQuestions,setSelectedQuestions] = useState([]);
 
-  const [explanation,
-    setExplanation] =
-    useState("");
-
-  const [showPopup,
-    setShowPopup] =
-    useState(false);
-
-  const [editingId,
-    setEditingId] =
-    useState(null);
-
-  const [search,
-    setSearch] =
-    useState("");
-
-  const [selectedSubject,
-setSelectedSubject] =
-useState("");
-
-const [selectedTopic,
-setSelectedTopic] =
-useState("");
-
-const [selectedSubTopic,
-setSelectedSubTopic] =
-useState("");
-
-const [selectedQuestions,
-setSelectedQuestions] =
-useState([]);
-
-const [subjects,
-setSubjects] =
-useState([]);
-
-const [topics,
-setTopics] =
-useState([]);
-
-const [subTopics,
-setSubTopics] =
-useState([]);
-
-  const [page,
-    setPage] =
-    useState(1);
+  const [page,setPage] = useState(1);
 
   const perPage = 10;
 
-  useEffect(() => {
+  const optionLabels = ["A","B","C","D"];
 
-    const unsubSubjects =
-      onSnapshot(
-        collection(db,"subjects"),
-        (snapshot)=>{
+  /* SUBJECTS */
 
-          const data =
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            );
-onSnapshot(
-collection(db,"subjects"),
-(snapshot)=>{
+  useEffect(()=>{
 
-setSubjects(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
+    const unsub = onSnapshot(
+      collection(db,"subjects"),
+      (snapshot)=>{
 
-}
-);
-
-onSnapshot(
-collection(db,"topics"),
-(snapshot)=>{
-
-setTopics(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
-
-}
-);
-
-onSnapshot(
-collection(db,"subTopics"),
-(snapshot)=>{
-
-setSubTopics(
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-)
-);
-
-}
-);
-          setSubjects(data);
-
-          if(
-            data.length > 0 &&
-            !selectedSubject
-          ){
-
-            setSelectedSubject(
-              data[0].id
-            );
-
+        const data = snapshot.docs.map((doc)=>(
+          {
+            id:doc.id,
+            ...doc.data(),
           }
+        ));
 
-        }
-      );
+        setSubjects(data);
 
-    return ()=>unsubSubjects();
+      }
+    );
 
-  }, []);
+    return ()=>unsub();
 
-  useEffect(() => {
+  },[]);
 
-    const unsubTopics =
-      onSnapshot(
-        collection(db,"topics"),
-        (snapshot)=>{
+  /* TOPICS */
 
-          const data =
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            );
+  useEffect(()=>{
 
-          setTopics(data);
+    const unsub = onSnapshot(
+      collection(db,"topics"),
+      (snapshot)=>{
 
-        }
-      );
+        const data = snapshot.docs.map((doc)=>(
+          {
+            id:doc.id,
+            ...doc.data(),
+          }
+        ));
 
-    return ()=>unsubTopics();
+        setTopics(data);
 
-  }, []);
+      }
+    );
 
-  useEffect(() => {
+    return ()=>unsub();
 
-    const unsubSubTopics =
-      onSnapshot(
-        collection(db,"subtopics"),
-        (snapshot)=>{
+  },[]);
 
-          const data =
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            );
+  /* SUBTOPICS */
 
-          setSubTopics(data);
+  useEffect(()=>{
 
-        }
-      );
+    const unsub = onSnapshot(
+      collection(db,"subTopics"),
+      (snapshot)=>{
 
-    return ()=>unsubSubTopics();
+        const data = snapshot.docs.map((doc)=>(
+          {
+            id:doc.id,
+            ...doc.data(),
+          }
+        ));
 
-  }, []);
+        setSubTopics(data);
 
-  useEffect(() => {
+      }
+    );
 
-    const unsubQuestions =
-      onSnapshot(
-        collection(db,"questions"),
-        (snapshot)=>{
+    return ()=>unsub();
 
-          const data =
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            );
+  },[]);
 
-          setQuestions(data);
+  /* QUESTIONS */
 
-        }
-      );
+  useEffect(()=>{
 
-    return ()=>unsubQuestions();
+    const unsub = onSnapshot(
+      collection(db,"questions"),
+      (snapshot)=>{
 
-  }, []);
+        const data = snapshot.docs.map((doc)=>(
+          {
+            id:doc.id,
+            ...doc.data(),
+          }
+        ));
+
+        setQuestions(data);
+
+      }
+    );
+
+    return ()=>unsub();
+
+  },[]);
+
+  /* FILTERED TOPICS */
 
   const filteredTopics =
     topics.filter(
       (t)=>
-        t.subjectId ===
-        selectedSubject
+        t.subjectId === selectedSubject
     );
+
+  /* FILTERED SUBTOPICS */
 
   const filteredSubTopics =
     subTopics.filter(
       (s)=>
-        s.subjectId ===
-          selectedSubject &&
-        s.topicId ===
-          selectedTopic
+        s.subjectId === selectedSubject &&
+        s.topicId === selectedTopic
     );
+
+  /* ADD QUESTION */
 
   async function handleAddQuestion(){
 
-    if(
-      !questionText.trim()
-    ){
-
-      toast.error(
-        "Question required"
-      );
-
+    if(!questionText.trim()){
+      toast.error("Question required");
       return;
-
     }
 
     if(
@@ -318,13 +195,8 @@ id:doc.id,
       !optionC.trim() ||
       !optionD.trim()
     ){
-
-      toast.error(
-        "All options required"
-      );
-
+      toast.error("All options required");
       return;
-
     }
 
     if(
@@ -332,60 +204,31 @@ id:doc.id,
       !selectedTopic ||
       !selectedSubTopic
     ){
-
-      toast.error(
-        "Select hierarchy"
-      );
-
+      toast.error("Select hierarchy");
       return;
-
     }
 
-    const duplicateQuery =
-      query(
-        collection(db,"questions"),
-        where(
-          "question",
-          "==",
-          questionText.trim()
-        ),
-        where(
-          "subTopicId",
-          "==",
-          selectedSubTopic
-        )
-      );
+    const duplicateQuery = query(
+      collection(db,"questions"),
+      where("question","==",questionText.trim()),
+      where("subTopicId","==",selectedSubTopic)
+    );
 
-    const duplicate =
-      await getDocs(
-        duplicateQuery
-      );
+    const duplicate = await getDocs(duplicateQuery);
 
     if(!duplicate.empty){
-
-      toast.error(
-        "Question already exists"
-      );
-
+      toast.error("Question already exists");
       return;
-
     }
 
     await addDoc(
       collection(db,"questions"),
       {
+        subjectId:selectedSubject,
+        topicId:selectedTopic,
+        subTopicId:selectedSubTopic,
 
-        subjectId:
-          selectedSubject,
-
-        topicId:
-          selectedTopic,
-
-        subTopicId:
-          selectedSubTopic,
-
-        question:
-          questionText.trim(),
+        question:questionText.trim(),
 
         options:[
           optionA.trim(),
@@ -395,114 +238,68 @@ id:doc.id,
         ],
 
         correctAnswer:
-  typeof correctAnswer === "number"
-  ? optionLabels[correctAnswer]
-  : correctAnswer,
+          typeof correctAnswer === "number"
+          ? optionLabels[correctAnswer]
+          : correctAnswer,
 
         difficulty,
 
-        explanation:
-          explanation.trim(),
+        explanation:explanation.trim(),
 
-        createdAt:
-          Date.now(),
-
+        createdAt:Date.now(),
       }
     );
 
-    toast.success(
-      "Question Added"
-    );
+    toast.success("Question Added");
 
     resetForm();
 
   }
 
+  /* EDIT QUESTION */
+
   function editQuestion(q){
 
     setEditingId(q.id);
 
-    setSelectedSubject(
-      q.subjectId
-    );
+    setSelectedSubject(q.subjectId);
+    setSelectedTopic(q.topicId);
+    setSelectedSubTopic(q.subTopicId);
 
-    setSelectedTopic(
-      q.topicId
-    );
+    setQuestionText(q.question);
 
-    setSelectedSubTopic(
-      q.subTopicId
-    );
+    setOptionA(q.options?.[0] || "");
+    setOptionB(q.options?.[1] || "");
+    setOptionC(q.options?.[2] || "");
+    setOptionD(q.options?.[3] || "");
 
-    setQuestionText(
-      q.question
-    );
+    setCorrectAnswer(q.correctAnswer || "A");
 
-    setOptionA(
-      q.options?.[0] || ""
-    );
+    setDifficulty(q.difficulty || "easy");
 
-    setOptionB(
-      q.options?.[1] || ""
-    );
-
-    setOptionC(
-      q.options?.[2] || ""
-    );
-
-    setOptionD(
-      q.options?.[3] || ""
-    );
-
-    setCorrectAnswer(
-      q.correctAnswer || 0
-    );
-
-    setDifficulty(
-      q.difficulty || "easy"
-    );
-
-    setExplanation(
-      q.explanation || ""
-    );
+    setExplanation(q.explanation || "");
 
     setShowPopup(true);
 
   }
 
+  /* UPDATE QUESTION */
+
   async function updateQuestion(){
 
-    if(
-      !questionText.trim()
-    ){
-
-      toast.error(
-        "Question required"
-      );
-
+    if(!questionText.trim()){
+      toast.error("Question required");
       return;
-
     }
 
     await updateDoc(
-      doc(
-        db,
-        "questions",
-        editingId
-      ),
+      doc(db,"questions",editingId),
       {
+        subjectId:selectedSubject,
+        topicId:selectedTopic,
+        subTopicId:selectedSubTopic,
 
-        subjectId:
-          selectedSubject,
-
-        topicId:
-          selectedTopic,
-
-        subTopicId:
-          selectedSubTopic,
-
-        question:
-          questionText.trim(),
+        question:questionText.trim(),
 
         options:[
           optionA.trim(),
@@ -511,49 +308,66 @@ id:doc.id,
           optionD.trim(),
         ],
 
-      correctAnswer:
-  typeof correctAnswer === "number"
-  ? optionLabels[correctAnswer]
-  : correctAnswer,
+        correctAnswer:
+          typeof correctAnswer === "number"
+          ? optionLabels[correctAnswer]
+          : correctAnswer,
+
         difficulty,
 
-        explanation:
-          explanation.trim(),
-
+        explanation:explanation.trim(),
       }
     );
 
-    toast.success(
-      "Question Updated"
-    );
+    toast.success("Question Updated");
 
     resetForm();
 
   }
 
+  /* DELETE */
+
   async function handleDelete(id){
 
-    const confirmDelete =
-      window.confirm(
-        "Delete Question?"
-      );
+    const confirmDelete = window.confirm(
+      "Delete Question?"
+    );
 
-    if(!confirmDelete)
-    return;
+    if(!confirmDelete) return;
 
     await deleteDoc(
-      doc(
-        db,
-        "questions",
-        id
-      )
+      doc(db,"questions",id)
     );
 
-    toast.success(
-      "Question Deleted"
-    );
+    toast.success("Question Deleted");
 
   }
+
+  /* BULK DELETE */
+
+  async function bulkDeleteQuestions(){
+
+    const confirmDelete = window.confirm(
+      `Delete ${selectedQuestions.length} questions?`
+    );
+
+    if(!confirmDelete) return;
+
+    for(const id of selectedQuestions){
+
+      await deleteDoc(
+        doc(db,"questions",id)
+      );
+
+    }
+
+    setSelectedQuestions([]);
+
+    toast.success("Questions Deleted");
+
+  }
+
+  /* RESET */
 
   function resetForm(){
 
@@ -564,7 +378,7 @@ id:doc.id,
     setOptionC("");
     setOptionD("");
 
-   setCorrectAnswer("A");
+    setCorrectAnswer("A");
 
     setDifficulty("easy");
 
@@ -576,108 +390,60 @@ id:doc.id,
 
   }
 
+  /* GET NAME */
+
   function getName(arr,id){
 
-    const item =
-      arr.find(
-        (x)=>x.id === id
-      );
+    const item = arr.find(
+      (x)=>x.id === id
+    );
 
-    return item
-      ? item.name
-      : "Unknown";
+    return item ? item.name : "Unknown";
 
   }
 
-  const filteredQuestions =
-questions.filter((q)=>{
+  /* FILTER QUESTIONS */
 
-const matchesSearch =
+  const filteredQuestions = questions.filter((q)=>{
 
-q.question
-?.toLowerCase()
-.includes(
-search.toLowerCase()
-);
+    const matchesSearch =
+      q.question
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
 
-const matchesSubject =
+    const matchesSubject =
+      filterSubject
+      ? q.subjectId === filterSubject
+      : true;
 
-selectedSubject
-? q.subjectId ===
-selectedSubject
-: true;
+    const matchesTopic =
+      filterTopic
+      ? q.topicId === filterTopic
+      : true;
 
-const matchesTopic =
+    const matchesSubTopic =
+      filterSubTopic
+      ? q.subTopicId === filterSubTopic
+      : true;
 
-selectedTopic
-? q.topicId ===
-selectedTopic
-: true;
-
-const matchesSubTopic =
-
-selectedSubTopic
-? q.subTopicId ===
-selectedSubTopic
-: true;
-
-return (
-matchesSearch &&
-matchesSubject &&
-matchesTopic &&
-matchesSubTopic
-);
-
-});
-
-  const totalPages =
-    Math.ceil(
-      filteredQuestions.length /
-      perPage
+    return (
+      matchesSearch &&
+      matchesSubject &&
+      matchesTopic &&
+      matchesSubTopic
     );
 
-  const paginated =
-    filteredQuestions.slice(
-      (page - 1) * perPage,
-      page * perPage
-    );
+  });
 
-  const optionLabels =
-    ["A","B","C","D"];
+  const totalPages = Math.ceil(
+    filteredQuestions.length / perPage
+  );
 
-async function bulkDeleteQuestions(){
+  const paginated = filteredQuestions.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
 
-const confirmDelete =
-window.confirm(
-
-`Delete
-${selectedQuestions.length}
-questions?`
-
-);
-
-if(!confirmDelete)
-return;
-
-for(
-const id of
-selectedQuestions
-){
-
-await deleteDoc(
-doc(
-db,
-"questions",
-id
-)
-);
-
-}
-
-setSelectedQuestions([]);
-
-}
-  
   return(
 
     <AdminLayout>
@@ -690,40 +456,30 @@ setSelectedQuestions([]);
             Questions Management
           </h2>
 
-{
-selectedQuestions.length > 0 && (
+          {
+            selectedQuestions.length > 0 && (
 
-<button
-className="delete-btn"
-onClick={
-bulkDeleteQuestions
-}
->
+            <button
+              className="delete-btn"
+              onClick={bulkDeleteQuestions}
+            >
+              Delete Selected
+              ({selectedQuestions.length})
+            </button>
 
-Delete Selected
-(
-{selectedQuestions.length}
-)
+            )
+          }
 
-</button>
-
-)
-}
-          
           <p>
             Total Questions:
             {" "}
-            {
-              filteredQuestions.length
-            }
+            {filteredQuestions.length}
           </p>
 
         </div>
 
         <button
-          onClick={()=>
-            setShowPopup(true)
-          }
+          onClick={()=>setShowPopup(true)}
         >
           + Add Question
         </button>
@@ -732,130 +488,123 @@ Delete Selected
 
       <div className="filter-bar">
 
-       <div className="question-filters">
+        <div className="question-filters">
 
-<input
-placeholder="Search Questions..."
-value={search}
-onChange={(e)=>
-setSearch(e.target.value)
-}
-/>
+          <input
+            placeholder="Search Questions..."
+            value={search}
+            onChange={(e)=>
+              setSearch(e.target.value)
+            }
+          />
 
-<select
-value={selectedSubject}
-onChange={(e)=>{
+          <select
+            value={filterSubject}
+            onChange={(e)=>{
 
-setSelectedSubject(
-e.target.value
-);
+              setFilterSubject(
+                e.target.value
+              );
 
-setSelectedTopic("");
-setSelectedSubTopic("");
+              setFilterTopic("");
+              setFilterSubTopic("");
 
-}}
->
+            }}
+          >
 
-<option value="">
-All Subjects
-</option>
+            <option value="">
+              All Subjects
+            </option>
 
-{
-subjects.map((s)=>(
+            {
+              subjects.map((s)=>(
 
-<option
-key={s.id}
-value={s.id}
->
+              <option
+                key={s.id}
+                value={s.id}
+              >
+                {s.name}
+              </option>
 
-{s.name}
+              ))
+            }
 
-</option>
+          </select>
 
-))
-}
+          <select
+            value={filterTopic}
+            onChange={(e)=>{
 
-</select>
+              setFilterTopic(
+                e.target.value
+              );
 
-<select
-value={selectedTopic}
-onChange={(e)=>{
+              setFilterSubTopic("");
 
-setSelectedTopic(
-e.target.value
-);
+            }}
+          >
 
-setSelectedSubTopic("");
+            <option value="">
+              All Topics
+            </option>
 
-}}
->
+            {
+              topics
+              .filter(
+                (t)=>
+                  !filterSubject ||
+                  t.subjectId === filterSubject
+              )
+              .map((t)=>(
 
-<option value="">
-All Topics
-</option>
+              <option
+                key={t.id}
+                value={t.id}
+              >
+                {t.name}
+              </option>
 
-{
-topics
-.filter(
-(t)=>
-!selectedSubject ||
-t.subjectId ===
-selectedSubject
-)
-.map((t)=>(
+              ))
+            }
 
-<option
-key={t.id}
-value={t.id}
->
+          </select>
 
-{t.name}
+          <select
+            value={filterSubTopic}
+            onChange={(e)=>
+              setFilterSubTopic(
+                e.target.value
+              )
+            }
+          >
 
-</option>
+            <option value="">
+              All SubTopics
+            </option>
 
-))
-}
+            {
+              subTopics
+              .filter(
+                (st)=>
+                  !filterTopic ||
+                  st.topicId === filterTopic
+              )
+              .map((st)=>(
 
-</select>
+              <option
+                key={st.id}
+                value={st.id}
+              >
+                {st.name}
+              </option>
 
-<select
-value={selectedSubTopic}
-onChange={(e)=>
-setSelectedSubTopic(
-e.target.value
-)
-}
->
+              ))
+            }
 
-<option value="">
-All SubTopics
-</option>
+          </select>
 
-{
-subTopics
-.filter(
-(st)=>
-!selectedTopic ||
-st.topicId ===
-selectedTopic
-)
-.map((st)=>(
+        </div>
 
-<option
-key={st.id}
-value={st.id}
->
-
-{st.name}
-
-</option>
-
-))
-}
-
-</select>
-
-</div>
       </div>
 
       <div className="table-card">
@@ -865,40 +614,36 @@ value={st.id}
           <thead>
 
             <tr>
-<th>
 
-<input
-type="checkbox"
+              <th>
 
-checked={
-selectedQuestions.length
-===
-filteredQuestions.length
-&&
-filteredQuestions.length > 0
-}
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedQuestions.length === filteredQuestions.length &&
+                    filteredQuestions.length > 0
+                  }
+                  onChange={(e)=>{
 
-onChange={(e)=>{
+                    if(e.target.checked){
 
-if(e.target.checked){
+                      setSelectedQuestions(
+                        filteredQuestions.map(
+                          (q)=>q.id
+                        )
+                      );
 
-setSelectedQuestions(
-filteredQuestions.map(
-(q)=>q.id
-)
-);
+                    }else{
 
-}else{
+                      setSelectedQuestions([]);
 
-setSelectedQuestions([]);
+                    }
 
-}
+                  }}
+                />
 
-}}
-/>
+              </th>
 
-</th>
-              
               <th>
                 Question
               </th>
@@ -930,123 +675,112 @@ setSelectedQuestions([]);
           <tbody>
 
             {
-              paginated.map(
-                (q,index)=>(
+              paginated.map((q,index)=>(
 
-                <tr key={q.id}>
-<td>
+              <tr key={q.id}>
 
-<input
-type="checkbox"
+                <td>
 
-checked={
-selectedQuestions.includes(
-q.id
-)
-}
-
-onChange={(e)=>{
-
-if(e.target.checked){
-
-setSelectedQuestions(
-(prev)=>[
-...prev,
-q.id
-]
-);
-
-}else{
-
-setSelectedQuestions(
-(prev)=>
-prev.filter(
-(id)=>id !== q.id
-)
-);
-
-}
-
-}}
-/>
-
-</td>
-                  <td>
-
-                    {
-                      (page - 1)
-                      * perPage
-                      + index + 1
-                    }.
-
-                    {" "}
-
-                    {q.question}
-
-                  </td>
-
-                  <td>
-
-                    {
-                      getName(
-                        subjects,
-                        q.subjectId
-                      )
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedQuestions.includes(q.id)
                     }
+                    onChange={(e)=>{
 
-                  </td>
+                      if(e.target.checked){
 
-                  <td>
-                    {q.difficulty}
-                  </td>
+                        setSelectedQuestions(
+                          (prev)=>[
+                            ...prev,
+                            q.id
+                          ]
+                        );
 
-<td>
+                      }else{
 
-{
-typeof q.correctAnswer === "number"
+                        setSelectedQuestions(
+                          (prev)=>
+                            prev.filter(
+                              (id)=>id !== q.id
+                            )
+                        );
 
-? q.options?.[
-    q.correctAnswer
-  ]
-
-: q.options?.[
-    optionLabels.indexOf(
-      q.correctAnswer
-    )
-  ]
-}
-
-</td>
-
-<td>
-
-<button
-  className="edit-btn"
-  onClick={()=>
-    editQuestion(q)
-  }
->
-  Edit
-</button>
-
-</td>
-
-                  <td>
-
-                    <button
-                      className="delete-btn"
-                      onClick={()=>
-                        handleDelete(
-                          q.id
-                        )
                       }
-                    >
-                      Delete
-                    </button>
 
-                  </td>
+                    }}
+                  />
 
-                </tr>
+                </td>
+
+                <td>
+
+                  {
+                    (page - 1) * perPage + index + 1
+                  }.
+
+                  {" "}
+
+                  {q.question}
+
+                </td>
+
+                <td>
+                  {
+                    getName(
+                      subjects,
+                      q.subjectId
+                    )
+                  }
+                </td>
+
+                <td>
+                  {q.difficulty}
+                </td>
+
+                <td>
+
+                  {
+                    typeof q.correctAnswer === "number"
+
+                    ? q.options?.[
+                        q.correctAnswer
+                      ]
+
+                    : q.options?.[
+                        optionLabels.indexOf(
+                          q.correctAnswer
+                        )
+                      ]
+                  }
+
+                </td>
+
+                <td>
+
+                  <button
+                    className="edit-btn"
+                    onClick={()=>editQuestion(q)}
+                  >
+                    Edit
+                  </button>
+
+                </td>
+
+                <td>
+
+                  <button
+                    className="delete-btn"
+                    onClick={()=>
+                      handleDelete(q.id)
+                    }
+                  >
+                    Delete
+                  </button>
+
+                </td>
+
+              </tr>
 
               ))
             }
@@ -1061,9 +795,7 @@ typeof q.correctAnswer === "number"
 
         <button
           disabled={page === 1}
-          onClick={()=>
-            setPage(page - 1)
-          }
+          onClick={()=>setPage(page - 1)}
         >
           Prev
         </button>
@@ -1075,12 +807,8 @@ typeof q.correctAnswer === "number"
         </span>
 
         <button
-          disabled={
-            page === totalPages
-          }
-          onClick={()=>
-            setPage(page + 1)
-          }
+          disabled={page === totalPages}
+          onClick={()=>setPage(page + 1)}
         >
           Next
         </button>
@@ -1092,27 +820,18 @@ typeof q.correctAnswer === "number"
 
         <div className="popup-overlay">
 
-          <div className="
-popup
-large-popup
-">
+          <div className="popup large-popup">
 
             <h3>
-
               {
                 editingId
-                ?
-                "Edit Question"
-                :
-                "Add Question"
+                ? "Edit Question"
+                : "Add Question"
               }
-
             </h3>
 
             <select
-              value={
-                selectedSubject
-              }
+              value={selectedSubject}
               onChange={(e)=>
                 setSelectedSubject(
                   e.target.value
@@ -1136,9 +855,7 @@ large-popup
             </select>
 
             <select
-              value={
-                selectedTopic
-              }
+              value={selectedTopic}
               onChange={(e)=>
                 setSelectedTopic(
                   e.target.value
@@ -1162,9 +879,7 @@ large-popup
             </select>
 
             <select
-              value={
-                selectedSubTopic
-              }
+              value={selectedSubTopic}
               onChange={(e)=>
                 setSelectedSubTopic(
                   e.target.value
@@ -1201,9 +916,7 @@ large-popup
               placeholder="Option A"
               value={optionA}
               onChange={(e)=>
-                setOptionA(
-                  e.target.value
-                )
+                setOptionA(e.target.value)
               }
             />
 
@@ -1211,9 +924,7 @@ large-popup
               placeholder="Option B"
               value={optionB}
               onChange={(e)=>
-                setOptionB(
-                  e.target.value
-                )
+                setOptionB(e.target.value)
               }
             />
 
@@ -1221,9 +932,7 @@ large-popup
               placeholder="Option C"
               value={optionC}
               onChange={(e)=>
-                setOptionC(
-                  e.target.value
-                )
+                setOptionC(e.target.value)
               }
             />
 
@@ -1231,16 +940,12 @@ large-popup
               placeholder="Option D"
               value={optionD}
               onChange={(e)=>
-                setOptionD(
-                  e.target.value
-                )
+                setOptionD(e.target.value)
               }
             />
 
             <select
-              value={
-                correctAnswer
-              }
+              value={correctAnswer}
               onChange={(e)=>
                 setCorrectAnswer(
                   e.target.value
@@ -1249,21 +954,23 @@ large-popup
             >
 
               <option value="A">
-  Correct: A
-</option>
+                Correct: A
+              </option>
 
-<option value="B">
-  Correct: B
-</option>
+              <option value="B">
+                Correct: B
+              </option>
 
-<option value="C">
-  Correct: C
-</option>
+              <option value="C">
+                Correct: C
+              </option>
 
-<option value="D">
-  Correct: D
-</option>
-</select>
+              <option value="D">
+                Correct: D
+              </option>
+
+            </select>
+
             <select
               value={difficulty}
               onChange={(e)=>
@@ -1288,10 +995,7 @@ large-popup
             </select>
 
             <textarea
-              placeholder="
-Explanation
-(Optional)
-"
+              placeholder="Explanation (Optional)"
               value={explanation}
               onChange={(e)=>
                 setExplanation(
@@ -1302,22 +1006,16 @@ Explanation
 
             {
               editingId
-              ?
-              (
+              ? (
               <button
-                onClick={
-                  updateQuestion
-                }
+                onClick={updateQuestion}
               >
                 Update Question
               </button>
               )
-              :
-              (
+              : (
               <button
-                onClick={
-                  handleAddQuestion
-                }
+                onClick={handleAddQuestion}
               >
                 Add Question
               </button>
@@ -1325,12 +1023,8 @@ Explanation
             }
 
             <button
-              className="
-cancel-btn
-"
-              onClick={
-                resetForm
-              }
+              className="cancel-btn"
+              onClick={resetForm}
             >
               Cancel
             </button>

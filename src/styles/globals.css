@@ -1351,7 +1351,7 @@ max-width:520px;
 display:flex;
 align-items:center;
 gap:12px;
-flex-wrap:wrap;
+flex-wrap:inherit;
 }
 
 .inline-filters select{

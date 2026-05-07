@@ -1,884 +1,424 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  collection,
-  onSnapshot,
-  writeBatch,
-  doc,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "../firebase/config";
-
-import Papa from "papaparse";
-
-import * as XLSX from "xlsx/xlsx.mjs";
-
-import toast from "react-hot-toast";
-
-import { saveAs } from "file-saver";
-
-import * as pdfjsLib from "pdfjs-dist";
+import React from "react";
 
 import AdminLayout from "./AdminLayout";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-
-export default function BulkImport() {
-
-  const [subjects,
-    setSubjects] =
-    useState([]);
-
-  const [topics,
-    setTopics] =
-    useState([]);
-
-  const [subTopics,
-    setSubTopics] =
-    useState([]);
-
-  const [selectedSubject,
-    setSelectedSubject] =
-    useState("");
-
-  const [selectedTopic,
-    setSelectedTopic] =
-    useState("");
-
-  const [selectedSubTopic,
-    setSelectedSubTopic] =
-    useState("");
-
-  const [questions,
-    setQuestions] =
-    useState([]);
-
-  const [loading,
-    setLoading] =
-    useState(false);
-
-  const [progress,
-    setProgress] =
-    useState(0);
-
-  const [search,
-    setSearch] =
-    useState("");
-
-  const [showGuide,
-    setShowGuide] =
-    useState(false);
-
-  const [failedImports,
-    setFailedImports] =
-    useState([]);
-
-  const [validation,
-    setValidation] =
-    useState({
-
-      total: 0,
-      valid: 0,
-      duplicates: 0,
-      invalid: 0,
-
-    });
-
-  useEffect(() => {
-
-    const unsubSubjects =
-      onSnapshot(
-        collection(db, "subjects"),
-        (snapshot) => {
-
-          setSubjects(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
-
-        }
-      );
-
-    const unsubTopics =
-      onSnapshot(
-        collection(db, "topics"),
-        (snapshot) => {
-
-          setTopics(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+export default function BulkImport(){
 
-        }
-      );
+return(
 
-    const unsubSubTopics =
-      onSnapshot(
-        collection(db, "subtopics"),
-        (snapshot) => {
+<AdminLayout>
 
-          setSubTopics(
-            snapshot.docs.map(
-              (doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+<div className="bulk-page">
 
-        }
-      );
+<div className="bulk-topbar">
 
-    return () => {
+<div>
 
-      unsubSubjects();
-      unsubTopics();
-      unsubSubTopics();
+<h1>
+Bulk Import
+</h1>
 
-    };
+<p>
+Import questions from CSV, Excel, JSON, PDF or Image
+</p>
 
-  }, []);
+</div>
 
-  const filteredTopics =
-    topics.filter(
-      (t) =>
-        t.subjectId ===
-        selectedSubject
-    );
+<button className="help-btn">
 
-  const filteredSubTopics =
-    subTopics.filter(
-      (s) =>
-        s.subjectId ===
-          selectedSubject &&
-        s.topicId ===
-          selectedTopic
-    );
+? Help & Format Guide
 
-  function normalizeAnswer(
-    answer
-  ) {
+</button>
 
-    if (
-      answer === undefined ||
-      answer === null ||
-      answer === ""
-    ) {
+</div>
 
-      return null;
+<div className="upload-grid">
 
-    }
+<div className="upload-card">
 
-    const ans =
-      String(answer)
-        .trim()
-        .toUpperCase();
+<h3>
+CSV Upload
+</h3>
 
-    if (ans === "A")
-      return 0;
+<p>
+Upload .csv file
+</p>
 
-    if (ans === "B")
-      return 1;
+<small>
+Hint:
+question,
+optionA,
+optionB,
+optionC,
+optionD,
+correctAnswer(A/B/C/D or 0/1/2/3),
+difficulty,
+language,
+explanation
+</small>
 
-    if (ans === "C")
-      return 2;
+<input
+type="file"
+accept=".csv"
+/>
 
-    if (ans === "D")
-      return 3;
+</div>
 
-    if (ans === "0")
-      return 0;
+<div className="upload-card">
 
-    if (ans === "1")
-      return 1;
+<h3>
+Excel Upload
+</h3>
 
-    if (ans === "2")
-      return 2;
+<p>
+Upload .xlsx file
+</p>
 
-    if (ans === "3")
-      return 3;
+<small>
+Hint:
+Same format as CSV
+</small>
 
-    return null;
+<input
+type="file"
+accept=".xlsx,.xls"
+/>
 
-  }
+</div>
 
-  function processQuestions(
-    data
-  ) {
+<div className="upload-card">
 
-    const seen =
-      new Set();
+<h3>
+JSON Upload
+</h3>
 
-    let duplicates =
-      0;
+<p>
+Upload .json file
+</p>
 
-    const cleaned =
-      data.filter(
-        (q) => {
+<small>
+Hint:
+Array of question objects
+</small>
 
-          if (
-            !q.question
-          ) {
+<input
+type="file"
+accept=".json"
+/>
 
-            return false;
+</div>
 
-          }
+<div className="upload-card">
 
-          const key =
-            q.question
-              .trim()
-              .toLowerCase();
+<h3>
+PDF Upload (OCR)
+</h3>
 
-          if (
-            seen.has(key)
-          ) {
+<p>
+Extract questions from PDF
+</p>
 
-            duplicates++;
+<small>
+Auto detect questions & options
+</small>
 
-            return false;
+<input
+type="file"
+accept=".pdf"
+/>
 
-          }
+</div>
 
-          seen.add(key);
+<div className="upload-card">
 
-          return true;
+<h3>
+Image Upload (OCR)
+</h3>
 
-        }
-      );
+<p>
+Upload image (JPG, PNG)
+</p>
 
-    setValidation({
+<small>
+Auto detect questions & options
+</small>
 
-      total:
-        data.length,
+<input
+type="file"
+accept="image/*"
+multiple
+/>
 
-      valid:
-        cleaned.length,
+</div>
 
-      duplicates,
+</div>
 
-      invalid:
-        data.length -
-        cleaned.length -
-        duplicates,
+<div className="hierarchy-bar">
 
-    });
+<select>
 
-    setQuestions(
-      cleaned
-    );
+<option>
+Select Subject
+</option>
 
-    toast.success(
-      `${cleaned.length} Questions Loaded`
-    );
+</select>
 
-  }
+<select>
 
-  function handleCSVUpload(
-    e
-  ) {
+<option>
+Select Topic
+</option>
 
-    const file =
-      e.target.files[0];
+</select>
 
-    if (!file)
-      return;
+<select>
 
-    Papa.parse(file, {
+<option>
+Select Sub Topic
+</option>
 
-      header: true,
+</select>
 
-      skipEmptyLines: true,
+<button className="red-btn">
 
-      complete: (
-        results
-      ) => {
+Clear All
 
-        const parsed =
-          results.data.map(
-            (q) => ({
+</button>
 
-              question:
-                q.question || "",
+<button className="green-btn">
 
-              options: [
+Bulk Delete Before Import
 
-                q.optionA || "",
-                q.optionB || "",
-                q.optionC || "",
-                q.optionD || "",
+</button>
 
-              ],
+</div>
 
-              correctAnswer:
-                normalizeAnswer(
-                  q.correctAnswer
-                ),
+<div className="stats-grid">
 
-              difficulty:
-                q.difficulty || "",
+<div className="stat-card">
 
-              language:
-                q.language || "",
+<h2>
+12
+</h2>
 
-              explanation:
-                q.explanation || "",
+<p>
+Total Questions
+</p>
 
-            })
-          );
+</div>
 
-        processQuestions(
-          parsed
-        );
+<div className="stat-card">
 
-      },
+<h2>
+11
+</h2>
 
-    });
+<p>
+Valid Questions
+</p>
 
-  }
+</div>
 
-  function handleJSONUpload(
-    e
-  ) {
+<div className="stat-card">
 
-    const file =
-      e.target.files[0];
+<h2>
+1
+</h2>
 
-    if (!file)
-      return;
+<p>
+Duplicates Removed
+</p>
 
-    const reader =
-      new FileReader();
+</div>
 
-    reader.onload =
-      (event) => {
+<div className="stat-card">
 
-        try {
+<h2>
+0
+</h2>
 
-          const json =
-            JSON.parse(
-              event.target.result
-            );
+<p>
+Invalid Questions
+</p>
 
-          const parsed =
-            json.map(
-              (q) => ({
+</div>
 
-                question:
-                  q.question || "",
+<div className="stat-card">
 
-                options:
-                  q.options || [
-                    "",
-                    "",
-                    "",
-                    "",
-                  ],
+<h2>
+0
+</h2>
 
-                correctAnswer:
-                  normalizeAnswer(
-                    q.correctAnswer
-                  ),
+<p>
+Failed Imports
+</p>
 
-                difficulty:
-                  q.difficulty || "",
+</div>
 
-                language:
-                  q.language || "",
+</div>
 
-                explanation:
-                  q.explanation || "",
+<div className="toolbar">
 
-              })
-            );
+<input
+placeholder="Search question..."
+/>
 
-          processQuestions(
-            parsed
-          );
+<button className="blue-btn">
 
-        } catch (error) {
+Export CSV
 
-          console.log(
-            error
-          );
+</button>
 
-          toast.error(
-            "Invalid JSON"
-          );
+<button className="green-btn">
 
-        }
+Export Excel
 
-      };
+</button>
 
-    reader.readAsText(
-      file
-    );
+<button>
 
-  }
+Clear Preview
 
-  function handleExcelUpload(
-    e
-  ) {
+</button>
 
-    const file =
-      e.target.files[0];
+<button className="blue-btn">
 
-    if (!file)
-      return;
+Import to Firestore
 
-    const reader =
-      new FileReader();
+</button>
 
-    reader.onload =
-      (evt) => {
+<button className="purple-btn">
 
-        const data =
-          new Uint8Array(
-            evt.target.result
-          );
+Retry Failed Imports
 
-        const workbook =
-          XLSX.read(data, {
-            type: "array",
-          });
+</button>
 
-        const sheet =
-          workbook.Sheets[
-            workbook.SheetNames[0]
-          ];
+</div>
 
-        const json =
-          XLSX.utils.sheet_to_json(
-            sheet
-          );
+<div className="question-table">
 
-        const parsed =
-          json.map(
-            (q) => ({
+<div className="table-header">
 
-              question:
-                q.question || "",
+<div>#</div>
+<div>Question</div>
+<div>Option A</div>
+<div>Option B</div>
+<div>Option C</div>
+<div>Option D</div>
+<div>Correct Answer</div>
+<div>Difficulty</div>
+<div>Language</div>
+<div>Explanation</div>
+<div>Action</div>
 
-              options: [
+</div>
 
-                q.optionA || "",
-                q.optionB || "",
-                q.optionC || "",
-                q.optionD || "",
+<div className="table-row">
 
-              ],
+<div>
+1
+</div>
 
-              correctAnswer:
-                normalizeAnswer(
-                  q.correctAnswer
-                ),
+<textarea
+defaultValue="ଓଡ଼ିଶାର ରାଜଧାନୀ କଣ ?"
+/>
 
-              difficulty:
-                q.difficulty || "",
+<input defaultValue="କଟକ"/>
 
-              language:
-                q.language || "",
+<input defaultValue="ଭୁବନେଶ୍ୱର"/>
 
-              explanation:
-                q.explanation || "",
+<input defaultValue="ପୁରୀ"/>
 
-            })
-          );
+<input defaultValue="ସମ୍ବଲପୁର"/>
 
-        processQuestions(
-          parsed
-        );
+<div className="answer-column">
 
-      };
+<label className="radio-item">
 
-    reader.readAsArrayBuffer(
-      file
-    );
+<input
+type="radio"
+checked
+readOnly
+/>
 
-  }
+<span>
+A
+</span>
 
-  function updateQuestion(
-    index,
-    field,
-    value
-  ) {
+</label>
 
-    const updated =
-      [...questions];
+<label className="radio-item">
 
-    updated[index][field] =
-      value;
+<input
+type="radio"
+/>
 
-    setQuestions(
-      updated
-    );
+<span>
+B
+</span>
 
-  }
+</label>
 
-  function updateOption(
-    qIndex,
-    opIndex,
-    value
-  ) {
+<label className="radio-item">
 
-    const updated =
-      [...questions];
+<input
+type="radio"
+/>
 
-    updated[qIndex]
-      .options[
-        opIndex
-      ] = value;
+<span>
+C
+</span>
 
-    setQuestions(
-      updated
-    );
+</label>
 
-  }
+<label className="radio-item">
 
-  async function importQuestions() {
+<input
+type="radio"
+/>
 
-    if (
-      questions.length === 0
-    ) {
+<span>
+D
+</span>
 
-      toast.error(
-        "No Questions"
-      );
+</label>
 
-      return;
+</div>
 
-    }
+<select>
 
-    try {
+<option>
+Easy
+</option>
 
-      setLoading(true);
+</select>
 
-      setProgress(0);
+<select>
 
-      const chunkSize =
-        400;
+<option>
+Odia
+</option>
 
-      for (
-        let i = 0;
-        i <
-        questions.length;
-        i += chunkSize
-      ) {
+</select>
 
-        const batch =
-          writeBatch(
-            db
-          );
+<textarea
+defaultValue="ଭୁବନେଶ୍ୱର ହେଉଛି ଓଡ଼ିଶାର ରାଜଧାନୀ ।"
+/>
 
-        const chunk =
-          questions.slice(
-            i,
-            i +
-              chunkSize
-          );
+<button className="delete-btn">
 
-        chunk.forEach(
-          (q) => {
+🗑
 
-            const ref =
-              doc(
-                collection(
-                  db,
-                  "questions"
-                )
-              );
+</button>
 
-            batch.set(
-              ref,
-              {
+</div>
 
-                subjectId:
-                  selectedSubject,
+</div>
 
-                topicId:
-                  selectedTopic,
+</div>
 
-                subTopicId:
-                  selectedSubTopic,
+</AdminLayout>
 
-                question:
-                  q.question,
-
-                options:
-                  q.options,
-
-                correctAnswer:
-                  q.correctAnswer,
-
-                difficulty:
-                  q.difficulty,
-
-                language:
-                  q.language,
-
-                explanation:
-                  q.explanation,
-
-                createdAt:
-                  Date.now(),
-
-              }
-            );
-
-          }
-        );
-
-        await batch.commit();
-
-        setProgress(
-
-          Math.round(
-
-            ((i +
-              chunk.length) /
-              questions.length) *
-              100
-
-          )
-
-        );
-
-      }
-
-      toast.success(
-        "Questions Imported"
-      );
-
-    } catch (error) {
-
-      console.log(
-        error
-      );
-
-      toast.error(
-        "Import Failed"
-      );
-
-    }
-
-    setLoading(false);
-
-  }
-
-  function exportCSV() {
-
-    const rows =
-      questions.map(
-        (q) => ({
-
-          question:
-            q.question,
-
-          optionA:
-            q.options[0],
-
-          optionB:
-            q.options[1],
-
-          optionC:
-            q.options[2],
-
-          optionD:
-            q.options[3],
-
-          correctAnswer:
-            ["A",
-              "B",
-              "C",
-              "D"][
-              q.correctAnswer
-            ],
-
-          difficulty:
-            q.difficulty,
-
-          language:
-            q.language,
-
-          explanation:
-            q.explanation,
-
-        })
-      );
-
-    const csv =
-      Papa.unparse(
-        rows
-      );
-
-    const blob =
-      new Blob(
-        [csv],
-        {
-          type:
-            "text/csv;charset=utf-8;",
-        }
-      );
-
-    saveAs(
-      blob,
-      "questions.csv"
-    );
-
-  }
-
-  function exportExcel() {
-
-    const rows =
-      questions.map(
-        (q) => ({
-
-          question:
-            q.question,
-
-          optionA:
-            q.options[0],
-
-          optionB:
-            q.options[1],
-
-          optionC:
-            q.options[2],
-
-          optionD:
-            q.options[3],
-
-          correctAnswer:
-            ["A",
-              "B",
-              "C",
-              "D"][
-              q.correctAnswer
-            ],
-
-          difficulty:
-            q.difficulty,
-
-          language:
-            q.language,
-
-          explanation:
-            q.explanation,
-
-        })
-      );
-
-    const worksheet =
-      XLSX.utils.json_to_sheet(
-        rows
-      );
-
-    const workbook =
-      XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
-      "Questions"
-    );
-
-    const excelBuffer =
-      XLSX.write(
-        workbook,
-        {
-          bookType:
-            "xlsx",
-          type:
-            "array",
-        }
-      );
-
-    const blob =
-      new Blob(
-        [excelBuffer],
-        {
-          type:
-            "application/octet-stream",
-        }
-      );
-
-    saveAs(
-      blob,
-      "questions.xlsx"
-    );
-
-  }
-
-  const filteredQuestions =
-    useMemo(() => {
-
-      return questions.filter(
-        (q) =>
-          q.question
-            ?.toLowerCase()
-            .includes(
-              search.toLowerCase()
-            )
-      );
-
-    }, [
-      questions,
-      search,
-    ]);
-
-  return (
-
-    <AdminLayout>
-
-      <div className="bulk-page">
-
-        <div className="bulk-topbar">
-
-          <div>
-
-            <h1>
-              Bulk Import
-            </h1>
-
-            <p>
-              Import questions from CSV, Excel, JSON, PDF or Image
-            </p>
-
-          </div>
-
-          <button
-            className="help-btn"
-            onClick={() =>
-              setShowGuide(
-                true
-              )
-            }
-          >
-
-            ? Help & Format Guide
-
-          </button>
-
-        </div>
-
-      </div>
-
-    </AdminLayout>
-
-  );
+);
 
 }

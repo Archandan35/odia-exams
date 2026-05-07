@@ -129,6 +129,7 @@ margin-bottom:10px;
 .admin-layout{
 display:flex;
 min-height:100vh;
+align-items:stretch;
 background:#020617;
 }
 
@@ -554,6 +555,7 @@ position:relative;
 
 .admin-content{
 padding:20px;
+min-height:100vh;
 }
 
 .page-header{

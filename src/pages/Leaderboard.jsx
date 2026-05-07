@@ -1,15 +1,15 @@
 import {
-useEffect,
-useState,
+  useEffect,
+  useState,
 } from "react";
 
 import {
-collection,
-onSnapshot,
+  collection,
+  onSnapshot,
 } from "firebase/firestore";
 
 import {
-db,
+  db,
 } from "../firebase/config";
 
 import TopNavbar
@@ -17,157 +17,200 @@ from "../components/TopNavbar";
 
 export default function Leaderboard(){
 
-const [results,
-setResults] =
-useState([]);
+  const [results,
+    setResults] =
+    useState([]);
 
-useEffect(()=>{
+  const [subjects,
+    setSubjects] =
+    useState([]);
 
-const unsub =
-onSnapshot(
-collection(db,"results"),
-(snapshot)=>{
+  useEffect(()=>{
 
-const data =
-snapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-);
+    const unsubResults =
+      onSnapshot(
+        collection(db,"results"),
+        (snapshot)=>{
 
-data.sort(
-(a,b)=>
-b.score - a.score
-);
+          const data =
+            snapshot.docs.map(
+              (doc)=>({
+                id:doc.id,
+                ...doc.data(),
+              })
+            );
 
-setResults(data);
+          data.sort(
+            (a,b)=>
+              b.score - a.score
+          );
 
-}
-);
+          setResults(data);
 
-return ()=>unsub();
+        }
+      );
 
-},[]);
+    const unsubSubjects =
+      onSnapshot(
+        collection(db,"subjects"),
+        (snapshot)=>{
 
-function getMedal(index){
+          setSubjects(
+            snapshot.docs.map(
+              (doc)=>({
+                id:doc.id,
+                ...doc.data(),
+              })
+            )
+          );
 
-if(index === 0)
-return "🥇";
+        }
+      );
 
-if(index === 1)
-return "🥈";
+    return ()=>{
 
-if(index === 2)
-return "🥉";
+      unsubResults();
+      unsubSubjects();
 
-return "🏅";
+    };
 
-}
+  },[]);
 
-return(
+  function getMedal(index){
 
-<div className="page">
+    if(index === 0)
+      return "🥇";
 
-<TopNavbar/>
+    if(index === 1)
+      return "🥈";
 
-<div className="page-header">
+    if(index === 2)
+      return "🥉";
 
-<div>
+    return "🏅";
 
-<h2>
-Leaderboard
-</h2>
+  }
 
-<p>
-Realtime Student Ranking
-</p>
+  function getSubjectName(id){
 
-</div>
+    const subject =
+      subjects.find(
+        (s)=>s.id === id
+      );
 
-</div>
+    return subject
+      ? subject.name
+      : id;
 
-<div className="table-card">
+  }
 
-<table>
+  return(
 
-<thead>
+    <div className="page">
 
-<tr>
+      <TopNavbar/>
 
-<th>
-Rank
-</th>
+      <div className="page-header">
 
-<th>
-Medal
-</th>
+        <div>
 
-<th>
-Subject
-</th>
+          <h2>
+            Leaderboard
+          </h2>
 
-<th>
-Score
-</th>
+          <p>
+            Realtime Student Ranking
+          </p>
 
-<th>
-Accuracy
-</th>
+        </div>
 
-<th>
-Cheat Warnings
-</th>
+      </div>
 
-</tr>
+      <div className="table-card">
 
-</thead>
+        <table>
 
-<tbody>
+          <thead>
 
-{
-results.map(
-(r,index)=>(
+            <tr>
 
-<tr key={r.id}>
+              <th>
+                Rank
+              </th>
 
-<td>
-#{index + 1}
-</td>
+              <th>
+                Medal
+              </th>
 
-<td>
-{getMedal(index)}
-</td>
+              <th>
+                Subject
+              </th>
 
-<td>
-{r.subject}
-</td>
+              <th>
+                Score
+              </th>
 
-<td>
-{r.score}
-</td>
+              <th>
+                Accuracy
+              </th>
 
-<td>
-{r.accuracy}%
-</td>
+              <th>
+                Cheat Warnings
+              </th>
 
-<td>
-{r.cheatCount || 0}
-</td>
+            </tr>
 
-</tr>
+          </thead>
 
-))
-}
+          <tbody>
 
-</tbody>
+            {
+              results.map(
+                (r,index)=>(
 
-</table>
+                  <tr key={r.id}>
 
-</div>
+                    <td>
+                      #{index + 1}
+                    </td>
 
-</div>
+                    <td>
+                      {getMedal(index)}
+                    </td>
 
-);
+                    <td>
+                      {
+                        getSubjectName(
+                          r.subjectId
+                        )
+                      }
+                    </td>
+
+                    <td>
+                      {r.score}
+                    </td>
+
+                    <td>
+                      {r.accuracy}%
+                    </td>
+
+                    <td>
+                      {r.cheatCount || 0}
+                    </td>
+
+                  </tr>
+
+                ))
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  );
 
 }

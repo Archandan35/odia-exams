@@ -16,7 +16,7 @@ import {
 
 import Papa from "papaparse";
 
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx/xlsx.mjs";
 
 import toast from "react-hot-toast";
 

@@ -1,424 +1,867 @@
-import React from "react";
+import {
+  useState,
+  useEffect,
+} from "react";
+
+import {
+  collection,
+  onSnapshot,
+  addDoc,
+} from "firebase/firestore";
+
+import Papa from "papaparse";
+
+import toast from "react-hot-toast";
+
+import {
+  db,
+} from "../firebase/config";
+
+import * as pdfjsLib from "pdfjs-dist";
+
+import { saveAs } from "file-saver";
 
 import AdminLayout from "./AdminLayout";
 
-export default function BulkImport(){
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+export default function BulkImport() {
+
+  const [subjects, setSubjects] =
+    useState([]);
+
+  const [topics, setTopics] =
+    useState([]);
+
+  const [subTopics, setSubTopics] =
+    useState([]);
+
+  const [selectedSubject,
+    setSelectedSubject] =
+    useState("");
+
+  const [selectedTopic,
+    setSelectedTopic] =
+    useState("");
+
+  const [selectedSubTopic,
+    setSelectedSubTopic] =
+    useState("");
+
+  const [previewQuestions,
+    setPreviewQuestions] =
+    useState([]);
 
-return(
+  const [loading,
+    setLoading] =
+    useState(false);
 
-<AdminLayout>
+  useEffect(() => {
 
-<div className="bulk-page">
+    const unsubSubjects =
+      onSnapshot(
+        collection(db, "subjects"),
+        (snapshot) => {
 
-<div className="bulk-topbar">
+          setSubjects(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
 
-<div>
+        }
+      );
 
-<h1>
-Bulk Import
-</h1>
+    const unsubTopics =
+      onSnapshot(
+        collection(db, "topics"),
+        (snapshot) => {
 
-<p>
-Import questions from CSV, Excel, JSON, PDF or Image
-</p>
+          setTopics(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
 
-</div>
+        }
+      );
 
-<button className="help-btn">
+    const unsubSubTopics =
+      onSnapshot(
+        collection(db, "subtopics"),
+        (snapshot) => {
 
-? Help & Format Guide
+          setSubTopics(
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            )
+          );
 
-</button>
+        }
+      );
 
-</div>
+    return () => {
 
-<div className="upload-grid">
+      unsubSubjects();
+      unsubTopics();
+      unsubSubTopics();
 
-<div className="upload-card">
+    };
 
-<h3>
-CSV Upload
-</h3>
+  }, []);
 
-<p>
-Upload .csv file
-</p>
+  const filteredTopics =
+    topics.filter(
+      (t) =>
+        t.subjectId ===
+        selectedSubject
+    );
 
-<small>
-Hint:
-question,
-optionA,
-optionB,
-optionC,
-optionD,
-correctAnswer(A/B/C/D or 0/1/2/3),
-difficulty,
-language,
-explanation
-</small>
+  const filteredSubTopics =
+    subTopics.filter(
+      (s) =>
+        s.subjectId === selectedSubject &&
+        s.topicId === selectedTopic
+    );
 
-<input
-type="file"
-accept=".csv"
-/>
+  async function handleImageOCR(e) {
 
-</div>
+    const files = Array.from(
+      e.target.files
+    );
 
-<div className="upload-card">
+    if (!files.length) return;
 
-<h3>
-Excel Upload
-</h3>
+    try {
 
-<p>
-Upload .xlsx file
-</p>
+      setLoading(true);
 
-<small>
-Hint:
-Same format as CSV
-</small>
+      toast.loading(
+        `Uploading ${files.length} image(s)...`
+      );
 
-<input
-type="file"
-accept=".xlsx,.xls"
-/>
+      let allQuestions = [];
 
-</div>
+      for (const file of files) {
 
-<div className="upload-card">
+        const base64Image =
+          await new Promise(
+            (resolve, reject) => {
 
-<h3>
-JSON Upload
-</h3>
+              const reader =
+                new FileReader();
 
-<p>
-Upload .json file
-</p>
+              reader.readAsDataURL(file);
 
-<small>
-Hint:
-Array of question objects
-</small>
+              reader.onload = () =>
+                resolve(reader.result);
 
-<input
-type="file"
-accept=".json"
-/>
+              reader.onerror = (
+                error
+              ) =>
+                reject(error);
 
-</div>
+            }
+          );
 
-<div className="upload-card">
+        const response =
+          await fetch(
+            "https://odia-exam.up.railway.app/api/gemini-ocr",
+            {
+              method: "POST",
 
-<h3>
-PDF Upload (OCR)
-</h3>
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
 
-<p>
-Extract questions from PDF
-</p>
+              body: JSON.stringify({
+                image: base64Image,
+              }),
+            }
+          );
 
-<small>
-Auto detect questions & options
-</small>
+        const data =
+          await response.json();
 
-<input
-type="file"
-accept=".pdf"
-/>
+        console.log(data);
 
-</div>
+        const questions =
+          data.questions || [];
 
-<div className="upload-card">
+        allQuestions = [
+          ...allQuestions,
+          ...questions,
+        ];
 
-<h3>
-Image Upload (OCR)
-</h3>
+      }
 
-<p>
-Upload image (JPG, PNG)
-</p>
+      setPreviewQuestions(
+        allQuestions
+      );
 
-<small>
-Auto detect questions & options
-</small>
+      toast.dismiss();
 
-<input
-type="file"
-accept="image/*"
-multiple
-/>
+      if (
+        allQuestions.length === 0
+      ) {
 
-</div>
+        toast.error(
+          "No Questions Parsed"
+        );
 
-</div>
+      } else {
 
-<div className="hierarchy-bar">
+        toast.success(
+          `${allQuestions.length} Questions Parsed`
+        );
 
-<select>
+      }
 
-<option>
-Select Subject
-</option>
+    } catch (error) {
 
-</select>
+      console.log(error);
 
-<select>
+      toast.dismiss();
 
-<option>
-Select Topic
-</option>
+      toast.error(
+        "Gemini OCR Failed"
+      );
 
-</select>
+    }
 
-<select>
+    setLoading(false);
 
-<option>
-Select Sub Topic
-</option>
+  }
 
-</select>
+  async function handlePDFOCR(e) {
 
-<button className="red-btn">
+    const file =
+      e.target.files[0];
 
-Clear All
+    if (!file) return;
 
-</button>
+    try {
 
-<button className="green-btn">
+      setLoading(true);
 
-Bulk Delete Before Import
+      toast.loading(
+        "Reading PDF..."
+      );
 
-</button>
+      const arrayBuffer =
+        await file.arrayBuffer();
 
-</div>
+      const pdf =
+        await pdfjsLib
+          .getDocument({
+            data: arrayBuffer,
+          }).promise;
 
-<div className="stats-grid">
+      let fullText = "";
 
-<div className="stat-card">
+      for (
+        let pageNum = 1;
+        pageNum <= pdf.numPages;
+        pageNum++
+      ) {
 
-<h2>
-12
-</h2>
+        const page =
+          await pdf.getPage(pageNum);
 
-<p>
-Total Questions
-</p>
+        const content =
+          await page.getTextContent();
 
-</div>
+        const strings =
+          content.items.map(
+            (item) => item.str
+          );
 
-<div className="stat-card">
+        fullText +=
+          "\n" +
+          strings.join(" ");
 
-<h2>
-11
-</h2>
+      }
 
-<p>
-Valid Questions
-</p>
+      toast.dismiss();
 
-</div>
+      toast.success(
+        "PDF Text Extracted"
+      );
 
-<div className="stat-card">
+      console.log(fullText);
 
-<h2>
-1
-</h2>
+    } catch (error) {
 
-<p>
-Duplicates Removed
-</p>
+      console.log(error);
 
-</div>
+      toast.dismiss();
 
-<div className="stat-card">
+      toast.error(
+        "PDF Import Failed"
+      );
 
-<h2>
-0
-</h2>
+    }
 
-<p>
-Invalid Questions
-</p>
+    setLoading(false);
 
-</div>
+  }
 
-<div className="stat-card">
+  function handleCSVUpload(e) {
 
-<h2>
-0
-</h2>
+    const file =
+      e.target.files[0];
 
-<p>
-Failed Imports
-</p>
+    if (!file) return;
 
-</div>
+    Papa.parse(file, {
 
-</div>
+      header: true,
 
-<div className="toolbar">
+      skipEmptyLines: true,
 
-<input
-placeholder="Search question..."
-/>
+      complete: (results) => {
 
-<button className="blue-btn">
+        const parsed =
+          results.data.map(
+            (q) => ({
 
-Export CSV
+              question:
+                q.question || "",
 
-</button>
+              options: [
 
-<button className="green-btn">
+                q.optionA || "",
+                q.optionB || "",
+                q.optionC || "",
+                q.optionD || "",
 
-Export Excel
+              ],
 
-</button>
+              correctAnswer:
+                Number(
+                  q.correctAnswer || 0
+                ),
 
-<button>
+              difficulty:
+                q.difficulty || "easy",
 
-Clear Preview
+              language:
+                q.language || "english",
 
-</button>
+              explanation:
+                q.explanation || "",
 
-<button className="blue-btn">
+            })
+          );
 
-Import to Firestore
+        setPreviewQuestions(parsed);
 
-</button>
+        toast.success(
+          "CSV Imported"
+        );
 
-<button className="purple-btn">
+      },
 
-Retry Failed Imports
+    });
 
-</button>
+  }
 
-</div>
+  function handleJSONUpload(e) {
 
-<div className="question-table">
+    const file =
+      e.target.files[0];
 
-<div className="table-header">
+    if (!file) return;
 
-<div>#</div>
-<div>Question</div>
-<div>Option A</div>
-<div>Option B</div>
-<div>Option C</div>
-<div>Option D</div>
-<div>Correct Answer</div>
-<div>Difficulty</div>
-<div>Language</div>
-<div>Explanation</div>
-<div>Action</div>
+    const reader =
+      new FileReader();
 
-</div>
+    reader.onload =
+      (event) => {
 
-<div className="table-row">
+        try {
 
-<div>
-1
-</div>
+          const json =
+            JSON.parse(
+              event.target.result
+            );
 
-<textarea
-defaultValue="ଓଡ଼ିଶାର ରାଜଧାନୀ କଣ ?"
-/>
+          setPreviewQuestions(json);
 
-<input defaultValue="କଟକ"/>
+          toast.success(
+            "JSON Imported"
+          );
 
-<input defaultValue="ଭୁବନେଶ୍ୱର"/>
+        } catch (error) {
 
-<input defaultValue="ପୁରୀ"/>
+          console.log(error);
 
-<input defaultValue="ସମ୍ବଲପୁର"/>
+          toast.error(
+            "Invalid JSON"
+          );
 
-<div className="answer-column">
+        }
 
-<label className="radio-item">
+      };
 
-<input
-type="radio"
-checked
-readOnly
-/>
+    reader.readAsText(file);
 
-<span>
-A
-</span>
+  }
 
-</label>
+  async function handleSaveQuestions() {
 
-<label className="radio-item">
+    if (
+      previewQuestions.length === 0
+    ) {
 
-<input
-type="radio"
-/>
+      toast.error(
+        "No Questions"
+      );
 
-<span>
-B
-</span>
+      return;
 
-</label>
+    }
 
-<label className="radio-item">
+    if (
+      !selectedSubject ||
+      !selectedTopic ||
+      !selectedSubTopic
+    ) {
 
-<input
-type="radio"
-/>
+      toast.error(
+        "Select Subject Hierarchy"
+      );
 
-<span>
-C
-</span>
+      return;
 
-</label>
+    }
 
-<label className="radio-item">
+    try {
 
-<input
-type="radio"
-/>
+      setLoading(true);
 
-<span>
-D
-</span>
+      for (const q of previewQuestions) {
 
-</label>
+        await addDoc(
+          collection(
+            db,
+            "questions"
+          ),
+          {
 
-</div>
+            subjectId:
+              selectedSubject,
 
-<select>
+            topicId:
+              selectedTopic,
 
-<option>
-Easy
-</option>
+            subTopicId:
+              selectedSubTopic,
 
-</select>
+            question:
+              q.question,
 
-<select>
+            options:
+              q.options,
 
-<option>
-Odia
-</option>
+            correctAnswer:
+              Number(
+                q.correctAnswer || 0
+              ),
 
-</select>
+            difficulty:
+              q.difficulty || "easy",
 
-<textarea
-defaultValue="ଭୁବନେଶ୍ୱର ହେଉଛି ଓଡ଼ିଶାର ରାଜଧାନୀ ।"
-/>
+            language:
+              q.language || "english",
 
-<button className="delete-btn">
+            explanation:
+              q.explanation || "",
 
-🗑
+            createdAt:
+              Date.now(),
 
-</button>
+          }
+        );
 
-</div>
+      }
 
-</div>
+      toast.success(
+        `${previewQuestions.length} Questions Imported`
+      );
 
-</div>
+      setPreviewQuestions([]);
 
-</AdminLayout>
+    } catch (error) {
 
-);
+      console.log(error);
+
+      toast.error(
+        "Import Failed"
+      );
+
+    }
+
+    setLoading(false);
+
+  }
+
+  return (
+
+    <AdminLayout>
+
+      <div className="page">
+
+        <div className="page-header">
+
+          <div>
+
+            <h2>
+              Gemini OCR Bulk Import
+            </h2>
+
+            <p>
+              Image + PDF + CSV + JSON Import
+            </p>
+
+          </div>
+
+        </div>
+
+        <div className="import-grid">
+
+          <div className="import-card">
+
+            <h3>
+              Bulk Image OCR
+            </h3>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={
+                handleImageOCR
+              }
+            />
+
+          </div>
+
+          <div className="import-card">
+
+            <h3>
+              PDF OCR
+            </h3>
+
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={
+                handlePDFOCR
+              }
+            />
+
+          </div>
+
+          <div className="import-card">
+
+            <h3>
+              CSV Upload
+            </h3>
+
+            <input
+              type="file"
+              accept=".csv"
+              onChange={
+                handleCSVUpload
+              }
+            />
+
+          </div>
+
+          <div className="import-card">
+
+            <h3>
+              JSON Upload
+            </h3>
+
+            <input
+              type="file"
+              accept=".json"
+              onChange={
+                handleJSONUpload
+              }
+            />
+
+          </div>
+
+        </div>
+
+        <div
+          className="glass-card"
+          style={{
+            marginTop: "25px",
+            padding: "25px",
+          }}
+        >
+
+          <h3>
+            Select Subject Hierarchy
+          </h3>
+
+          <div className="filter-bar">
+
+            <select
+              value={selectedSubject}
+              onChange={(e) =>
+                setSelectedSubject(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                Subject
+              </option>
+
+              {
+                subjects.map((s) => (
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={selectedTopic}
+              onChange={(e) =>
+                setSelectedTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                Topic
+              </option>
+
+              {
+                filteredTopics.map((t) => (
+
+                  <option
+                    key={t.id}
+                    value={t.id}
+                  >
+                    {t.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+            <select
+              value={selectedSubTopic}
+              onChange={(e) =>
+                setSelectedSubTopic(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                SubTopic
+              </option>
+
+              {
+                filteredSubTopics.map((s) => (
+
+                  <option
+                    key={s.id}
+                    value={s.id}
+                  >
+                    {s.name}
+                  </option>
+
+                ))
+              }
+
+            </select>
+
+          </div>
+
+        </div>
+
+        <div
+          className="glass-card"
+          style={{
+            marginTop: "25px",
+            padding: "25px",
+          }}
+        >
+
+          <h3>
+            CSV Upload Format
+          </h3>
+
+          <pre>
+
+{`question,optionA,optionB,optionC,optionD,correctAnswer,difficulty,language,explanation
+
+What is 2+2?,2,3,4,5,2,easy,english,2+2=4`}
+
+          </pre>
+
+          <h3
+            style={{
+              marginTop: "30px",
+            }}
+          >
+            JSON Upload Format
+          </h3>
+
+          <pre>
+
+{`[
+  {
+    "question":"What is 2+2?",
+    "options":["2","3","4","5"],
+    "correctAnswer":2,
+    "difficulty":"easy",
+    "language":"english",
+    "explanation":"2+2 = 4"
+  }
+]`}
+
+          </pre>
+
+        </div>
+
+        {
+          previewQuestions.length > 0 && (
+
+            <div
+              className="table-card"
+              style={{
+                marginTop: "25px",
+              }}
+            >
+
+              <div className="page-header">
+
+                <div>
+
+                  <h2>
+                    Parsed Questions
+                  </h2>
+
+                </div>
+
+                <button
+                  className="submit-btn"
+                  onClick={
+                    handleSaveQuestions
+                  }
+                  disabled={loading}
+                >
+
+                  {
+                    loading
+                      ? "Importing..."
+                      : "Confirm Import"
+                  }
+
+                </button>
+
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  marginTop: "20px",
+                }}
+              >
+
+                {
+                  previewQuestions.map(
+                    (q, index) => (
+
+                      <div
+                        key={index}
+                        className="question-review-card"
+                      >
+
+                        <h3>
+
+                          Q{index + 1}.
+                          {" "}
+                          {q.question}
+
+                        </h3>
+
+                        {
+                          q.options?.map(
+                            (op, i) => (
+
+                              <div
+                                key={i}
+                              >
+
+                                <b>
+                                  {
+                                    String.fromCharCode(
+                                      65 + i
+                                    )
+                                  }
+                                  )
+                                </b>
+
+                                {" "}
+                                {op}
+
+                              </div>
+
+                            )
+                          )
+                        }
+
+                      </div>
+
+                    )
+                  )
+                }
+
+              </div>
+
+            </div>
+
+          )
+        }
+
+      </div>
+
+    </AdminLayout>
+
+  );
 
 }

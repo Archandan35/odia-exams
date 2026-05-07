@@ -106,28 +106,28 @@ export default function Questions() {
     return ()=>unsub();
 
   },[]);
+  
+/* SUBTOPICS */
 
-  /* SUBTOPICS */
+useEffect(()=>{
 
-  useEffect(()=>{
+  const unsub = onSnapshot(
+    collection(db,"subtopics"),
+    (snapshot)=>{
 
-    const unsub = onSnapshot(
-      collection(db,"subTopics"),
-      (snapshot)=>{
+      const data = snapshot.docs.map((doc)=>({
+        id:doc.id,
+        ...doc.data(),
+      }));
 
-        const data = snapshot.docs.map((doc)=>({
-          id:doc.id,
-          ...doc.data(),
-        }));
+      setSubTopics(data);
 
-        setSubTopics(data);
+    }
+  );
 
-      }
-    );
+  return ()=>unsub();
 
-    return ()=>unsub();
-
-  },[]);
+},[]);
 
   /* QUESTIONS */
 

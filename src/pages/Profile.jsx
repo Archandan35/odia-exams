@@ -386,34 +386,186 @@ s.attempts
 }));
 
 /* =========================================
-AI INSIGHTS
+SUBJECT STATS
 ========================================= */
 
-let weakSubject =
-"-";
+const subjectStats =
+Object.values(
 
-let strongSubject =
-"-";
+results.reduce((acc,r)=>{
 
-if(subjectAnalytics.length > 0){
-
-const sorted =
-[...subjectAnalytics]
-.sort(
-(a,b)=>
-a.avgScore -
-b.avgScore
+const name =
+getSubjectName(
+r.subject
 );
 
-weakSubject =
-sorted[0]?.subject;
+if(!acc[name]){
 
-strongSubject =
-sorted[
-sorted.length - 1
-]?.subject;
+acc[name]={
+
+name,
+score:0,
+attempts:0,
+
+};
 
 }
+
+acc[name].score +=
+Number(r.score);
+
+acc[name].attempts++;
+
+return acc;
+
+},{})
+
+);
+
+/* =========================================
+TOPIC STATS
+========================================= */
+
+const topicStats =
+Object.values(
+
+results.reduce((acc,r)=>{
+
+const name =
+getTopicName(
+r.topicId
+);
+
+if(!acc[name]){
+
+acc[name]={
+
+name,
+score:0,
+attempts:0,
+
+};
+
+}
+
+acc[name].score +=
+Number(r.score);
+
+acc[name].attempts++;
+
+return acc;
+
+},{})
+
+);
+
+/* =========================================
+SUBTOPIC STATS
+========================================= */
+
+const subTopicStats =
+Object.values(
+
+results.reduce((acc,r)=>{
+
+const name =
+getSubTopicName(
+r.subTopicId
+);
+
+if(!acc[name]){
+
+acc[name]={
+
+name,
+score:0,
+attempts:0,
+
+};
+
+}
+
+acc[name].score +=
+Number(r.score);
+
+acc[name].attempts++;
+
+return acc;
+
+},{})
+
+);
+
+/* =========================================
+CALCULATE
+========================================= */
+
+function getWeakStrong(data){
+
+if(data.length === 0){
+
+return {
+
+weak:"-",
+strong:"-",
+
+};
+
+}
+
+const sorted =
+[...data].sort(
+(a,b)=>
+(a.score/a.attempts) -
+(b.score/b.attempts)
+);
+
+return{
+
+weak:
+sorted[0]?.name || "-",
+
+strong:
+sorted[
+sorted.length - 1
+]?.name || "-",
+
+};
+
+}
+
+const subjectResult =
+getWeakStrong(
+subjectStats
+);
+
+const topicResult =
+getWeakStrong(
+topicStats
+);
+
+const subTopicResult =
+getWeakStrong(
+subTopicStats
+);
+
+const weakSubject =
+subjectResult.weak;
+
+const strongSubject =
+subjectResult.strong;
+
+const weakTopic =
+topicResult.weak;
+
+const strongTopic =
+topicResult.strong;
+
+const weakSubTopic =
+subTopicResult.weak;
+
+const strongSubTopic =
+subTopicResult.strong;
 
 /* =========================================
 PIE DATA
@@ -594,21 +746,48 @@ Strong Subject
 <div className="analytics-card">
 
 <h3>
-Study Insight
+Weak Topic
 </h3>
 
-<p>
+<h2>
+{weakTopic}
+</h2>
 
-Focus more on
-{" "}
-<b>
-{weakSubject}
-</b>
+</div>
 
-{" "}
-for better overall ranking.
+<div className="analytics-card">
 
-</p>
+<h3>
+Strong Topic
+</h3>
+
+<h2>
+{strongTopic}
+</h2>
+
+</div>
+
+<div className="analytics-card">
+
+<h3>
+Weak SubTopic
+</h3>
+
+<h2>
+{weakSubTopic}
+</h2>
+
+</div>
+
+<div className="analytics-card">
+
+<h3>
+Strong SubTopic
+</h3>
+
+<h2>
+{strongSubTopic}
+</h2>
 
 </div>
 

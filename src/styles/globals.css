@@ -1819,18 +1819,37 @@ gap:12px;
 }
 
 .review-palette-btn{
-height:48px;
+
+width:100%;
+
+min-width:0;
+
+height:46px;
+
 border-radius:12px;
-font-size:16px;
+
+font-size:15px;
+
 font-weight:700;
+
 border:none;
+
 cursor:pointer;
+
 transition:0.3s;
+
 background:#475569;
+
 color:white;
+
 display:flex;
+
 align-items:center;
+
 justify-content:center;
+
+flex-shrink:1;
+
 }
 
 .review-current{
@@ -2165,15 +2184,27 @@ flex-direction:column;
 display:grid;
 
 grid-template-columns:
-repeat(5,1fr);
+repeat(5,minmax(0,1fr));
 
-gap:12px;
+gap:10px;
 
 overflow-y:auto;
 
-padding-right:6px;
+overflow-x:hidden;
+
+padding-right:4px;
 
 max-height:calc(100vh - 360px);
+
+width:100%;
+
+}
+
+/* REMOVE LEFT-RIGHT SCROLL */
+
+.review-sidebar{
+
+overflow-x:hidden;
 
 }
 

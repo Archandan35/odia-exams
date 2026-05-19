@@ -29,6 +29,12 @@ const [selectedSubTopic,setSelectedSubTopic]=useState("");
 const [previewQuestions,setPreviewQuestions]=useState([]);
 
 const [showHelp,setShowHelp]=useState(false);
+
+const [showManualOCR,
+setShowManualOCR]=useState(false);
+
+const [manualJSON,
+setManualJSON]=useState("");
 const [showImportModal,setShowImportModal]=useState(false);
 
 const [importProgress,setImportProgress]=useState(0);
@@ -178,6 +184,77 @@ toast.success(`${parsed.length} Questions Loaded`)
 
 }
 })
+}
+
+  function handleManualJSONSubmit(){
+
+if(!manualJSON.trim()){
+
+toast.error(
+"No JSON Data"
+)
+
+return;
+
+}
+
+try{
+
+const parsed =
+JSON.parse(manualJSON)
+
+const formatted =
+parsed.map(q=>({
+
+question:
+q.question || "",
+
+options:
+q.options || [
+"",
+"",
+"",
+"",
+],
+
+correctAnswer:
+typeof q.correctAnswer === "string"
+? q.correctAnswer
+.trim()
+.toUpperCase()
+: q.correctAnswer,
+
+difficulty:
+q.difficulty || "Easy",
+
+language:
+q.language || "English",
+
+explanation:
+q.explanation || "",
+
+}))
+
+setPreviewQuestions(formatted)
+
+toast.success(
+`${formatted.length} Questions Loaded`
+)
+
+setShowManualOCR(false)
+
+setManualJSON("")
+
+}catch(error){
+
+console.log(error)
+
+toast.error(
+"Invalid JSON"
+)
+
+}
+
 }
 
 function exportCSV(){
@@ -506,6 +583,33 @@ Extract questions from Image
 
 </div>
 
+  <div className="bulk-card">
+
+<div>
+
+<h3>
+Manual OCR
+</h3>
+
+<p>
+Paste OCR JSON Data
+</p>
+
+</div>
+
+<button
+className="bulk-action-btn bulk-success"
+onClick={()=>
+setShowManualOCR(true)
+}
+>
+
+Paste Data
+
+</button>
+
+</div>
+
 <div className="bulk-filter-card">
 
 <div className="bulk-filter-grid">
@@ -678,6 +782,73 @@ previewQuestions.map((q,index)=>(
 
 </div>
 
+{
+showManualOCR && (
+
+<div className="bulk-popup-overlay">
+
+<div className="manual-ocr-popup">
+
+<h2>
+Manual OCR JSON Import
+</h2>
+
+<p className="manual-ocr-subtitle">
+
+Paste OCR JSON Data Below
+
+</p>
+
+<textarea
+value={manualJSON}
+onChange={(e)=>
+setManualJSON(
+e.target.value
+)
+}
+placeholder='[
+{
+"question":"What is 2+2?",
+"options":["2","3","4","5"],
+"correctAnswer":"C"
+}
+]'
+className="manual-ocr-textarea"
+/>
+
+<div className="manual-ocr-actions">
+
+<button
+onClick={()=>
+setShowManualOCR(false)
+}
+className="bulk-action-btn bulk-danger"
+>
+
+Cancel
+
+</button>
+
+<button
+onClick={
+handleManualJSONSubmit
+}
+className="bulk-action-btn bulk-success"
+>
+
+Submit JSON
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)
+}
+  
 {
 showHelp && (
 <div className="bulk-popup-overlay">

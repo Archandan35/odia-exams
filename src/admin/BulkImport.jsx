@@ -477,7 +477,7 @@ totalImport
 ) * 100}%`
 }}
 />
-
+  
 </div>
 
 <p className="import-progress-text">
@@ -608,7 +608,7 @@ Paste Data
 </button>
 
 </div>
-
+</div>
 
 <div className="bulk-filter-card">
 

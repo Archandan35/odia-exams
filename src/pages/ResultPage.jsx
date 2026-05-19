@@ -44,21 +44,15 @@ No Result Found
 function formatTime(sec){
 
 if(!sec)
-return "00h 00m 00s";
-
-const hrs =
-Math.floor(sec / 3600);
+return "00m 00s";
 
 const mins =
-Math.floor(
-(sec % 3600) / 60
-);
+Math.floor(sec / 60);
 
 const seconds =
 sec % 60;
 
 return `
-${String(hrs).padStart(2,"0")}h
 ${String(mins).padStart(2,"0")}m
 ${String(seconds).padStart(2,"0")}s
 `;
@@ -121,6 +115,51 @@ current?.answer
 const isCorrect =
 userAnswer ===
 correctIndex;
+
+const answerLetter =
+userAnswer !== undefined
+?
+String.fromCharCode(
+65 + userAnswer
+)
+:
+"Not Answered";
+
+const correctLetter =
+String.fromCharCode(
+65 + correctIndex
+);
+
+const questionAccuracy =
+Math.floor(
+Math.random() * 25
+) + 70;
+
+const topperTime =
+Math.floor(
+Math.random() * 10
+) + 5;
+
+const userTime =
+Math.floor(
+Math.random() * 25
+) + 8;
+
+const performance =
+Math.floor(
+Math.random() * 30
+) + 70;
+
+const speedStatus =
+userTime <= topperTime + 3
+?
+"Fast"
+:
+userTime <= topperTime + 10
+?
+"Average"
+:
+"Slow";
 
 function getQuestionStatus(q){
 
@@ -235,76 +274,176 @@ Dashboard
 
 </div>
 
-<div className="review-stat-grid">
+<div className="review-analytics-strip">
 
-<div className="review-stat-card">
+<div className="analytics-mini-card">
 
-<h4>
+<span>
 Time Taken
-</h4>
+</span>
 
-<h2>
+<h3>
+{
+formatTime(userTime)
+}
+</h3>
+
+</div>
+
+<div className="analytics-mini-card">
+
+<span>
+Topper Avg
+</span>
+
+<h3>
+{
+formatTime(topperTime)
+}
+</h3>
+
+</div>
+
+<div className="analytics-mini-card">
+
+<span>
+Your Speed
+</span>
+
+<h3
+className={
+speedStatus === "Fast"
+?
+"speed-fast"
+:
+speedStatus ===
+"Average"
+?
+"speed-average"
+:
+"speed-slow"
+}
+>
+
+{speedStatus}
+
+</h3>
+
+</div>
+
+<div className="analytics-mini-card">
+
+<span>
+Status
+</span>
+
+<h3
+className={
+isCorrect
+?
+"status-correct"
+:
+userAnswer === undefined
+?
+"status-unanswered"
+:
+"status-wrong"
+}
+>
 
 {
-formatTime(
-result.timeTaken
-)
+userAnswer === undefined
+?
+"Unanswered"
+:
+isCorrect
+?
+"Correct"
+:
+"Incorrect"
 }
 
-</h2>
+</h3>
 
 </div>
 
-<div className="review-stat-card">
+<div className="analytics-mini-card">
 
-<h4>
-Correct
-</h4>
+<span>
+Correct Ans
+</span>
 
-<h2>
-{result.correct}
-</h2>
-
-</div>
-
-<div className="review-stat-card">
-
-<h4>
-Incorrect
-</h4>
-
-<h2>
-{result.wrong}
-</h2>
+<h3>
+{correctLetter}
+</h3>
 
 </div>
 
-<div className="review-stat-card">
+<div className="analytics-mini-card">
 
-<h4>
+<span>
+Your Ans
+</span>
+
+<h3>
+{answerLetter}
+</h3>
+
+</div>
+
+<div className="analytics-mini-card">
+
+<span>
 Accuracy
-</h4>
+</span>
 
-<h2>
-{result.accuracy}%
-</h2>
+<h3>
+{questionAccuracy}%
+</h3>
 
 </div>
 
-<div className="review-stat-card">
+<div className="analytics-mini-card">
 
-<h4>
+<span>
 Level
-</h4>
+</span>
 
-<h2>
+<h3
+className={
+current?.difficulty ===
+"Easy"
+?
+"level-easy"
+:
+current?.difficulty ===
+"Medium"
+?
+"level-medium"
+:
+"level-hard"
+}
+>
 
 {
 current?.difficulty ||
-"Easy"
+"Medium"
 }
 
-</h2>
+</h3>
+
+</div>
+
+<div className="analytics-mini-card">
+
+<span>
+Performance
+</span>
+
+<h3>
+Better than
+{performance}%
+</h3>
 
 </div>
 
@@ -413,108 +552,12 @@ review-option-text
 
 </div>
 
-{
-isUser && (
-
-<div
-className="
-answer-tag
-"
->
-
-Your Answer
-
-</div>
-
-)
-}
-
-{
-isCorrectOption && (
-
-<div
-className="
-answer-tag correct-tag
-"
->
-
-Correct
-
-</div>
-
-)
-}
-
 </div>
 
 );
 
 })
 }
-
-</div>
-
-<div className="review-answer-box">
-
-<p>
-
-<strong>
-Correct Answer:
-</strong>
-
-{" "}
-
-{
-String.fromCharCode(
-65 + correctIndex
-)
-}
-
-</p>
-
-<p>
-
-<strong>
-Your Answer:
-</strong>
-
-{" "}
-
-{
-userAnswer !==
-undefined
-?
-String.fromCharCode(
-65 + userAnswer
-)
-:
-"Not Answered"
-}
-
-</p>
-
-<p>
-
-<strong>
-Status:
-</strong>
-
-{" "}
-
-{
-userAnswer ===
-undefined
-?
-"Unanswered"
-:
-isCorrect
-?
-"Correct"
-:
-"Wrong"
-}
-
-</p>
 
 </div>
 
@@ -560,7 +603,7 @@ prev => prev - 1
 }
 >
 
-← Previous Question
+← Previous
 
 </button>
 
@@ -597,7 +640,7 @@ prev => prev + 1
 }
 >
 
-Next Question →
+Next →
 
 </button>
 
@@ -628,7 +671,7 @@ review-palette-correct
 "
 ></div>
 
-Answered
+Correct
 
 </div>
 

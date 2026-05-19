@@ -168,7 +168,7 @@ useEffect(()=>{
 
 const unsub =
 onSnapshot(
-collection(db,"subTopics"),
+collection(db,"subtopics"),
 (snapshot)=>{
 
 const data =

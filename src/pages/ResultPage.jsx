@@ -21,9 +21,9 @@ useLocation();
 const result =
 location.state;
 
-const [showAnswers,
-setShowAnswers] =
-useState(false);
+const [currentQuestion,
+setCurrentQuestion] =
+useState(0);
 
 if(!result){
 
@@ -65,18 +65,123 @@ ${String(seconds).padStart(2,"0")}s
 
 }
 
+const questions =
+result.questions || [];
+
+const current =
+questions[currentQuestion];
+
+const userAnswer =
+result.answers?.[
+current?.id
+];
+
+const map = {
+
+A:0,
+B:1,
+C:2,
+D:3,
+
+};
+
+let correctIndex = 0;
+
+if(
+typeof current?.correctAnswer ===
+"number"
+){
+
+correctIndex =
+current.correctAnswer;
+
+}
+else if(
+typeof current?.correctAnswer ===
+"string"
+){
+
+correctIndex =
+map[
+current.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+else{
+
+correctIndex =
+map[
+current?.answer
+] || 0;
+
+}
+
+const isCorrect =
+userAnswer ===
+correctIndex;
+
+function getQuestionStatus(q){
+
+const answer =
+result.answers?.[
+q.id
+];
+
+let cIndex = 0;
+
+if(
+typeof q.correctAnswer ===
+"number"
+){
+
+cIndex =
+q.correctAnswer;
+
+}
+else if(
+typeof q.correctAnswer ===
+"string"
+){
+
+cIndex =
+map[
+q.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+
+if(answer === undefined){
+
+return "unanswered";
+
+}
+
+if(answer === cIndex){
+
+return "correct";
+
+}
+
+return "wrong";
+
+}
+
 return(
 
 <div className="page">
 
 <TopNavbar/>
 
-<div className="page-header">
+<div className="review-topbar">
 
 <div>
 
 <h2>
-Exam Result
+Exam Review
 </h2>
 
 <p>
@@ -84,6 +189,37 @@ Detailed Performance Analysis
 </p>
 
 </div>
+
+<div className="review-actions">
+
+<button
+onClick={()=>
+navigate("/analysis",{
+state:result,
+})
+}
+>
+
+Analysis
+
+</button>
+
+<button
+className="submit-btn"
+onClick={()=>
+navigate("/exam",{
+state:{
+reAttempt:true,
+questions:
+result.questions,
+},
+})
+}
+>
+
+Reattempt
+
+</button>
 
 <button
 onClick={()=>
@@ -97,236 +233,155 @@ Dashboard
 
 </div>
 
-<div className="dashboard-grid">
-
-<div className="analytics-card">
-
-<h3>
-Score
-</h3>
-
-<h1>
-{result.score}
-</h1>
-
 </div>
 
-<div className="analytics-card">
+<div className="review-stat-grid">
 
-<h3>
-Correct
-</h3>
+<div className="review-stat-card">
 
-<h1>
-{result.correct}
-</h1>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
-Wrong
-</h3>
-
-<h1>
-{result.wrong}
-</h1>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
-Accuracy
-</h3>
-
-<h1>
-{result.accuracy}%
-</h1>
-
-</div>
-
-<div className="analytics-card">
-
-<h3>
+<h4>
 Time Taken
-</h3>
+</h4>
 
-<h1>
+<h2>
+
 {
 formatTime(
 result.timeTaken
 )
 }
-</h1>
+
+</h2>
 
 </div>
 
-<div className="analytics-card">
+<div className="review-stat-card">
 
-<h3>
-Unanswered
-</h3>
+<h4>
+Correct
+</h4>
 
-<h1>
-{result.unanswered}
-</h1>
+<h2>
+{result.correct}
+</h2>
+
+</div>
+
+<div className="review-stat-card">
+
+<h4>
+Incorrect
+</h4>
+
+<h2>
+{result.wrong}
+</h2>
+
+</div>
+
+<div className="review-stat-card">
+
+<h4>
+Accuracy
+</h4>
+
+<h2>
+{result.accuracy}%
+</h2>
+
+</div>
+
+<div className="review-stat-card">
+
+<h4>
+Level
+</h4>
+
+<h2>
+
+{
+current?.difficulty ||
+"Easy"
+}
+
+</h2>
 
 </div>
 
 </div>
 
-<div className="table-card">
+<div className="review-layout">
+
+<div className="review-main">
+
+<div className="review-question-card">
+
+<div className="review-question-header">
 
 <div
-style={{
-display:"flex",
-justifyContent:"space-between",
-alignItems:"center",
-marginBottom:"20px",
-}}
+className="
+review-question-badge
+"
 >
 
-<h3>
-Question Review
-</h3>
-
-<button
-onClick={()=>
-setShowAnswers(
-!showAnswers
-)
-}
->
-
-{
-showAnswers
-?
-"Hide Answers"
-:
-"Show Answers"
-}
-
-</button>
+Q.
+{currentQuestion + 1}
 
 </div>
 
-{
-showAnswers && (
-
 <div
-style={{
-display:"flex",
-flexDirection:"column",
-gap:"22px",
-}}
+className="
+review-question-text
+"
 >
 
+{current?.question}
+
+</div>
+
+</div>
+
+<div className="review-options">
+
 {
-result.questions?.map(
-(q,index)=>{
+current?.options?.map(
+(op,i)=>{
 
-const userAnswer =
-result.answers?.[
-q.id
-];
+const isUser =
+i === userAnswer;
 
-let correctIndex = 0;
-
-const map = {
-
-A:0,
-B:1,
-C:2,
-D:3,
-
-};
-
-if(
-typeof q.correctAnswer ===
-"number"
-){
-
-correctIndex =
-q.correctAnswer;
-
-}
-else if(
-typeof q.correctAnswer ===
-"string"
-){
-
-correctIndex =
-map[
-q.correctAnswer
-?.trim()
-?.toUpperCase()
-] ?? 0;
-
-}
-else{
-
-correctIndex =
-map[q.answer] || 0;
-
-}
-
-const isCorrect =
-userAnswer ===
-correctIndex;
+const isCorrectOption =
+i === correctIndex;
 
 return(
-
-<div
-key={q.id}
-className="
-question-review-card
-"
->
-
-<h3>
-
-Q{index + 1}.
-
-{" "}
-
-{q.question}
-
-</h3>
-
-<div
-className="
-review-options
-"
->
-
-{
-q.options?.map(
-(op,i)=>(
 
 <div
 key={i}
 className={`
 
-review-option
+review-option-card
 
 ${
-i ===
-correctIndex
+isCorrectOption
 ?
-"correct-option"
+"review-correct"
 :
 ""
 }
 
 ${
-i ===
-userAnswer &&
-i !==
-correctIndex
+isUser &&
+!isCorrectOption
 ?
-"wrong-option"
+"review-wrong"
+:
+""
+}
+
+${
+isUser
+?
+"review-selected"
 :
 ""
 }
@@ -334,30 +389,78 @@ correctIndex
 `}
 >
 
-<b>
+<div
+className="
+review-option-label
+"
+>
 
 {
 String.fromCharCode(
 65 + i
 )
-}) 
+}.
 
-</b>
+</div>
+
+<div
+className="
+review-option-text
+"
+>
 
 {op}
 
 </div>
 
-))
+{
+isUser && (
+
+<div
+className="
+answer-tag
+"
+>
+
+Your Answer
+
+</div>
+
+)
+}
+
+{
+isCorrectOption && (
+
+<div
+className="
+answer-tag correct-tag
+"
+>
+
+Correct
+
+</div>
+
+)
 }
 
 </div>
 
+);
+
+})
+}
+
+</div>
+
+<div className="review-answer-box">
+
 <p>
 
-<b>
+<strong>
 Correct Answer:
-</b>
+</strong>
 
 {" "}
 
@@ -371,9 +474,9 @@ String.fromCharCode(
 
 <p>
 
-<b>
+<strong>
 Your Answer:
-</b>
+</strong>
 
 {" "}
 
@@ -392,9 +495,9 @@ String.fromCharCode(
 
 <p>
 
-<b>
+<strong>
 Status:
-</b>
+</strong>
 
 {" "}
 
@@ -413,29 +516,222 @@ isCorrect
 
 </p>
 
+</div>
+
 {
-q.explanation && (
+current?.explanation && (
 
 <div
 className="
-explanation-box
+review-explanation
 "
 >
 
-<b>
-Explanation:
-</b>
+<h4>
+Explanation
+</h4>
 
-{" "}
+<p>
 
-{q.explanation}
+{
+current.explanation
+}
+
+</p>
 
 </div>
 
 )
 }
 
+<div className="review-navigation">
+
+<button
+className="
+review-nav-btn
+"
+disabled={
+currentQuestion === 0
+}
+onClick={()=>
+setCurrentQuestion(
+prev => prev - 1
+)
+}
+>
+
+← Previous Question
+
+</button>
+
+<div
+className="
+review-question-count
+"
+>
+
+{
+currentQuestion + 1
+}
+
+/
+
+{
+questions.length
+}
+
 </div>
+
+<button
+className="
+review-nav-btn
+"
+disabled={
+currentQuestion ===
+questions.length - 1
+}
+onClick={()=>
+setCurrentQuestion(
+prev => prev + 1
+)
+}
+>
+
+Next Question →
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="review-sidebar">
+
+<h3>
+Questions
+</h3>
+
+<div className="review-legend">
+
+<div
+className="
+review-legend-item
+"
+>
+
+<div
+className="
+review-dot
+review-palette-correct
+"
+></div>
+
+Answered
+
+</div>
+
+<div
+className="
+review-legend-item
+"
+>
+
+<div
+className="
+review-dot
+review-palette-wrong
+"
+></div>
+
+Incorrect
+
+</div>
+
+<div
+className="
+review-legend-item
+"
+>
+
+<div
+className="
+review-dot
+review-palette-unanswered
+"
+></div>
+
+Unanswered
+
+</div>
+
+</div>
+
+<div className="review-palette">
+
+{
+questions.map(
+(q,index)=>{
+
+const status =
+getQuestionStatus(q);
+
+return(
+
+<button
+key={q.id}
+onClick={()=>
+setCurrentQuestion(
+index
+)
+}
+className={`
+
+review-palette-btn
+
+${
+status ===
+"correct"
+?
+"review-palette-correct"
+:
+""
+}
+
+${
+status ===
+"wrong"
+?
+"review-palette-wrong"
+:
+""
+}
+
+${
+status ===
+"unanswered"
+?
+"review-palette-unanswered"
+:
+""
+}
+
+${
+currentQuestion ===
+index
+?
+"review-current"
+:
+""
+}
+
+`}
+>
+
+{index + 1}
+
+</button>
 
 );
 
@@ -444,8 +740,7 @@ Explanation:
 
 </div>
 
-)
-}
+</div>
 
 </div>
 

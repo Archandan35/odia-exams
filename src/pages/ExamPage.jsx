@@ -649,7 +649,6 @@ questions.length
 ).toFixed(2)
 :
 0;
-
 const resultData = {
 
 userId:
@@ -665,6 +664,7 @@ examData?.examType,
 
 subject:
 questions?.[0]?.subjectId || "",
+
 topicId:
 questions?.[0]?.topicId || "",
 
@@ -679,8 +679,7 @@ correct,
 wrong,
 
 unanswered:
-questions.length
--
+questions.length -
 (
 correct + wrong
 ),
@@ -709,7 +708,7 @@ createdAt:
 Date.now(),
 
 };
-
+  
 await addDoc(
 collection(db,"results"),
 resultData

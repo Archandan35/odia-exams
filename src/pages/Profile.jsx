@@ -41,12 +41,24 @@ export default function Profile(){
 const navigate =
 useNavigate();
 
+/* =========================================
+STATE
+========================================= */
+
 const [results,
 setResults] =
 useState([]);
 
 const [subjects,
 setSubjects] =
+useState([]);
+
+const [topics,
+setTopics] =
+useState([]);
+
+const [subTopics,
+setSubTopics] =
 useState([]);
 
 /* =========================================
@@ -121,6 +133,62 @@ return ()=>unsub();
 },[]);
 
 /* =========================================
+LOAD TOPICS
+========================================= */
+
+useEffect(()=>{
+
+const unsub =
+onSnapshot(
+collection(db,"topics"),
+(snapshot)=>{
+
+const data =
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
+
+setTopics(data);
+
+}
+);
+
+return ()=>unsub();
+
+},[]);
+
+/* =========================================
+LOAD SUBTOPICS
+========================================= */
+
+useEffect(()=>{
+
+const unsub =
+onSnapshot(
+collection(db,"subTopics"),
+(snapshot)=>{
+
+const data =
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
+
+setSubTopics(data);
+
+}
+);
+
+return ()=>unsub();
+
+},[]);
+
+/* =========================================
 HELPERS
 ========================================= */
 
@@ -134,6 +202,36 @@ subjects.find(
 return (
 subject?.name ||
 subjectId ||
+"-"
+);
+
+}
+
+function getTopicName(topicId){
+
+const topic =
+topics.find(
+(t)=>t.id === topicId
+);
+
+return (
+topic?.name ||
+topicId ||
+"-"
+);
+
+}
+
+function getSubTopicName(subTopicId){
+
+const subTopic =
+subTopics.find(
+(s)=>s.id === subTopicId
+);
+
+return (
+subTopic?.name ||
+subTopicId ||
 "-"
 );
 
@@ -687,6 +785,14 @@ Subject
 </th>
 
 <th>
+Topic
+</th>
+
+<th>
+SubTopic
+</th>
+
+<th>
 Correct
 </th>
 
@@ -737,6 +843,22 @@ r.createdAt
 {
 getSubjectName(
 r.subject
+)
+}
+</td>
+
+<td>
+{
+getTopicName(
+r.topicId
+)
+}
+</td>
+
+<td>
+{
+getSubTopicName(
+r.subTopicId
 )
 }
 </td>

@@ -890,9 +890,48 @@ Submit
 
 <div className="navigator">
 
-<h3>
-Question Palette
+<h3 className="palette-title">
+  Questions
 </h3>
+
+<div className="exam-legend">
+
+  <div className="exam-legend-item">
+    <div className="exam-legend-badge legend-answered">
+      {answeredCount}
+    </div>
+    <span>Answered</span>
+  </div>
+
+  <div className="exam-legend-item">
+    <div className="exam-legend-badge legend-marked">
+      {markedCount}
+    </div>
+    <span>Marked</span>
+  </div>
+
+  <div className="exam-legend-item">
+    <div className="exam-legend-badge legend-markedanswered">
+      {markedAnsweredCount}
+    </div>
+    <span>Marked & Answered</span>
+  </div>
+
+  <div className="exam-legend-item">
+    <div className="exam-legend-badge legend-notanswered">
+      {notAnsweredCount}
+    </div>
+    <span>Not Answered</span>
+  </div>
+
+  <div className="exam-legend-item">
+    <div className="exam-legend-badge legend-notvisited">
+      {notVisitedCount}
+    </div>
+    <span>Not Visited</span>
+  </div>
+
+</div>
 
 <div className="palette-grid">
 

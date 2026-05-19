@@ -665,6 +665,11 @@ examData?.examType,
 
 subject:
 questions?.[0]?.subjectId || "",
+topicId:
+questions?.[0]?.topicId || "",
+
+subTopicId:
+questions?.[0]?.subTopicId || "",
 
 totalQuestions:
 questions.length,

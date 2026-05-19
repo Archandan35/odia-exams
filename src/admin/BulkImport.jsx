@@ -609,8 +609,6 @@ Paste Data
 
 </div>
 
-</div>
-
 
 <div className="bulk-filter-card">
 

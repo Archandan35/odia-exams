@@ -246,17 +246,13 @@ Analysis
 <button
 className="submit-btn"
 onClick={()=>
-navigate("/exam",{
-state:{
-reAttempt:true,
-questions:
-result.questions,
-},
-})
+navigate(
+`/exam/${result.examId}`
+)
 }
 >
 
-Reattempt
+Re-attempt
 
 </button>
 

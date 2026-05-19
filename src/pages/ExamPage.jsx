@@ -70,7 +70,9 @@ const [cheatCount,
 setCheatCount] =
 useState(0);
 
-/* FULLSCREEN */
+/* =========================================
+FULLSCREEN
+========================================= */
 
 useEffect(()=>{
 
@@ -85,7 +87,9 @@ elem.requestFullscreen();
 
 },[]);
 
-/* CHEAT DETECTION */
+/* =========================================
+CHEAT DETECTION
+========================================= */
 
 useEffect(()=>{
 
@@ -163,11 +167,15 @@ submitExam(true);
 
 }
 
-/* LOAD EXAM */
+/* =========================================
+LOAD EXAM
+========================================= */
 
 useEffect(()=>{
 
 async function loadExam(){
+
+try{
 
 const saved =
 localStorage.getItem(
@@ -326,13 +334,23 @@ setQuestions(allQuestions);
 
 setLoading(false);
 
+}catch(error){
+
+console.error(error);
+
+setLoading(false);
+
+}
+
 }
 
 loadExam();
 
 },[examId]);
 
-/* AUTO SAVE */
+/* =========================================
+AUTO SAVE
+========================================= */
 
 useEffect(()=>{
 
@@ -364,7 +382,9 @@ timeLeft,
 
 ]);
 
-/* TIMER */
+/* =========================================
+TIMER
+========================================= */
 
 useEffect(()=>{
 
@@ -401,6 +421,10 @@ loading,
 questions,
 ]);
 
+/* =========================================
+FORMAT TIME
+========================================= */
+
 function formatTime(seconds){
 
 const hrs =
@@ -425,6 +449,10 @@ ${String(secs)
 
 }
 
+/* =========================================
+ANSWER SELECT
+========================================= */
+
 function selectAnswer(
 qid,
 index
@@ -448,6 +476,10 @@ setVisited((prev)=>({
 
 }
 
+/* =========================================
+MARK REVIEW
+========================================= */
+
 function markReview(qid){
 
 setReview((prev)=>({
@@ -461,6 +493,10 @@ setReview((prev)=>({
 
 }
 
+/* =========================================
+BOOKMARK
+========================================= */
+
 function toggleBookmark(qid){
 
 setBookmarks((prev)=>({
@@ -473,6 +509,10 @@ setBookmarks((prev)=>({
 }));
 
 }
+
+/* =========================================
+NAVIGATION
+========================================= */
 
 function nextQuestion(){
 
@@ -500,6 +540,10 @@ currentQuestion - 1
 }
 
 }
+
+/* =========================================
+SUBMIT EXAM
+========================================= */
 
 async function submitExam(
 autoSubmit=false
@@ -569,6 +613,7 @@ correctIndex =
 answerMap[q.answer] || 0;
 
 }
+
 if(
 correctIndex === ans
 ){
@@ -678,6 +723,10 @@ state:resultData,
 
 }
 
+/* =========================================
+LOADING
+========================================= */
+
 if(loading){
 
 return(
@@ -694,10 +743,18 @@ Loading Exam...
 
 }
 
+/* =========================================
+CURRENT QUESTION
+========================================= */
+
 const q =
 questions[currentQuestion];
 
-  const answeredCount =
+/* =========================================
+LEGEND COUNTS
+========================================= */
+
+const answeredCount =
 Object.keys(answers).filter(
 (key)=>
 answers[key] !== undefined &&
@@ -730,6 +787,10 @@ answers[key] === null
 const notVisitedCount =
 questions.length -
 Object.keys(visited).length;
+
+/* =========================================
+UI
+========================================= */
 
 return(
 
@@ -839,7 +900,7 @@ index
 String.fromCharCode(
 65 + index
 )
-}) 
+}.
 
 </span>
 
@@ -925,94 +986,114 @@ Submit
 <div className="navigator">
 
 <h3 className="palette-title">
-  Questions
+Questions
 </h3>
 
 <div className="exam-legend">
 
-  <div className="exam-legend-item">
-    <div className="exam-legend-badge legend-answered">
-      {answeredCount}
-    </div>
-    <span>Answered</span>
-  </div>
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-answered">
+{answeredCount}
+</div>
+<span>Answered</span>
+</div>
 
-  <div className="exam-legend-item">
-    <div className="exam-legend-badge legend-marked">
-      {markedCount}
-    </div>
-    <span>Marked</span>
-  </div>
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-marked">
+{markedCount}
+</div>
+<span>Marked</span>
+</div>
 
-  <div className="exam-legend-item">
-    <div className="exam-legend-badge legend-markedanswered">
-      {markedAnsweredCount}
-    </div>
-    <span>Marked & Answered</span>
-  </div>
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-markedanswered">
+{markedAnsweredCount}
+</div>
+<span>Marked & Answered</span>
+</div>
 
-  <div className="exam-legend-item">
-    <div className="exam-legend-badge legend-notanswered">
-      {notAnsweredCount}
-    </div>
-    <span>Not Answered</span>
-  </div>
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-notanswered">
+{notAnsweredCount}
+</div>
+<span>Not Answered</span>
+</div>
 
-  <div className="exam-legend-item">
-    <div className="exam-legend-badge legend-notvisited">
-      {notVisitedCount}
-    </div>
-    <span>Not Visited</span>
-  </div>
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-notvisited">
+{notVisitedCount}
+</div>
+<span>Not Visited</span>
+</div>
 
 </div>
 
 <div className="palette-grid">
 
-{
-questions.map(
-(item,index)=>{
+{questions.map((question,index)=>{
+
+const answered =
+answers[question.id] !== undefined;
+
+const marked =
+review[question.id];
+
+const visitedQuestion =
+visited[question.id];
 
 let btnClass =
 "palette-btn";
 
 if(
-review[item.id]
+marked &&
+answered
 ){
 
 btnClass +=
-" review-btn";
+" marked-answered";
+
+}
+else if(marked){
+
+btnClass +=
+" marked";
+
+}
+else if(answered){
+
+btnClass +=
+" answered";
+
+}
+else if(visitedQuestion){
+
+btnClass +=
+" not-answered";
+
+}
+else{
+
+btnClass +=
+" not-visited";
 
 }
 
-else if(
-answers[item.id]
-!== undefined
+if(
+currentQuestion === index
 ){
 
 btnClass +=
-" answered-btn";
-
-}
-
-else if(
-visited[item.id]
-){
-
-btnClass +=
-" visited-btn";
+" current";
 
 }
 
 return(
 
 <button
-key={item.id}
+key={question.id}
 className={btnClass}
 onClick={()=>
-setCurrentQuestion(
-index
-)
+setCurrentQuestion(index)
 }
 >
 
@@ -1022,8 +1103,7 @@ index
 
 );
 
-})
-}
+})}
 
 </div>
 
@@ -1032,5 +1112,4 @@ index
 </div>
 
 );
-
 }

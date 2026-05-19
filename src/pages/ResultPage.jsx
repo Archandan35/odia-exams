@@ -441,7 +441,7 @@ Performance
 </span>
 
 <h3>
-Better than
+Better than 
 {performance}%
 </h3>
 

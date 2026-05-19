@@ -581,9 +581,8 @@ Extract questions from Image
 <input type="file" />
 </div>
 
-</div>
-
-  <div className="bulk-card">
+  {/* MANUAL OCR */}
+<div className="bulk-card">
 
 <div>
 
@@ -608,6 +607,9 @@ Paste Data
 
 </button>
 
+</div>
+
+</div>
 </div>
 
 <div className="bulk-filter-card">

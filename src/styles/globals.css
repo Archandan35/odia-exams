@@ -1926,3 +1926,162 @@ padding:16px;
 }
 
 }
+/* =========================================
+   ANALYTICS STRIP
+========================================= */
+
+.review-analytics-strip{
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(140px,1fr));
+
+gap:14px;
+
+margin-bottom:22px;
+
+}
+
+.analytics-mini-card{
+
+background:#0f172a;
+
+border:1px solid #1e293b;
+
+border-radius:16px;
+
+padding:16px;
+
+display:flex;
+
+flex-direction:column;
+
+gap:8px;
+
+min-height:88px;
+
+justify-content:center;
+
+}
+
+.analytics-mini-card span{
+
+font-size:12px;
+
+font-weight:600;
+
+color:#94a3b8;
+
+}
+
+.analytics-mini-card h3{
+
+font-size:18px;
+
+font-weight:700;
+
+line-height:1.4;
+
+color:#f8fafc;
+
+word-break:break-word;
+
+}
+
+/* SPEED */
+
+.speed-fast{
+
+color:#22c55e !important;
+
+}
+
+.speed-average{
+
+color:#3b82f6 !important;
+
+}
+
+.speed-slow{
+
+color:#f59e0b !important;
+
+}
+
+/* STATUS */
+
+.status-correct{
+
+color:#22c55e !important;
+
+}
+
+.status-wrong{
+
+color:#ef4444 !important;
+
+}
+
+.status-unanswered{
+
+color:#facc15 !important;
+
+}
+
+/* LEVEL */
+
+.level-easy{
+
+color:#22c55e !important;
+
+}
+
+.level-medium{
+
+color:#facc15 !important;
+
+}
+
+.level-hard{
+
+color:#ef4444 !important;
+
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+.review-analytics-strip{
+
+grid-template-columns:
+repeat(2,1fr);
+
+}
+
+.analytics-mini-card{
+
+padding:14px;
+
+min-height:80px;
+
+}
+
+.analytics-mini-card h3{
+
+font-size:16px;
+
+}
+
+}
+
+@media(max-width:500px){
+
+.review-analytics-strip{
+
+grid-template-columns:1fr;
+
+}
+
+}

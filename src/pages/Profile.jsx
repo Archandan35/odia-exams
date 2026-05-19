@@ -45,6 +45,14 @@ const [results,
 setResults] =
 useState([]);
 
+const [subjects,
+setSubjects] =
+useState([]);
+
+/* =========================================
+LOAD RESULTS
+========================================= */
+
 useEffect(()=>{
 
 if(!auth.currentUser)
@@ -83,6 +91,84 @@ setResults(data);
 return ()=>unsub();
 
 },[]);
+
+/* =========================================
+LOAD SUBJECTS
+========================================= */
+
+useEffect(()=>{
+
+const unsub =
+onSnapshot(
+collection(db,"subjects"),
+(snapshot)=>{
+
+const data =
+snapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
+
+setSubjects(data);
+
+}
+);
+
+return ()=>unsub();
+
+},[]);
+
+/* =========================================
+HELPERS
+========================================= */
+
+function getSubjectName(subjectId){
+
+const subject =
+subjects.find(
+(s)=>s.id === subjectId
+);
+
+return (
+subject?.name ||
+subjectId ||
+"-"
+);
+
+}
+
+function formatDate(timestamp){
+
+if(!timestamp)
+return "-";
+
+const d =
+new Date(timestamp);
+
+return d.toLocaleDateString();
+
+}
+
+function formatTime(sec){
+
+if(!sec)
+return "0s";
+
+const mins =
+Math.floor(sec / 60);
+
+const seconds =
+sec % 60;
+
+return `${mins}m ${seconds}s`;
+
+}
+
+/* =========================================
+ANALYTICS
+========================================= */
 
 const totalAttempts =
 results.length;
@@ -127,7 +213,9 @@ Number(r.score)
 :
 0;
 
-/* PERFORMANCE TREND */
+/* =========================================
+TREND DATA
+========================================= */
 
 const trendData =
 results
@@ -146,7 +234,9 @@ Number(r.accuracy),
 
 }));
 
-/* SUBJECT ANALYTICS */
+/* =========================================
+SUBJECT ANALYTICS
+========================================= */
 
 const subjectAnalytics =
 Object.values(
@@ -154,11 +244,17 @@ Object.values(
 results.reduce(
 (acc,r)=>{
 
-if(!acc[r.subject]){
+const subjectName =
+getSubjectName(
+r.subject
+);
 
-acc[r.subject]={
+if(!acc[subjectName]){
 
-subject:r.subject,
+acc[subjectName]={
+
+subject:
+subjectName,
 
 score:0,
 
@@ -168,11 +264,11 @@ attempts:0,
 
 }
 
-acc[r.subject]
+acc[subjectName]
 .score +=
 Number(r.score);
 
-acc[r.subject]
+acc[subjectName]
 .attempts++;
 
 return acc;
@@ -191,7 +287,9 @@ s.attempts
 
 }));
 
-/* AI INSIGHTS */
+/* =========================================
+AI INSIGHTS
+========================================= */
 
 let weakSubject =
 "-";
@@ -219,7 +317,9 @@ sorted.length - 1
 
 }
 
-/* PIE */
+/* =========================================
+PIE DATA
+========================================= */
 
 const accuracyData = [
 
@@ -251,32 +351,9 @@ b.wrong || 0
 
 ];
 
-function formatDate(timestamp){
-
-if(!timestamp)
-return "-";
-
-const d =
-new Date(timestamp);
-
-return d.toLocaleDateString();
-
-}
-
-function formatTime(sec){
-
-if(!sec)
-return "0s";
-
-const mins =
-Math.floor(sec / 60);
-
-const seconds =
-sec % 60;
-
-return `${mins}m ${seconds}s`;
-
-}
+/* =========================================
+UI
+========================================= */
 
 return(
 
@@ -330,6 +407,10 @@ Leaderboard
 
 </div>
 
+{/* =========================================
+TOP ANALYTICS
+========================================= */}
+
 <div className="dashboard-grid">
 
 <div className="analytics-card">
@@ -382,6 +463,10 @@ Best Score
 
 </div>
 
+{/* =========================================
+AI INSIGHTS
+========================================= */}
+
 <div className="dashboard-grid">
 
 <div className="analytics-card">
@@ -430,6 +515,10 @@ for better overall ranking.
 </div>
 
 </div>
+
+{/* =========================================
+CHARTS
+========================================= */}
 
 <div className="charts-grid">
 
@@ -504,6 +593,10 @@ dataKey="avgScore"
 
 </div>
 
+{/* =========================================
+PIE CHART
+========================================= */}
+
 <div className="charts-grid">
 
 <div className="chart-card">
@@ -551,6 +644,10 @@ key={index}
 </div>
 
 </div>
+
+{/* =========================================
+ATTEMPT HISTORY
+========================================= */}
 
 <div className="table-card">
 
@@ -637,7 +734,11 @@ r.createdAt
 </td>
 
 <td>
-{r.subject}
+{
+getSubjectName(
+r.subject
+)
+}
 </td>
 
 <td>

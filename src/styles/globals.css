@@ -2936,3 +2936,91 @@ font-weight:700;
 color:#60a5fa;
 
 }
+
+
+/* =========================================
+MANUAL OCR POPUP
+========================================= */
+
+.manual-ocr-popup{
+
+width:95%;
+max-width:900px;
+
+background:#111827;
+
+border:
+1px solid #1e293b;
+
+border-radius:28px;
+
+padding:32px;
+
+box-shadow:
+0 0 40px rgba(0,0,0,0.5);
+
+}
+
+.manual-ocr-popup h2{
+
+font-size:32px;
+font-weight:700;
+
+margin-bottom:12px;
+
+}
+
+.manual-ocr-subtitle{
+
+color:#94a3b8;
+
+margin-bottom:24px;
+
+font-size:15px;
+
+}
+
+.manual-ocr-textarea{
+
+width:100%;
+height:350px;
+
+background:#0f172a;
+
+border:
+1px solid #1e293b;
+
+border-radius:18px;
+
+padding:20px;
+
+font-size:15px;
+
+color:white;
+
+resize:vertical;
+
+outline:none;
+
+}
+
+.manual-ocr-textarea:focus{
+
+border-color:#2563eb;
+
+box-shadow:
+0 0 0 3px rgba(37,99,235,0.2);
+
+}
+
+.manual-ocr-actions{
+
+display:flex;
+justify-content:flex-end;
+gap:12px;
+
+margin-top:24px;
+
+flex-wrap:wrap;
+
+}

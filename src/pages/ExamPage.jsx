@@ -697,6 +697,40 @@ Loading Exam...
 const q =
 questions[currentQuestion];
 
+  const answeredCount =
+Object.keys(answers).filter(
+(key)=>
+answers[key] !== undefined &&
+answers[key] !== null
+).length;
+
+const markedCount =
+Object.keys(review).filter(
+(key)=>review[key]
+).length;
+
+const markedAnsweredCount =
+Object.keys(review).filter(
+(key)=>
+review[key] &&
+answers[key] !== undefined &&
+answers[key] !== null
+).length;
+
+const notAnsweredCount =
+Object.keys(visited).filter(
+(key)=>
+visited[key] &&
+(
+answers[key] === undefined ||
+answers[key] === null
+)
+).length;
+
+const notVisitedCount =
+questions.length -
+Object.keys(visited).length;
+
 return(
 
 <div className="exam-layout">

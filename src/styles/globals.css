@@ -466,6 +466,122 @@ top:0;
 
 }
 
+/* =========================================
+   QUESTION LEGEND
+========================================= */
+
+.palette-title{
+
+font-size:30px;
+
+font-weight:700;
+
+margin-bottom:20px;
+
+}
+
+/* LEGEND CONTAINER */
+
+.exam-legend{
+
+display:grid;
+
+grid-template-columns:
+1fr 1fr;
+
+gap:12px;
+
+margin-bottom:24px;
+
+}
+
+/* LEGEND ITEM */
+
+.exam-legend-item{
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+font-size:14px;
+
+font-weight:600;
+
+color:#f8fafc;
+
+}
+
+/* LEGEND BADGE */
+
+.exam-legend-badge{
+
+min-width:34px;
+
+height:34px;
+
+padding:0 10px;
+
+border-radius:12px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:14px;
+
+font-weight:700;
+
+color:white;
+
+}
+
+/* COLORS */
+
+.legend-answered{
+
+background:#16a34a;
+
+}
+
+.legend-marked{
+
+background:#7c3aed;
+
+}
+
+.legend-markedanswered{
+
+background:#9333ea;
+
+}
+
+.legend-notanswered{
+
+background:#dc2626;
+
+}
+
+.legend-notvisited{
+
+background:#475569;
+
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.exam-legend{
+
+grid-template-columns:1fr;
+
+}
+
+}
 /* PALETTE SCROLLBAR */
 
 .navigator::-webkit-scrollbar{

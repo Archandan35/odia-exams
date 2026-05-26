@@ -38,6 +38,10 @@ export default function Sidebar() {
           Exams
         </div>
 
+        <Link to="/admin/mock-generator">
+          Mock Generator
+        </Link>
+
         <Link to="/admin/exams">
           Add Exam
         </Link>

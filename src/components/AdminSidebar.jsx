@@ -35,6 +35,15 @@ title:"Bulk Import",
 path:"/admin/bulk-import",
 },
 
+/* ================================= */
+/* MOCK GENERATOR */
+/* ================================= */
+
+{
+title:"Mock Generator",
+path:"/admin/mock-generator",
+},
+
 ];
 
 const examMenus = [
@@ -45,7 +54,7 @@ path:"/admin/exams",
 },
 
 {
-title:"Resultsbaba",
+title:"Results",
 path:"/admin/results",
 },
 
@@ -89,11 +98,19 @@ return(
 
 <div className="sidebar">
 
+{/* LOGO */}
+
 <div className="logo">
 
-Odia Exam Admin
+Odia Exam
+<br />
+Admin
 
 </div>
+
+{/* ================================= */}
+{/* DASHBOARD */}
+{/* ================================= */}
 
 <div className="sidebar-group">
 
@@ -125,6 +142,10 @@ Dashboard
 
 </div>
 
+{/* ================================= */}
+{/* ACADEMIC */}
+{/* ================================= */}
+
 <div className="sidebar-group">
 
 <div className="sidebar-group-title">
@@ -145,6 +166,10 @@ academicMenus
 
 </div>
 
+{/* ================================= */}
+{/* EXAMINATIONS */}
+{/* ================================= */}
+
 <div className="sidebar-group">
 
 <div className="sidebar-group-title">
@@ -164,6 +189,10 @@ examMenus
 </div>
 
 </div>
+
+{/* ================================= */}
+{/* USERS */}
+{/* ================================= */}
 
 <div className="sidebar-group">
 

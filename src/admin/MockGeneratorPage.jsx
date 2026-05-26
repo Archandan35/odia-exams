@@ -10,6 +10,7 @@ from "./AdminLayout";
 import {
 collection,
 getDocs,
+onSnapshot,
 } from "firebase/firestore";
 
 import {
@@ -31,6 +32,12 @@ STATES
 ========================================= */
 
 const [subjects,setSubjects] =
+useState([]);
+
+const [topics,setTopics] =
+useState([]);
+
+const [subTopics,setSubTopics] =
 useState([]);
 
 const [questions,setQuestions] =
@@ -99,6 +106,60 @@ return ()=>unsubscribe();
 },[]);
 
 /* =========================================
+LOAD TOPICS
+========================================= */
+
+useEffect(()=>{
+
+const unsub = onSnapshot(
+collection(db,"topics"),
+(snapshot)=>{
+
+const data =
+snapshot.docs.map((doc)=>({
+
+id:doc.id,
+...doc.data(),
+
+}));
+
+setTopics(data);
+
+}
+);
+
+return ()=>unsub();
+
+},[]);
+
+/* =========================================
+LOAD SUBTOPICS
+========================================= */
+
+useEffect(()=>{
+
+const unsub = onSnapshot(
+collection(db,"subtopics"),
+(snapshot)=>{
+
+const data =
+snapshot.docs.map((doc)=>({
+
+id:doc.id,
+...doc.data(),
+
+}));
+
+setSubTopics(data);
+
+}
+);
+
+return ()=>unsub();
+
+},[]);
+
+/* =========================================
 LOAD QUESTIONS
 ========================================= */
 
@@ -128,6 +189,33 @@ loadQuestions();
 },[]);
 
 /* =========================================
+FILTERED TOPICS
+========================================= */
+
+const filteredTopics =
+topics.filter(
+(t)=>
+t.subjectId ===
+subjectId
+);
+
+/* =========================================
+FILTERED SUBTOPICS
+========================================= */
+
+const filteredSubTopics =
+subTopics.filter(
+(st)=>
+
+st.subjectId ===
+subjectId &&
+
+st.topicId ===
+topic
+
+);
+
+/* =========================================
 FILTER QUESTIONS
 ========================================= */
 
@@ -147,20 +235,16 @@ true;
 const topicMatch =
 topic
 ?
-(
-q.topicName ||
-q.topic
-) === topic
+q.topicId ===
+topic
 :
 true;
 
 const subTopicMatch =
 subTopic
 ?
-(
-q.subTopicName ||
-q.subTopic
-) === subTopic
+q.subTopicId ===
+subTopic
 :
 true;
 
@@ -201,89 +285,6 @@ quantity
 },[
 filteredQuestions,
 quantity,
-]);
-
-/* =========================================
-TOPICS
-========================================= */
-
-const topics =
-useMemo(()=>{
-
-return [
-
-...new Set(
-
-questions
-.filter(
-(q)=>
-!subjectId ||
-q.subjectId ===
-subjectId
-)
-.map(
-(q)=>
-q.topicName ||
-q.topic
-)
-.filter(Boolean)
-
-),
-
-];
-
-},[
-questions,
-subjectId,
-]);
-
-/* =========================================
-SUBTOPICS
-========================================= */
-
-const subTopics =
-useMemo(()=>{
-
-return [
-
-...new Set(
-
-questions
-.filter((q)=>{
-
-const subjectMatch =
-!subjectId ||
-q.subjectId ===
-subjectId;
-
-const topicMatch =
-!topic ||
-(
-q.topicName ||
-q.topic
-) === topic;
-
-return (
-subjectMatch &&
-topicMatch
-);
-
-})
-.map(
-(q)=>
-q.subTopicName ||
-q.subTopic
-)
-.filter(Boolean)
-
-),
-
-];
-
-},[
-questions,
-subjectId,
-topic,
 ]);
 
 /* =========================================
@@ -549,14 +550,14 @@ setSubTopic("");
 All Topics
 </option>
 
-{topics.map((t)=>(
+{filteredTopics.map((t)=>(
 
 <option
-key={t}
-value={t}
+key={t.id}
+value={t.id}
 >
 
-{t}
+{t.name}
 
 </option>
 
@@ -566,7 +567,7 @@ value={t}
 
 </div>
 
-{/* SUB TOPIC */}
+{/* SUBTOPIC */}
 
 <div className="form-group">
 
@@ -587,14 +588,14 @@ e.target.value
 All Sub Topics
 </option>
 
-{subTopics.map((st)=>(
+{filteredSubTopics.map((st)=>(
 
 <option
-key={st}
-value={st}
+key={st.id}
+value={st.id}
 >
 
-{st}
+{st.name}
 
 </option>
 

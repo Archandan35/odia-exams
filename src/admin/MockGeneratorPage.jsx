@@ -93,6 +93,36 @@ setGeneratedMocks
 ] = useState([]);
 
 /* =========================================
+ADVANCED DISTRIBUTION
+========================================= */
+
+const [
+includeAllQuestions,
+setIncludeAllQuestions
+] = useState(false);
+
+const [
+distributionMode,
+setDistributionMode
+] = useState("balanced");
+
+const [
+manualDistribution,
+setManualDistribution
+] = useState("");
+
+const [
+distributionPreview,
+setDistributionPreview
+] = useState([]);
+
+const remainder =
+totalQuestions % quantity;
+
+const remainderPercentage =
+(remainder / quantity) * 100;
+
+/* =========================================
 LOAD SUBJECTS
 ========================================= */
 
@@ -288,6 +318,154 @@ quantity,
 ]);
 
 /* =========================================
+DISTRIBUTION ENGINE
+========================================= */
+
+useEffect(()=>{
+
+if(!includeAllQuestions){
+
+setDistributionPreview([]);
+
+return;
+
+}
+
+if(totalQuestions <= 0){
+
+setDistributionPreview([]);
+
+return;
+
+}
+
+/* BALANCED */
+
+if(
+distributionMode ===
+"balanced"
+){
+
+const totalMockCount =
+Math.floor(
+totalQuestions /
+quantity
+);
+
+const base =
+Math.floor(
+totalQuestions /
+totalMockCount
+);
+
+const extra =
+totalQuestions %
+totalMockCount;
+
+const arr = [];
+
+for(
+let i = 0;
+i < totalMockCount;
+i++
+){
+
+arr.push(
+base +
+(i < extra ? 1 : 0)
+);
+
+}
+
+setDistributionPreview(arr);
+
+}
+
+/* EXTRA */
+
+if(
+distributionMode ===
+"extra"
+){
+
+const arr = [];
+
+const fullMocks =
+Math.floor(
+totalQuestions /
+quantity
+);
+
+for(
+let i = 0;
+i < fullMocks;
+i++
+){
+
+arr.push(quantity);
+
+}
+
+const rem =
+totalQuestions %
+quantity;
+
+if(rem > 0){
+
+arr.push(rem);
+
+}
+
+setDistributionPreview(arr);
+
+}
+
+/* MANUAL */
+
+if(
+distributionMode ===
+"manual"
+){
+
+const arr =
+manualDistribution
+.split(",")
+
+.map((n)=>
+Number(n.trim())
+)
+
+.filter(Boolean);
+
+setDistributionPreview(arr);
+
+}
+
+},[
+includeAllQuestions,
+distributionMode,
+manualDistribution,
+totalQuestions,
+quantity,
+]);
+
+/* =========================================
+SUGGESTION ENGINE
+========================================= */
+
+const recommendedStrategy =
+
+remainderPercentage >= 15
+
+?
+
+"balanced"
+
+:
+
+"extra";
+
+/* =========================================
 GENERATE
 ========================================= */
 
@@ -315,7 +493,8 @@ return;
 
 if(
 desiredMocks >
-totalMocks
+totalMocks &&
+!includeAllQuestions
 ){
 
 alert(
@@ -334,14 +513,28 @@ setGenerationProgress(0);
 
 const generated = [];
 
+const finalDistribution =
+
+includeAllQuestions &&
+distributionPreview.length > 0
+
+?
+
+distributionPreview
+
+:
+
+Array(desiredMocks)
+.fill(quantity);
+
 for(
-let i = 1;
-i <= desiredMocks;
+let i = 0;
+i < finalDistribution.length;
 i++
 ){
 
 const currentName =
-`${mockName} ${i}`;
+`${mockName} ${i + 1}`;
 
 await generateMocks({
 
@@ -357,7 +550,7 @@ topic,
 subTopic,
 
 quantity:
-Number(quantity),
+finalDistribution[i],
 
 duration:
 Number(duration),
@@ -370,7 +563,9 @@ generated.push(
 currentName
 );
 
-setGenerationProgress(i);
+setGenerationProgress(
+i + 1
+);
 
 }
 
@@ -379,9 +574,7 @@ generated
 );
 
 alert(
-
 `${generated.length} mocks generated successfully`
-
 );
 
 }catch(error){
@@ -419,20 +612,16 @@ Mock Generator
 </h2>
 
 <p>
-Generate full and sectional mocks automatically
+Generate intelligent mock tests automatically
 </p>
 
 </div>
 
 </div>
 
-{/* =========================================
-FORM GRID
-========================================= */}
+{/* FORM */}
 
 <div className="mock-generator-grid">
-
-{/* MOCK NAME */}
 
 <div className="form-group">
 
@@ -452,8 +641,6 @@ e.target.value
 />
 
 </div>
-
-{/* MOCK TYPE */}
 
 <div className="form-group">
 
@@ -481,8 +668,6 @@ Sectional Mock
 </select>
 
 </div>
-
-{/* SUBJECT */}
 
 <div className="form-group">
 
@@ -525,8 +710,6 @@ value={subject.id}
 
 </div>
 
-{/* TOPIC */}
-
 <div className="form-group">
 
 <label>
@@ -567,8 +750,6 @@ value={t.id}
 
 </div>
 
-{/* SUBTOPIC */}
-
 <div className="form-group">
 
 <label>
@@ -604,8 +785,6 @@ value={st.id}
 </select>
 
 </div>
-
-{/* QUESTIONS */}
 
 <div className="form-group">
 
@@ -669,8 +848,6 @@ e.target.value
 </div>
 
 </div>
-
-{/* DURATION */}
 
 <div className="form-group">
 
@@ -743,8 +920,6 @@ e.target.value
 
 </div>
 
-{/* DESIRED MOCKS */}
-
 <div className="form-group">
 
 <label>
@@ -784,33 +959,189 @@ setDesiredMocks(value);
 
 </div>
 
-{/* =========================================
-STATS
-========================================= */}
+{/* STATS */}
 
 <div className="stats-box">
 
 <h3>
-
-Total Questions Available:
+Total Questions:
 {" "}
 {totalQuestions}
-
 </h3>
 
 <h3>
-
-Maximum Mocks Possible:
+Maximum Mocks:
 {" "}
 {totalMocks}
-
 </h3>
 
 </div>
 
-{/* =========================================
-PROGRESS
-========================================= */}
+{/* ADVANCED DISTRIBUTION */}
+
+<div className="stats-box">
+
+<label className="checkbox-row">
+
+<input
+type="checkbox"
+checked={
+includeAllQuestions
+}
+onChange={(e)=>
+setIncludeAllQuestions(
+e.target.checked
+)
+}
+/>
+
+Include All Available Questions
+
+</label>
+
+{includeAllQuestions && (
+
+<>
+
+<div className="recommend-box">
+
+Recommended:
+{" "}
+
+<strong>
+
+{
+recommendedStrategy ===
+"balanced"
+
+?
+
+"Balanced Distribution"
+
+:
+
+"Extra Mock Distribution"
+}
+
+</strong>
+
+</div>
+
+<div className="distribution-options">
+
+<label>
+
+<input
+type="radio"
+name="distribution"
+checked={
+distributionMode ===
+"balanced"
+}
+onChange={()=>
+setDistributionMode(
+"balanced"
+)
+}
+/>
+
+Balanced Distribution
+
+</label>
+
+<label>
+
+<input
+type="radio"
+name="distribution"
+checked={
+distributionMode ===
+"extra"
+}
+onChange={()=>
+setDistributionMode(
+"extra"
+)
+}
+/>
+
+Create Extra Mock
+
+</label>
+
+<label>
+
+<input
+type="radio"
+name="distribution"
+checked={
+distributionMode ===
+"manual"
+}
+onChange={()=>
+setDistributionMode(
+"manual"
+)
+}
+/>
+
+Manual Distribution
+
+</label>
+
+</div>
+
+{distributionMode ===
+"manual" && (
+
+<input
+type="text"
+placeholder="Example: 100,100,19"
+value={
+manualDistribution
+}
+onChange={(e)=>
+setManualDistribution(
+e.target.value
+)
+}
+/>
+
+)}
+
+{distributionPreview
+.length > 0 && (
+
+<div className="distribution-preview">
+
+{distributionPreview.map(
+(q,index)=>(
+
+<div
+key={index}
+className="distribution-card"
+>
+
+Mock {index + 1}
+<br />
+{q} Questions
+
+</div>
+
+)
+)}
+
+</div>
+
+)}
+
+</>
+
+)}
+
+</div>
+
+{/* PROGRESS */}
 
 {loading && (
 
@@ -822,7 +1153,17 @@ Generating:
 {" "}
 {generationProgress}
 /
-{desiredMocks}
+{
+includeAllQuestions
+
+?
+
+distributionPreview.length
+
+:
+
+desiredMocks
+}
 
 </h3>
 
@@ -830,9 +1171,7 @@ Generating:
 
 )}
 
-{/* =========================================
-GENERATED
-========================================= */}
+{/* GENERATED */}
 
 {generatedMocks.length > 0 && (
 
@@ -840,30 +1179,19 @@ GENERATED
 
 <h3>
 
-Successfully Generated:
+Generated:
 {" "}
 {generatedMocks.length}
 
 </h3>
 
-<div
-style={{
-display:"flex",
-gap:"12px",
-flexWrap:"wrap",
-}}
->
+<div className="distribution-preview">
 
 {generatedMocks.map((m)=>(
 
 <div
 key={m}
-style={{
-background:"#2563eb",
-padding:"8px 14px",
-borderRadius:"10px",
-fontWeight:"700",
-}}
+className="distribution-card"
 >
 
 {m}
@@ -889,10 +1217,6 @@ View Mock Tests
 </div>
 
 )}
-
-{/* =========================================
-BUTTON
-========================================= */}
 
 <button
 className="submit-btn"

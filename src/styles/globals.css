@@ -3025,3 +3025,255 @@ margin-top:24px;
 flex-wrap:wrap;
 
 }
+
+
+/* =========================================
+   EXAMS GRID CARD SYSTEM
+========================================= */
+
+.exam-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(320px,1fr));
+
+gap:22px;
+
+margin-top:20px;
+
+}
+
+/* CARD */
+
+.exam-card{
+
+background:#0f172a;
+
+border:1px solid #1e293b;
+
+border-radius:22px;
+
+padding:24px;
+
+position:relative;
+
+transition:0.3s;
+
+overflow:hidden;
+
+display:flex;
+
+flex-direction:column;
+
+gap:14px;
+
+}
+
+/* HOVER */
+
+.exam-card:hover{
+
+transform:translateY(-4px);
+
+border-color:#2563eb;
+
+box-shadow:
+0 15px 30px
+rgba(0,0,0,0.35);
+
+}
+
+/* BADGE */
+
+.exam-badge{
+
+position:absolute;
+
+top:18px;
+
+right:18px;
+
+padding:8px 14px;
+
+border-radius:999px;
+
+font-size:11px;
+
+font-weight:700;
+
+letter-spacing:0.5px;
+
+text-transform:uppercase;
+
+color:white;
+
+}
+
+/* FULL MOCK */
+
+.full-badge{
+
+background:
+linear-gradient(
+90deg,
+#2563eb,
+#3b82f6
+);
+
+}
+
+/* SECTIONAL */
+
+.sectional-badge{
+
+background:
+linear-gradient(
+90deg,
+#7c3aed,
+#9333ea
+);
+
+}
+
+/* TITLE */
+
+.exam-card-title{
+
+font-size:24px;
+
+font-weight:700;
+
+padding-right:90px;
+
+line-height:1.4;
+
+}
+
+/* DETAILS */
+
+.exam-details{
+
+display:flex;
+
+flex-direction:column;
+
+gap:10px;
+
+margin-top:4px;
+
+}
+
+.exam-details p{
+
+font-size:14px;
+
+color:#e2e8f0;
+
+line-height:1.7;
+
+}
+
+/* LABEL */
+
+.exam-details strong{
+
+color:#60a5fa;
+
+font-weight:700;
+
+}
+
+/* ACTIONS */
+
+.exam-actions{
+
+display:flex;
+
+gap:12px;
+
+margin-top:16px;
+
+flex-wrap:wrap;
+
+}
+
+/* BUTTONS */
+
+.exam-actions button{
+
+flex:1;
+
+min-width:120px;
+
+height:46px;
+
+font-weight:700;
+
+border-radius:14px;
+
+}
+
+/* MODAL */
+
+.exam-edit-modal{
+
+width:520px;
+
+max-width:95%;
+
+}
+
+/* MODAL GRID */
+
+.exam-edit-grid{
+
+display:grid;
+
+grid-template-columns:1fr 1fr;
+
+gap:14px;
+
+}
+
+/* FULL WIDTH */
+
+.exam-full-width{
+
+grid-column:1/-1;
+
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+.exam-edit-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.exam-card-title{
+
+font-size:20px;
+
+padding-right:0;
+
+margin-top:34px;
+
+}
+
+.exam-actions{
+
+flex-direction:column;
+
+}
+
+.exam-actions button{
+
+width:100%;
+
+}
+
+}

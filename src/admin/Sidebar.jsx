@@ -1,179 +1,220 @@
 import {
-  Link,
-  useLocation,
+Link,
+useLocation,
 } from "react-router-dom";
 
 export default function Sidebar() {
 
-  const location =
-    useLocation();
+const location =
+useLocation();
 
-  function isActive(path){
+function isActive(path){
 
-    return (
-      location.pathname === path
-    );
-  }
+return (
+location.pathname === path
+);
 
-  return (
+}
 
-    <div className="sidebar">
+return (
 
-      {/* LOGO */}
+<div className="sidebar">
 
-      <div className="logo">
+{/* LOGO */}
 
-        Odia Exam Admin
+<div className="logo">
 
-      </div>
+Odia Exam
+<br />
+Admin
 
-      {/* MENU */}
+</div>
 
-      <div className="menu">
+{/* MENU */}
 
-        {/* DASHBOARD */}
+<div className="menu">
 
-        <Link
-          to="/admin"
-          className={
-            isActive("/admin")
-              ? "active-link"
-              : ""
-          }
-        >
-          Dashboard
-        </Link>
+{/* DASHBOARD */}
 
-        {/* ================================= */}
-        {/* ACADEMIC */}
-        {/* ================================= */}
+<div className="sidebar-group">
 
-        <div className="menu-title">
-          Academic
-        </div>
+<div className="sidebar-group-title">
+Dashboard
+</div>
 
-        <Link
-          to="/admin/subjects"
-          className={
-            isActive(
-              "/admin/subjects"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Subjects
-        </Link>
+<Link
+to="/admin"
+className={
+isActive("/admin")
+? "active-link"
+: ""
+}
+>
+Dashboard
+</Link>
 
-        <Link
-          to="/admin/topics"
-          className={
-            isActive(
-              "/admin/topics"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Topics
-        </Link>
+</div>
 
-        <Link
-          to="/admin/subtopics"
-          className={
-            isActive(
-              "/admin/subtopics"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Sub Topics
-        </Link>
+{/* ================================= */}
+{/* ACADEMIC */}
+{/* ================================= */}
 
-        <Link
-          to="/admin/questions"
-          className={
-            isActive(
-              "/admin/questions"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Questions
-        </Link>
+<div className="sidebar-group">
 
-        <Link
-          to="/admin/bulk-import"
-          className={
-            isActive(
-              "/admin/bulk-import"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Bulk Import
-        </Link>
+<div className="sidebar-group-title">
+Academic
+</div>
 
-        <Link
-          to="/admin/mock-generator"
-          className={
-            isActive(
-              "/admin/mock-generator"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Mock Generator
-        </Link>
+<Link
+to="/admin/subjects"
+className={
+isActive(
+"/admin/subjects"
+)
+? "active-link"
+: ""
+}
+>
+Subjects
+</Link>
 
-        {/* ================================= */}
-        {/* EXAMS */}
-        {/* ================================= */}
+<Link
+to="/admin/topics"
+className={
+isActive(
+"/admin/topics"
+)
+? "active-link"
+: ""
+}
+>
+Topics
+</Link>
 
-        <div className="menu-title">
-          Exams
-        </div>
+<Link
+to="/admin/subtopics"
+className={
+isActive(
+"/admin/subtopics"
+)
+? "active-link"
+: ""
+}
+>
+Sub Topics
+</Link>
 
-        <Link
-          to="/admin/exams"
-          className={
-            isActive(
-              "/admin/exams"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Manage Exams
-        </Link>
+<Link
+to="/admin/questions"
+className={
+isActive(
+"/admin/questions"
+)
+? "active-link"
+: ""
+}
+>
+Questions
+</Link>
 
-        {/* ================================= */}
-        {/* RESULTS */}
-        {/* ================================= */}
+<Link
+to="/admin/bulk-import"
+className={
+isActive(
+"/admin/bulk-import"
+)
+? "active-link"
+: ""
+}
+>
+Bulk Import
+</Link>
 
-        <div className="menu-title">
-          Results
-        </div>
+{/* ================================= */}
+{/* MOCK GENERATOR */}
+{/* ================================= */}
 
-        <Link
-          to="/admin/results"
-          className={
-            isActive(
-              "/admin/results"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Results
-        </Link>
+<Link
+to="/admin/mock-generator"
+className={
+isActive(
+"/admin/mock-generator"
+)
+? "active-link"
+: ""
+}
+>
+Mock Generator
+</Link>
 
-      </div>
+</div>
 
-    </div>
-  );
+{/* ================================= */}
+{/* EXAMINATIONS */}
+{/* ================================= */}
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+Examinations
+</div>
+
+<Link
+to="/admin/exams"
+className={
+isActive(
+"/admin/exams"
+)
+? "active-link"
+: ""
+}
+>
+Exams
+</Link>
+
+<Link
+to="/admin/results"
+className={
+isActive(
+"/admin/results"
+)
+? "active-link"
+: ""
+}
+>
+Results
+</Link>
+
+</div>
+
+{/* ================================= */}
+{/* USERS */}
+{/* ================================= */}
+
+<div className="sidebar-group">
+
+<div className="sidebar-group-title">
+Users
+</div>
+
+<Link
+to="/profile"
+className={
+isActive(
+"/profile"
+)
+? "active-link"
+: ""
+}
+>
+Profile
+</Link>
+
+</div>
+
+</div>
+
+</div>
+
+);
 }

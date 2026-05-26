@@ -29,10 +29,12 @@ export default function Exams() {
   // =========================================
 
   const [exams,
-    setExams] = useState([]);
+    setExams] =
+      useState([]);
 
   const [subjects,
-    setSubjects] = useState([]);
+    setSubjects] =
+      useState([]);
 
   const [selectedSubject,
     setSelectedSubject] =
@@ -109,8 +111,7 @@ export default function Exams() {
 
           exams
             .map((e) =>
-              e.topicName ||
-              e.topicId
+              e.topicName
             )
             .filter(Boolean)
 
@@ -133,8 +134,7 @@ export default function Exams() {
 
           exams
             .map((e) =>
-              e.subTopicName ||
-              e.subTopicId
+              e.subTopicName
             )
             .filter(Boolean)
 
@@ -159,18 +159,14 @@ export default function Exams() {
 
       const topicMatch =
         selectedTopic
-          ? (
-              exam.topicName ||
-              exam.topicId
-            ) === selectedTopic
+          ? exam.topicName ===
+            selectedTopic
           : true;
 
       const subTopicMatch =
         selectedSubTopic
-          ? (
-              exam.subTopicName ||
-              exam.subTopicId
-            ) === selectedSubTopic
+          ? exam.subTopicName ===
+            selectedSubTopic
           : true;
 
       return (
@@ -265,19 +261,11 @@ export default function Exams() {
         subjectId:
           editingExam.subjectId,
 
-        topicId:
-          editingExam.topicId,
-
-        subTopicId:
-          editingExam.subTopicId,
-
         topicName:
-          editingExam.topicName ||
-          editingExam.topicId,
+          editingExam.topicName,
 
         subTopicName:
-          editingExam.subTopicName ||
-          editingExam.subTopicId,
+          editingExam.subTopicName,
 
         totalQuestions:
           Number(
@@ -483,9 +471,9 @@ export default function Exams() {
                     Topic:
                   </strong>{" "}
 
-                  {exam.topicName ||
-                    exam.topicId ||
-                    "-"}
+                  {exam.topicName
+                    ? exam.topicName
+                    : "Topic Missing"}
 
                 </p>
 
@@ -495,9 +483,9 @@ export default function Exams() {
                     Sub Topic:
                   </strong>{" "}
 
-                  {exam.subTopicName ||
-                    exam.subTopicId ||
-                    "-"}
+                  {exam.subTopicName
+                    ? exam.subTopicName
+                    : "Sub Topic Missing"}
 
                 </p>
 
@@ -507,9 +495,11 @@ export default function Exams() {
                     Quantity:
                   </strong>{" "}
 
-                  {exam.totalQuestions ||
+                  {
+                    exam.totalQuestions ||
                     exam.questionCount ||
-                    0}
+                    0
+                  } Questions
 
                 </p>
 
@@ -658,10 +648,9 @@ export default function Exams() {
 
                 <input
                   type="text"
-                  placeholder="Topic"
+                  placeholder="Topic Name"
                   value={
                     editingExam.topicName ||
-                    editingExam.topicId ||
                     ""
                   }
                   onChange={(e) =>
@@ -680,10 +669,9 @@ export default function Exams() {
 
                 <input
                   type="text"
-                  placeholder="Sub Topic"
+                  placeholder="Sub Topic Name"
                   value={
                     editingExam.subTopicName ||
-                    editingExam.subTopicId ||
                     ""
                   }
                   onChange={(e) =>
@@ -700,43 +688,119 @@ export default function Exams() {
 
                 {/* QUANTITY */}
 
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={
-                    editingExam.totalQuestions
-                  }
-                  onChange={(e) =>
-                    setEditingExam({
+                <div className="custom-input-group">
 
-                      ...editingExam,
+                  <select
+                    value={
+                      editingExam.totalQuestions
+                    }
+                    onChange={(e) =>
+                      setEditingExam({
 
-                      totalQuestions:
-                        e.target.value,
+                        ...editingExam,
 
-                    })
-                  }
-                />
+                        totalQuestions:
+                          e.target.value,
+
+                      })
+                    }
+                  >
+
+                    <option value={100}>
+                      100 Questions
+                    </option>
+
+                    <option value={50}>
+                      50 Questions
+                    </option>
+
+                    <option value={25}>
+                      25 Questions
+                    </option>
+
+                  </select>
+
+                  <input
+                    type="number"
+                    placeholder="Custom Questions"
+                    value={
+                      editingExam.totalQuestions
+                    }
+                    onChange={(e) =>
+                      setEditingExam({
+
+                        ...editingExam,
+
+                        totalQuestions:
+                          e.target.value,
+
+                      })
+                    }
+                  />
+
+                </div>
 
                 {/* DURATION */}
 
-                <input
-                  type="number"
-                  placeholder="Duration in mins"
-                  value={
-                    editingExam.duration
-                  }
-                  onChange={(e) =>
-                    setEditingExam({
+                <div className="custom-input-group">
 
-                      ...editingExam,
+                  <select
+                    value={
+                      editingExam.duration
+                    }
+                    onChange={(e) =>
+                      setEditingExam({
 
-                      duration:
-                        e.target.value,
+                        ...editingExam,
 
-                    })
-                  }
-                />
+                        duration:
+                          e.target.value,
+
+                      })
+                    }
+                  >
+
+                    <option value={60}>
+                      60 mins
+                    </option>
+
+                    <option value={45}>
+                      45 mins
+                    </option>
+
+                    <option value={30}>
+                      30 mins
+                    </option>
+
+                    <option value={15}>
+                      15 mins
+                    </option>
+
+                    <option value={10}>
+                      10 mins
+                    </option>
+
+                  </select>
+
+                  <input
+                    type="number"
+                    placeholder="Custom Duration"
+                    value={
+                      editingExam.duration
+                    }
+                    onChange={(e) =>
+                      setEditingExam({
+
+                        ...editingExam,
+
+                        duration:
+                          e.target.value,
+
+                      })
+                    }
+                  />
+
+                </div>
 
               </div>
 

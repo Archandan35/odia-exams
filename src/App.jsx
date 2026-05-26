@@ -5,34 +5,56 @@ import {
 } from "react-router-dom";
 
 import Login from "./pages/Login";
+
 import Register from "./pages/Register";
 
-import StudentDashboard from "./pages/StudentDashboard";
+import StudentDashboard
+from "./pages/StudentDashboard";
 
-import ExamPage from "./pages/ExamPage";
+import ExamPage
+from "./pages/ExamPage";
 
-import ProtectedRoute from "./routes/ProtectedRoute";
-import AdminRoute from "./routes/AdminRoute";
+import ProtectedRoute
+from "./routes/ProtectedRoute";
 
-import AdminPage from "./pages/AdminPage";
+import AdminRoute
+from "./routes/AdminRoute";
 
-import Subjects from "./admin/Subjects";
+import AdminPage
+from "./pages/AdminPage";
 
-import Topics from "./admin/Topics";
+import Subjects
+from "./admin/Subjects";
 
-import SubTopics from "./admin/SubTopics";
+import Topics
+from "./admin/Topics";
 
-import Questions from "./admin/Questions";
+import SubTopics
+from "./admin/SubTopics";
 
-import Exams from "./admin/Exams";
+import Questions
+from "./admin/Questions";
 
-import Profile from "./pages/Profile";
+import Exams
+from "./admin/Exams";
 
-import Results from "./admin/Results";
+import Results
+from "./admin/Results";
 
-import ResultPage from "./pages/ResultPage";
-import BulkImport from "./admin/BulkImport";
-import Leaderboard from "./pages/Leaderboard";
+import BulkImport
+from "./admin/BulkImport";
+
+import MockGeneratorPage
+from "./admin/MockGeneratorPage";
+
+import Profile
+from "./pages/Profile";
+
+import ResultPage
+from "./pages/ResultPage";
+
+import Leaderboard
+from "./pages/Leaderboard";
 
 export default function App() {
 
@@ -41,6 +63,10 @@ export default function App() {
     <BrowserRouter>
 
       <Routes>
+
+        {/* ================================= */}
+        {/* AUTH */}
+        {/* ================================= */}
 
         <Route
           path="/"
@@ -52,11 +78,17 @@ export default function App() {
           element={<Register />}
         />
 
+        {/* ================================= */}
+        {/* STUDENT */}
+        {/* ================================= */}
+
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
+
               <StudentDashboard />
+
             </ProtectedRoute>
           }
         />
@@ -65,105 +97,177 @@ export default function App() {
           path="/exam/:examId"
           element={
             <ProtectedRoute>
+
               <ExamPage />
+
             </ProtectedRoute>
           }
         />
 
         <Route
-  path="/admin/topics"
-  element={
-    <AdminRoute>
-      <Topics />
-    </AdminRoute>
-  }
-/>
-        
-<Route
-  path="/admin/subjects"
-  element={
-    <AdminRoute>
-      <Subjects />
-    </AdminRoute>
-  }
-/>
+          path="/profile"
+          element={
+            <ProtectedRoute>
+
+              <Profile />
+
+            </ProtectedRoute>
+          }
+        />
 
         <Route
-  path="/admin/subtopics"
-  element={
-    <AdminRoute>
-      <SubTopics />
-    </AdminRoute>
-  }
-/>
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+
+              <Leaderboard />
+
+            </ProtectedRoute>
+          }
+        />
 
         <Route
-  path="/admin/questions"
-  element={
-    <AdminRoute>
-      <Questions />
-    </AdminRoute>
-  }
-/>
+          path="/result"
+          element={
+            <ProtectedRoute>
 
-        <Route
-path="/admin/bulk-import"
-element={
-<AdminRoute>
-<BulkImport/>
-</AdminRoute>
-}
-/>
-        
+              <ResultPage />
 
-<Route
-  path="/admin/exams"
-  element={
-    <AdminRoute>
-      <Exams />
-    </AdminRoute>
-  }
-/>
-        <Route
-  path="/admin/results"
-  element={
-    <AdminRoute>
-      <Results />
-    </AdminRoute>
-  }
-/>
+            </ProtectedRoute>
+          }
+        />
 
-        <Route
-path="/profile"
-element={
-<ProtectedRoute>
-<Profile/>
-</ProtectedRoute>
-}
-/>
-        <Route
-path="/leaderboard"
-element={
-<ProtectedRoute>
-<Leaderboard/>
-</ProtectedRoute>
-}
-/>
-        
-        <Route
-path="/result"
-element={
-<ProtectedRoute>
-<ResultPage/>
-</ProtectedRoute>
-}
-/>
-        
+        {/* ================================= */}
+        {/* ADMIN DASHBOARD */}
+        {/* ================================= */}
+
         <Route
           path="/admin"
           element={
             <AdminRoute>
+
               <AdminPage />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* SUBJECTS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/subjects"
+          element={
+            <AdminRoute>
+
+              <Subjects />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* TOPICS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/topics"
+          element={
+            <AdminRoute>
+
+              <Topics />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* SUB TOPICS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/subtopics"
+          element={
+            <AdminRoute>
+
+              <SubTopics />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* QUESTIONS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/questions"
+          element={
+            <AdminRoute>
+
+              <Questions />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* BULK IMPORT */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/bulk-import"
+          element={
+            <AdminRoute>
+
+              <BulkImport />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* MOCK GENERATOR */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/mock-generator"
+          element={
+            <AdminRoute>
+
+              <MockGeneratorPage />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* EXAMS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/exams"
+          element={
+            <AdminRoute>
+
+              <Exams />
+
+            </AdminRoute>
+          }
+        />
+
+        {/* ================================= */}
+        {/* RESULTS */}
+        {/* ================================= */}
+
+        <Route
+          path="/admin/results"
+          element={
+            <AdminRoute>
+
+              <Results />
+
             </AdminRoute>
           }
         />

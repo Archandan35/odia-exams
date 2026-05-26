@@ -1,478 +1,728 @@
 import {
-  useEffect,
-  useState,
+useEffect,
+useMemo,
+useState,
 } from "react";
 
-import AdminLayout from "./AdminLayout";
+import AdminLayout
+from "./AdminLayout";
 
 import {
-  listenSubjects,
+collection,
+getDocs,
+} from "firebase/firestore";
+
+import {
+db,
+} from "../firebase/config";
+
+import {
+listenSubjects,
 } from "../services/subjectService";
 
 import {
-  generateMocks,
-  getFilteredQuestions,
+generateMocks,
+getFilteredQuestions,
 } from "../services/mockGeneratorService";
 
-export default function MockGeneratorPage() {
+export default function MockGeneratorPage(){
 
-  // =========================================
-  // STATES
-  // =========================================
+// =========================================
+// STATES
+// =========================================
 
-  const [subjects,
-    setSubjects] =
-      useState([]);
+const [subjects,
+setSubjects] =
+useState([]);
 
-  const [mockType,
-    setMockType] =
-      useState("full");
+const [questions,
+setQuestions] =
+useState([]);
 
-  const [subjectId,
-    setSubjectId] =
-      useState("");
+const [mockName,
+setMockName] =
+useState("");
 
-  const [topicId,
-    setTopicId] =
-      useState("");
+const [mockType,
+setMockType] =
+useState("full");
 
-  const [subTopicId,
-    setSubTopicId] =
-      useState("");
+const [subjectId,
+setSubjectId] =
+useState("");
 
-  const [quantity,
-    setQuantity] =
-      useState(100);
+const [topic,
+setTopic] =
+useState("");
 
-  const [duration,
-    setDuration] =
-      useState(60);
+const [subTopic,
+setSubTopic] =
+useState("");
 
-  const [totalQuestions,
-    setTotalQuestions] =
-      useState(0);
+const [quantity,
+setQuantity] =
+useState(100);
 
-  const [totalMocks,
-    setTotalMocks] =
-      useState(0);
+const [duration,
+setDuration] =
+useState(60);
 
-  const [loading,
-    setLoading] =
-      useState(false);
+const [desiredMocks,
+setDesiredMocks] =
+useState(1);
 
-  // =========================================
-  // LOAD SUBJECTS
-  // =========================================
+const [totalQuestions,
+setTotalQuestions] =
+useState(0);
 
-  useEffect(() => {
+const [totalMocks,
+setTotalMocks] =
+useState(0);
 
-    const unsubscribe =
-      listenSubjects(setSubjects);
+const [loading,
+setLoading] =
+useState(false);
 
-    return () => unsubscribe();
+// =========================================
+// LOAD SUBJECTS
+// =========================================
 
-  }, []);
+useEffect(()=>{
 
-  // =========================================
-  // LOAD QUESTION STATS
-  // =========================================
+const unsubscribe =
+listenSubjects(setSubjects);
 
-  useEffect(() => {
+return ()=>unsubscribe();
 
-    async function loadData() {
+},[]);
 
-      const questions =
-        await getFilteredQuestions({
+// =========================================
+// LOAD QUESTIONS
+// =========================================
 
-          subjectId,
-          topicId,
-          subTopicId,
+useEffect(()=>{
 
-        });
+async function loadQuestions(){
 
-      setTotalQuestions(
-        questions.length
-      );
+const snapshot =
+await getDocs(
+collection(db,"questions")
+);
 
-      setTotalMocks(
+const data =
+snapshot.docs.map((doc)=>({
 
-        Math.floor(
-          questions.length /
-          quantity
-        )
+id:doc.id,
+...doc.data(),
 
-      );
-    }
+}));
 
-    loadData();
+setQuestions(data);
 
-  }, [
+}
 
-    subjectId,
-    topicId,
-    subTopicId,
-    quantity,
+loadQuestions();
 
-  ]);
+},[]);
 
-  // =========================================
-  // GENERATE
-  // =========================================
+// =========================================
+// FILTER QUESTIONS
+// =========================================
+
+const filteredQuestions =
+useMemo(()=>{
+
+return questions.filter((q)=>{
+
+const subjectMatch =
+subjectId
+?
+q.subjectId ===
+subjectId
+:
+true;
 
-  async function handleGenerate() {
+const topicMatch =
+topic
+?
+q.topic === topic
+:
+true;
+
+const subTopicMatch =
+subTopic
+?
+q.subTopic ===
+subTopic
+:
+true;
+
+return (
+subjectMatch &&
+topicMatch &&
+subTopicMatch
+);
 
-    if (!subjectId) {
+});
 
-      alert(
-        "Please select subject"
-      );
+},[
+questions,
+subjectId,
+topic,
+subTopic,
+]);
+
+// =========================================
+// QUESTION STATS
+// =========================================
 
-      return;
-    }
+useEffect(()=>{
 
-    if (totalMocks <= 0) {
+setTotalQuestions(
+filteredQuestions.length
+);
 
-      alert(
-        "Not enough questions available"
-      );
+setTotalMocks(
 
-      return;
-    }
+Math.floor(
+filteredQuestions.length /
+quantity
+)
 
-    try {
+);
 
-      setLoading(true);
+},[
+filteredQuestions,
+quantity,
+]);
 
-      await generateMocks({
+// =========================================
+// TOPICS
+// =========================================
 
-        mockType,
+const topics =
+useMemo(()=>{
 
-        subjectId,
+return [
 
-        topicId,
+...new Set(
 
-        subTopicId,
+questions
+.filter(
+(q)=>
+!subjectId ||
+q.subjectId ===
+subjectId
+)
+.map((q)=>q.topic)
+.filter(Boolean)
 
-        quantity:
-          Number(quantity),
+),
 
-        duration:
-          Number(duration),
+];
 
-      });
+},[
+questions,
+subjectId,
+]);
 
-      alert(
-        "Mocks Generated Successfully"
-      );
+// =========================================
+// SUBTOPICS
+// =========================================
 
-    } catch (error) {
+const subTopics =
+useMemo(()=>{
 
-      console.error(error);
+return [
 
-      alert(
-        "Failed to generate mocks"
-      );
+...new Set(
 
-    } finally {
+questions
+.filter((q)=>{
 
-      setLoading(false);
-    }
-  }
+const subjectMatch =
+!subjectId ||
+q.subjectId ===
+subjectId;
 
-  // =========================================
-  // UI
-  // =========================================
+const topicMatch =
+!topic ||
+q.topic === topic;
 
-  return (
+return (
+subjectMatch &&
+topicMatch
+);
 
-    <AdminLayout>
+})
+.map((q)=>q.subTopic)
+.filter(Boolean)
 
-      <div className="page">
+),
 
-        {/* HEADER */}
+];
 
-        <div className="page-header">
+},[
+questions,
+subjectId,
+topic,
+]);
 
-          <div>
+// =========================================
+// GENERATE
+// =========================================
 
-            <h2>
-              Mock Generator
-            </h2>
+async function handleGenerate(){
 
-            <p>
-              Automatically generate
-              unique full and sectional
-              mocks
-            </p>
+if(!mockName){
 
-          </div>
+alert(
+"Enter mock name"
+);
 
-        </div>
+return;
+}
 
-        {/* MAIN BOX */}
+if(!subjectId){
 
-        <div className="mock-generator-box">
+alert(
+"Select subject"
+);
 
-          {/* MOCK TYPE */}
+return;
+}
 
-          <div className="form-group">
+if(
+desiredMocks >
+totalMocks
+){
 
-            <label>
-              Mock Type
-            </label>
+alert(
+`Maximum ${totalMocks} mocks can be generated`
+);
 
-            <select
-              value={mockType}
-              onChange={(e) =>
-                setMockType(
-                  e.target.value
-                )
-              }
-            >
+return;
+}
 
-              <option value="full">
-                Full Mock
-              </option>
+try{
 
-              <option value="sectional">
-                Sectional Mock
-              </option>
+setLoading(true);
 
-            </select>
+await generateMocks({
 
-          </div>
+mockName,
 
-          {/* SUBJECT */}
+mockType,
 
-          <div className="form-group">
+subjectId,
 
-            <label>
-              Subject
-            </label>
+topic,
 
-            <select
-              value={subjectId}
-              onChange={(e) =>
-                setSubjectId(
-                  e.target.value
-                )
-              }
-            >
+subTopic,
 
-              <option value="">
-                Select Subject
-              </option>
+quantity:
+Number(quantity),
 
-              {subjects.map((subject) => (
+duration:
+Number(duration),
 
-                <option
-                  key={subject.id}
-                  value={subject.id}
-                >
-                  {subject.name}
-                </option>
+desiredMocks:
+Number(desiredMocks),
 
-              ))}
+});
 
-            </select>
+alert(
+"Mocks Generated Successfully"
+);
 
-          </div>
+}catch(error){
 
-          {/* TOPIC */}
+console.error(error);
 
-          <div className="form-group">
+alert(
+"Failed to generate mocks"
+);
 
-            <label>
-              Topic
-            </label>
+}finally{
 
-            <input
-              type="text"
-              placeholder="Enter Topic"
-              value={topicId}
-              onChange={(e) =>
-                setTopicId(
-                  e.target.value
-                )
-              }
-            />
+setLoading(false);
 
-          </div>
+}
 
-          {/* SUB TOPIC */}
+}
 
-          <div className="form-group">
+// =========================================
+// UI
+// =========================================
 
-            <label>
-              Sub Topic
-            </label>
+return(
 
-            <input
-              type="text"
-              placeholder="Enter Sub Topic"
-              value={subTopicId}
-              onChange={(e) =>
-                setSubTopicId(
-                  e.target.value
-                )
-              }
-            />
+<AdminLayout>
 
-          </div>
+<div className="page">
 
-          {/* QUANTITY */}
+<div className="page-header">
 
-          <div className="form-group">
+<div>
 
-            <label>
-              Quantity
-            </label>
+<h2>
+Mock Generator
+</h2>
 
-            <div className="custom-input-group">
+<p>
+Generate full and sectional mocks automatically
+</p>
 
-              <select
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-              >
+</div>
 
-                <option value={100}>
-                  100 Questions
-                </option>
+</div>
 
-                <option value={50}>
-                  50 Questions
-                </option>
+<div className="mock-generator-grid">
 
-                <option value={25}>
-                  25 Questions
-                </option>
+{/* MOCK NAME */}
 
-              </select>
+<div className="form-group">
 
-              <input
-                type="number"
-                placeholder="Custom Questions"
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-              />
+<label>
+Mock Name
+</label>
 
-            </div>
+<input
+type="text"
+placeholder="Enter Mock Name"
+value={mockName}
+onChange={(e)=>
+setMockName(
+e.target.value
+)
+}
+/>
 
-          </div>
+</div>
 
-          {/* DURATION */}
+{/* MOCK TYPE */}
 
-          <div className="form-group">
+<div className="form-group">
 
-            <label>
-              Duration
-            </label>
+<label>
+Mock Type
+</label>
 
-            <div className="custom-input-group">
+<select
+value={mockType}
+onChange={(e)=>
+setMockType(
+e.target.value
+)
+}
+>
 
-              <select
-                value={duration}
-                onChange={(e) =>
-                  setDuration(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-              >
+<option value="full">
+Full Mock
+</option>
 
-                <option value={60}>
-                  60 mins
-                </option>
+<option value="sectional">
+Sectional Mock
+</option>
 
-                <option value={45}>
-                  45 mins
-                </option>
+</select>
 
-                <option value={30}>
-                  30 mins
-                </option>
+</div>
 
-                <option value={15}>
-                  15 mins
-                </option>
+{/* SUBJECT */}
 
-                <option value={10}>
-                  10 mins
-                </option>
+<div className="form-group">
 
-              </select>
+<label>
+Subject
+</label>
 
-              <input
-                type="number"
-                placeholder="Custom Duration"
-                value={duration}
-                onChange={(e) =>
-                  setDuration(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-              />
+<select
+value={subjectId}
+onChange={(e)=>
+setSubjectId(
+e.target.value
+)
+}
+>
 
-            </div>
+<option value="">
+Select Subject
+</option>
 
-          </div>
+{subjects.map((subject)=>(
 
-          {/* STATS */}
+<option
+key={subject.id}
+value={subject.id}
+>
 
-          <div className="stats-box">
+{subject.name}
 
-            <h3>
+</option>
 
-              Total Questions Available:
-              {" "}
-              {totalQuestions}
+))}
 
-            </h3>
+</select>
 
-            <h3>
+</div>
 
-              Total Mocks To Be Created:
-              {" "}
-              {totalMocks}
+{/* TOPIC */}
 
-            </h3>
+<div className="form-group">
 
-          </div>
+<label>
+Topic
+</label>
 
-          {/* BUTTON */}
+<select
+value={topic}
+onChange={(e)=>
+setTopic(
+e.target.value
+)
+}
+>
 
-          <button
-            className="submit-btn"
-            onClick={handleGenerate}
-            disabled={loading}
-          >
+<option value="">
+All Topics
+</option>
 
-            {loading
-              ? "Generating..."
-              : "Generate Mocks"}
+{topics.map((t)=>(
 
-          </button>
+<option
+key={t}
+value={t}
+>
 
-        </div>
+{t}
 
-      </div>
+</option>
 
-    </AdminLayout>
+))}
 
-  );
+</select>
+
+</div>
+
+{/* SUB TOPIC */}
+
+<div className="form-group">
+
+<label>
+Sub Topic
+</label>
+
+<select
+value={subTopic}
+onChange={(e)=>
+setSubTopic(
+e.target.value
+)
+}
+>
+
+<option value="">
+All Sub Topics
+</option>
+
+{subTopics.map((st)=>(
+
+<option
+key={st}
+value={st}
+>
+
+{st}
+
+</option>
+
+))}
+
+</select>
+
+</div>
+
+{/* QUANTITY */}
+
+<div className="form-group">
+
+<label>
+Questions Per Mock
+</label>
+
+<div className="custom-input-group">
+
+<select
+value={quantity}
+onChange={(e)=>
+setQuantity(
+Number(
+e.target.value
+)
+)
+}
+>
+
+<option value={100}>
+100 Questions
+</option>
+
+<option value={50}>
+50 Questions
+</option>
+
+<option value={25}>
+25 Questions
+</option>
+
+</select>
+
+<input
+type="number"
+placeholder="Custom Questions"
+value={quantity}
+onChange={(e)=>
+setQuantity(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+</div>
+
+</div>
+
+{/* DURATION */}
+
+<div className="form-group">
+
+<label>
+Duration
+</label>
+
+<div className="custom-input-group">
+
+<select
+value={duration}
+onChange={(e)=>
+setDuration(
+Number(
+e.target.value
+)
+)
+}
+>
+
+<option value={60}>
+60 mins
+</option>
+
+<option value={45}>
+45 mins
+</option>
+
+<option value={30}>
+30 mins
+</option>
+
+<option value={15}>
+15 mins
+</option>
+
+<option value={10}>
+10 mins
+</option>
+
+</select>
+
+<input
+type="number"
+placeholder="Custom Duration"
+value={duration}
+onChange={(e)=>
+setDuration(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+</div>
+
+</div>
+
+{/* DESIRED MOCKS */}
+
+<div className="form-group">
+
+<label>
+Desired Mock Quantity
+</label>
+
+<input
+type="number"
+placeholder="Enter mock quantity"
+value={desiredMocks}
+max={totalMocks}
+onChange={(e)=>
+setDesiredMocks(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+</div>
+
+</div>
+
+{/* STATS */}
+
+<div className="stats-box">
+
+<h3>
+
+Total Questions Available:
+{" "}
+{totalQuestions}
+
+</h3>
+
+<h3>
+
+Maximum Mocks Possible:
+{" "}
+{totalMocks}
+
+</h3>
+
+</div>
+
+{/* BUTTON */}
+
+<button
+className="submit-btn"
+onClick={handleGenerate}
+disabled={loading}
+>
+
+{loading
+?
+"Generating..."
+:
+"Generate Mocks"}
+
+</button>
+
+</div>
+
+</AdminLayout>
+
+);
+
 }

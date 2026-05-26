@@ -22,70 +22,72 @@ listenSubjects,
 
 import {
 generateMocks,
-getFilteredQuestions,
 } from "../services/mockGeneratorService";
 
 export default function MockGeneratorPage(){
 
-// =========================================
-// STATES
-// =========================================
+/* =========================================
+STATES
+========================================= */
 
-const [subjects,
-setSubjects] =
+const [subjects,setSubjects] =
 useState([]);
 
-const [questions,
-setQuestions] =
+const [questions,setQuestions] =
 useState([]);
 
-const [mockName,
-setMockName] =
+const [mockName,setMockName] =
 useState("");
 
-const [mockType,
-setMockType] =
-useState("full");
+const [mockType,setMockType] =
+useState("sectional");
 
-const [subjectId,
-setSubjectId] =
+const [subjectId,setSubjectId] =
 useState("");
 
-const [topic,
-setTopic] =
+const [topic,setTopic] =
 useState("");
 
-const [subTopic,
-setSubTopic] =
+const [subTopic,setSubTopic] =
 useState("");
 
-const [quantity,
-setQuantity] =
-useState(100);
+const [quantity,setQuantity] =
+useState(25);
 
-const [duration,
-setDuration] =
+const [duration,setDuration] =
 useState(60);
 
-const [desiredMocks,
-setDesiredMocks] =
-useState(1);
+const [
+desiredMocks,
+setDesiredMocks
+] = useState(1);
 
-const [totalQuestions,
-setTotalQuestions] =
-useState(0);
+const [
+totalQuestions,
+setTotalQuestions
+] = useState(0);
 
-const [totalMocks,
-setTotalMocks] =
-useState(0);
+const [
+totalMocks,
+setTotalMocks
+] = useState(0);
 
-const [loading,
-setLoading] =
+const [loading,setLoading] =
 useState(false);
 
-// =========================================
-// LOAD SUBJECTS
-// =========================================
+const [
+generationProgress,
+setGenerationProgress
+] = useState(0);
+
+const [
+generatedMocks,
+setGeneratedMocks
+] = useState([]);
+
+/* =========================================
+LOAD SUBJECTS
+========================================= */
 
 useEffect(()=>{
 
@@ -96,9 +98,9 @@ return ()=>unsubscribe();
 
 },[]);
 
-// =========================================
-// LOAD QUESTIONS
-// =========================================
+/* =========================================
+LOAD QUESTIONS
+========================================= */
 
 useEffect(()=>{
 
@@ -125,9 +127,9 @@ loadQuestions();
 
 },[]);
 
-// =========================================
-// FILTER QUESTIONS
-// =========================================
+/* =========================================
+FILTER QUESTIONS
+========================================= */
 
 const filteredQuestions =
 useMemo(()=>{
@@ -145,15 +147,20 @@ true;
 const topicMatch =
 topic
 ?
-q.topic === topic
+(
+q.topicName ||
+q.topic
+) === topic
 :
 true;
 
 const subTopicMatch =
 subTopic
 ?
-q.subTopic ===
-subTopic
+(
+q.subTopicName ||
+q.subTopic
+) === subTopic
 :
 true;
 
@@ -172,9 +179,9 @@ topic,
 subTopic,
 ]);
 
-// =========================================
-// QUESTION STATS
-// =========================================
+/* =========================================
+QUESTION STATS
+========================================= */
 
 useEffect(()=>{
 
@@ -196,9 +203,9 @@ filteredQuestions,
 quantity,
 ]);
 
-// =========================================
-// TOPICS
-// =========================================
+/* =========================================
+TOPICS
+========================================= */
 
 const topics =
 useMemo(()=>{
@@ -214,7 +221,11 @@ questions
 q.subjectId ===
 subjectId
 )
-.map((q)=>q.topic)
+.map(
+(q)=>
+q.topicName ||
+q.topic
+)
 .filter(Boolean)
 
 ),
@@ -226,9 +237,9 @@ questions,
 subjectId,
 ]);
 
-// =========================================
-// SUBTOPICS
-// =========================================
+/* =========================================
+SUBTOPICS
+========================================= */
 
 const subTopics =
 useMemo(()=>{
@@ -247,7 +258,10 @@ subjectId;
 
 const topicMatch =
 !topic ||
-q.topic === topic;
+(
+q.topicName ||
+q.topic
+) === topic;
 
 return (
 subjectMatch &&
@@ -255,7 +269,11 @@ topicMatch
 );
 
 })
-.map((q)=>q.subTopic)
+.map(
+(q)=>
+q.subTopicName ||
+q.subTopic
+)
 .filter(Boolean)
 
 ),
@@ -268,9 +286,9 @@ subjectId,
 topic,
 ]);
 
-// =========================================
-// GENERATE
-// =========================================
+/* =========================================
+GENERATE
+========================================= */
 
 async function handleGenerate(){
 
@@ -281,6 +299,7 @@ alert(
 );
 
 return;
+
 }
 
 if(!subjectId){
@@ -290,6 +309,7 @@ alert(
 );
 
 return;
+
 }
 
 if(
@@ -298,19 +318,34 @@ totalMocks
 ){
 
 alert(
-`Maximum ${totalMocks} mocks can be generated`
+`Maximum ${totalMocks} mocks possible`
 );
 
 return;
+
 }
 
 try{
 
 setLoading(true);
 
+setGenerationProgress(0);
+
+const generated = [];
+
+for(
+let i = 1;
+i <= desiredMocks;
+i++
+){
+
+const currentName =
+`${mockName} ${i}`;
+
 await generateMocks({
 
-mockName,
+mockName:
+currentName,
 
 mockType,
 
@@ -326,13 +361,26 @@ Number(quantity),
 duration:
 Number(duration),
 
-desiredMocks:
-Number(desiredMocks),
+desiredMocks:1,
 
 });
 
+generated.push(
+currentName
+);
+
+setGenerationProgress(i);
+
+}
+
+setGeneratedMocks(
+generated
+);
+
 alert(
-"Mocks Generated Successfully"
+
+`${generated.length} mocks generated successfully`
+
 );
 
 }catch(error){
@@ -351,9 +399,9 @@ setLoading(false);
 
 }
 
-// =========================================
-// UI
-// =========================================
+/* =========================================
+UI
+========================================= */
 
 return(
 
@@ -376,6 +424,10 @@ Generate full and sectional mocks automatically
 </div>
 
 </div>
+
+{/* =========================================
+FORM GRID
+========================================= */}
 
 <div className="mock-generator-grid">
 
@@ -439,11 +491,16 @@ Subject
 
 <select
 value={subjectId}
-onChange={(e)=>
+onChange={(e)=>{
+
 setSubjectId(
 e.target.value
-)
-}
+);
+
+setTopic("");
+setSubTopic("");
+
+}}
 >
 
 <option value="">
@@ -477,11 +534,15 @@ Topic
 
 <select
 value={topic}
-onChange={(e)=>
+onChange={(e)=>{
+
 setTopic(
 e.target.value
-)
-}
+);
+
+setSubTopic("");
+
+}}
 >
 
 <option value="">
@@ -543,7 +604,7 @@ value={st}
 
 </div>
 
-{/* QUANTITY */}
+{/* QUESTIONS */}
 
 <div className="form-group">
 
@@ -575,6 +636,19 @@ e.target.value
 <option value={25}>
 25 Questions
 </option>
+
+{
+![100,50,25]
+.includes(quantity) && (
+
+<option value={quantity}>
+
+{quantity} Questions
+
+</option>
+
+)
+}
 
 </select>
 
@@ -636,6 +710,19 @@ e.target.value
 10 mins
 </option>
 
+{
+![60,45,30,15,10]
+.includes(duration) && (
+
+<option value={duration}>
+
+{duration} mins
+
+</option>
+
+)
+}
+
 </select>
 
 <input
@@ -668,20 +755,37 @@ type="number"
 placeholder="Enter mock quantity"
 value={desiredMocks}
 max={totalMocks}
-onChange={(e)=>
-setDesiredMocks(
+onChange={(e)=>{
+
+const value =
 Number(
 e.target.value
-)
-)
+);
+
+if(
+value > totalMocks
+){
+
+alert(
+`Maximum allowed mocks is ${totalMocks}`
+);
+
+return;
+
 }
+
+setDesiredMocks(value);
+
+}}
 />
 
 </div>
 
 </div>
 
-{/* STATS */}
+{/* =========================================
+STATS
+========================================= */}
 
 <div className="stats-box">
 
@@ -703,7 +807,91 @@ Maximum Mocks Possible:
 
 </div>
 
-{/* BUTTON */}
+{/* =========================================
+PROGRESS
+========================================= */}
+
+{loading && (
+
+<div className="stats-box">
+
+<h3>
+
+Generating:
+{" "}
+{generationProgress}
+/
+{desiredMocks}
+
+</h3>
+
+</div>
+
+)}
+
+{/* =========================================
+GENERATED
+========================================= */}
+
+{generatedMocks.length > 0 && (
+
+<div className="stats-box">
+
+<h3>
+
+Successfully Generated:
+{" "}
+{generatedMocks.length}
+
+</h3>
+
+<div
+style={{
+display:"flex",
+gap:"12px",
+flexWrap:"wrap",
+}}
+>
+
+{generatedMocks.map((m)=>(
+
+<div
+key={m}
+style={{
+background:"#2563eb",
+padding:"8px 14px",
+borderRadius:"10px",
+fontWeight:"700",
+}}
+>
+
+{m}
+
+</div>
+
+))}
+
+</div>
+
+<button
+className="submit-btn"
+onClick={()=>
+window.location.href =
+"/admin/exams"
+}
+>
+
+View Mock Tests
+
+</button>
+
+</div>
+
+)}
+
+{/* =========================================
+BUTTON
+========================================= */}
 
 <button
 className="submit-btn"

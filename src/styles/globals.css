@@ -3277,36 +3277,275 @@ width:100%;
 }
 
 }
-
 /* =========================================
-   MOCK GENERATOR
+   ADVANCED MOCK GENERATOR UI
 ========================================= */
 
-.mock-generator-grid{
+.mock-generator-page{
+display:flex;
+flex-direction:column;
+gap:24px;
+}
+
+/* =========================================
+TOP STATS
+========================================= */
+
+.mock-top-stats{
 
 display:grid;
 
 grid-template-columns:
-repeat(
-auto-fit,
-minmax(320px,1fr)
-);
+1fr 1fr;
 
 gap:22px;
 
-background:#0f172a;
+}
+
+.mock-stat-card{
+
+background:
+linear-gradient(
+135deg,
+#0f172a,
+#111c34
+);
 
 border:1px solid #1e293b;
 
-padding:28px;
-
 border-radius:24px;
 
-margin-bottom:24px;
+padding:28px;
+
+display:flex;
+
+align-items:center;
+
+gap:20px;
+
+min-height:130px;
+
+position:relative;
+
+overflow:hidden;
 
 }
 
-/* FORM GROUP */
+.mock-stat-card::before{
+
+content:"";
+
+position:absolute;
+
+inset:0;
+
+background:
+radial-gradient(
+circle at top right,
+rgba(37,99,235,0.15),
+transparent 50%
+);
+
+pointer-events:none;
+
+}
+
+.mock-stat-icon{
+
+width:70px;
+
+height:70px;
+
+border-radius:18px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:32px;
+
+flex-shrink:0;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#1d4ed8
+);
+
+box-shadow:
+0 10px 30px
+rgba(37,99,235,0.35);
+
+}
+
+.mock-stat-card.green .mock-stat-icon{
+
+background:
+linear-gradient(
+135deg,
+#16a34a,
+#15803d
+);
+
+box-shadow:
+0 10px 30px
+rgba(22,163,74,0.35);
+
+}
+
+.mock-stat-content{
+
+display:flex;
+
+flex-direction:column;
+
+gap:8px;
+
+}
+
+.mock-stat-content span{
+
+font-size:16px;
+
+color:#94a3b8;
+
+font-weight:600;
+
+}
+
+.mock-stat-content h2{
+
+font-size:46px;
+
+font-weight:800;
+
+line-height:1;
+
+color:#ffffff;
+
+}
+
+/* =========================================
+CONFIG SECTION
+========================================= */
+
+.mock-config-section{
+
+background:
+linear-gradient(
+180deg,
+rgba(15,23,42,0.98),
+rgba(12,20,36,0.98)
+);
+
+border:1px solid #1e293b;
+
+border-radius:28px;
+
+padding:32px;
+
+display:flex;
+
+flex-direction:column;
+
+gap:26px;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.mock-config-section::before{
+
+content:"";
+
+position:absolute;
+
+top:-120px;
+right:-120px;
+
+width:260px;
+height:260px;
+
+background:
+radial-gradient(
+circle,
+rgba(59,130,246,0.12),
+transparent 70%
+);
+
+pointer-events:none;
+
+}
+
+.section-heading{
+
+display:flex;
+
+align-items:center;
+
+gap:14px;
+
+font-size:32px;
+
+font-weight:800;
+
+margin-bottom:6px;
+
+}
+
+.section-heading-icon{
+
+width:48px;
+height:48px;
+
+border-radius:14px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#3b82f6
+);
+
+font-size:22px;
+
+}
+
+.section-subtitle{
+
+font-size:15px;
+
+color:#94a3b8;
+
+margin-top:-8px;
+
+}
+
+/* =========================================
+FORM GRID
+========================================= */
+
+.mock-form-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(3,minmax(0,1fr));
+
+gap:24px;
+
+align-items:end;
+
+}
 
 .form-group{
 
@@ -3318,11 +3557,9 @@ gap:10px;
 
 }
 
-/* LABEL */
-
 .form-group label{
 
-font-size:14px;
+font-size:15px;
 
 font-weight:700;
 
@@ -3330,7 +3567,37 @@ color:#60a5fa;
 
 }
 
-/* CUSTOM INPUT GROUP */
+.form-group input,
+.form-group select{
+
+height:56px;
+
+padding:0 18px;
+
+border-radius:16px;
+
+background:#1e293b;
+
+border:1px solid #334155;
+
+font-size:16px;
+
+color:#ffffff;
+
+transition:0.25s;
+
+}
+
+.form-group input:focus,
+.form-group select:focus{
+
+border-color:#3b82f6;
+
+box-shadow:
+0 0 0 4px
+rgba(59,130,246,0.15);
+
+}
 
 .custom-input-group{
 
@@ -3350,75 +3617,499 @@ flex:1;
 
 .custom-input-group input{
 
-flex:1;
+width:130px;
 
 }
 
-/* STATS BOX */
+/* =========================================
+DISTRIBUTION SECTION
+========================================= */
 
-.stats-box{
+.distribution-section{
 
-background:#111827;
+background:
+linear-gradient(
+180deg,
+rgba(15,23,42,0.98),
+rgba(10,18,34,0.98)
+);
 
-border:1px solid #1f2937;
+border:1px solid #1e293b;
 
-padding:22px;
+border-radius:28px;
 
-border-radius:18px;
+padding:30px;
 
 display:flex;
 
-justify-content:space-between;
+flex-direction:column;
+
+gap:22px;
+
+}
+
+.checkbox-row{
+
+display:flex;
 
 align-items:center;
 
-gap:20px;
+gap:14px;
 
-margin-bottom:24px;
+font-size:17px;
+
+font-weight:700;
+
+color:#ffffff;
+
+}
+
+.checkbox-row input{
+
+width:22px;
+height:22px;
+
+accent-color:#2563eb;
+
+}
+
+/* RECOMMEND */
+
+.recommend-box{
+
+background:
+linear-gradient(
+90deg,
+rgba(22,163,74,0.15),
+rgba(34,197,94,0.08)
+);
+
+border:1px solid rgba(34,197,94,0.25);
+
+padding:16px 18px;
+
+border-radius:16px;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+font-weight:700;
+
+font-size:16px;
+
+color:#86efac;
+
+}
+
+/* =========================================
+INLINE RADIO OPTIONS
+========================================= */
+
+.distribution-options{
+
+display:grid;
+
+grid-template-columns:
+repeat(3,1fr);
+
+gap:18px;
+
+}
+
+.distribution-option{
+
+position:relative;
+
+border:1px solid #334155;
+
+background:#111827;
+
+padding:18px;
+
+border-radius:18px;
+
+cursor:pointer;
+
+transition:0.3s;
+
+display:flex;
+
+align-items:center;
+
+gap:14px;
+
+min-height:74px;
+
+}
+
+.distribution-option:hover{
+
+border-color:#3b82f6;
+
+transform:translateY(-2px);
+
+}
+
+.distribution-option.active{
+
+border-color:#2563eb;
+
+background:
+linear-gradient(
+135deg,
+rgba(37,99,235,0.18),
+rgba(37,99,235,0.08)
+);
+
+box-shadow:
+0 10px 24px
+rgba(37,99,235,0.18);
+
+}
+
+.distribution-option input{
+
+width:22px;
+height:22px;
+
+accent-color:#2563eb;
+
+}
+
+.distribution-option-text{
+
+display:flex;
+
+flex-direction:column;
+
+gap:4px;
+
+}
+
+.distribution-option-text h4{
+
+font-size:17px;
+
+font-weight:700;
+
+color:#ffffff;
+
+}
+
+.distribution-option-text p{
+
+font-size:13px;
+
+color:#94a3b8;
+
+line-height:1.5;
+
+}
+
+/* =========================================
+PREVIEW CARDS
+========================================= */
+
+.distribution-preview{
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(240px,1fr));
+
+gap:18px;
+
+margin-top:6px;
+
+}
+
+.distribution-card{
+
+background:
+linear-gradient(
+135deg,
+#111827,
+#172033
+);
+
+border:1px dashed #334155;
+
+border-radius:20px;
+
+padding:22px;
+
+display:flex;
+
+align-items:center;
+
+gap:18px;
+
+transition:0.3s;
+
+}
+
+.distribution-card:hover{
+
+border-color:#2563eb;
+
+transform:translateY(-3px);
+
+}
+
+.distribution-card-icon{
+
+width:54px;
+height:54px;
+
+border-radius:16px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:24px;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#3b82f6
+);
+
+flex-shrink:0;
+
+}
+
+.distribution-card-content{
+
+display:flex;
+
+flex-direction:column;
+
+gap:6px;
+
+}
+
+.distribution-card-content h4{
+
+font-size:20px;
+
+font-weight:700;
+
+color:#ffffff;
+
+}
+
+.distribution-card-content p{
+
+font-size:15px;
+
+font-weight:600;
+
+color:#cbd5e1;
+
+}
+
+/* =========================================
+GENERATE BUTTON
+========================================= */
+
+.generate-btn{
+
+width:100%;
+
+height:68px;
+
+border:none;
+
+border-radius:22px;
+
+font-size:22px;
+
+font-weight:800;
+
+cursor:pointer;
+
+background:
+linear-gradient(
+90deg,
+#22c55e,
+#16a34a
+);
+
+color:white;
+
+transition:0.3s;
+
+box-shadow:
+0 12px 28px
+rgba(22,163,74,0.35);
+
+}
+
+.generate-btn:hover{
+
+transform:translateY(-3px);
+
+box-shadow:
+0 18px 40px
+rgba(22,163,74,0.45);
+
+}
+
+/* =========================================
+SUCCESS BOX
+========================================= */
+
+.mock-success-box{
+
+margin-top:22px;
+
+padding:24px;
+
+border-radius:22px;
+
+background:
+linear-gradient(
+135deg,
+rgba(22,163,74,0.18),
+rgba(34,197,94,0.08)
+);
+
+border:1px solid rgba(34,197,94,0.25);
+
+display:flex;
+
+flex-direction:column;
+
+gap:16px;
+
+}
+
+.mock-success-box h3{
+
+font-size:24px;
+
+font-weight:800;
+
+color:#4ade80;
+
+}
+
+.mock-success-box p{
+
+font-size:15px;
+
+line-height:1.7;
+
+color:#d1fae5;
+
+}
+
+.mock-success-actions{
+
+display:flex;
+
+gap:14px;
 
 flex-wrap:wrap;
 
 }
 
-.stats-box h3{
+.mock-success-actions button{
 
-font-size:18px;
+height:52px;
 
-font-weight:700;
-
-color:#f1f5f9;
-
-}
-
-/* BUTTON */
-
-.submit-btn{
-
-width:100%;
-
-height:56px;
-
-font-size:16px;
-
-font-weight:700;
-
-border:none;
+padding:0 24px;
 
 border-radius:16px;
 
-cursor:pointer;
+font-weight:700;
 
 }
 
-/* RESPONSIVE */
+/* =========================================
+PROGRESS BAR
+========================================= */
 
-@media(max-width:768px){
+.mock-progress-wrapper{
 
-.mock-generator-grid{
+margin-top:12px;
+
+display:flex;
+
+flex-direction:column;
+
+gap:10px;
+
+}
+
+.mock-progress-bar{
+
+width:100%;
+
+height:18px;
+
+background:#1e293b;
+
+border-radius:999px;
+
+overflow:hidden;
+
+}
+
+.mock-progress-fill{
+
+height:100%;
+
+border-radius:999px;
+
+background:
+linear-gradient(
+90deg,
+#22c55e,
+#16a34a
+);
+
+transition:0.4s;
+
+}
+
+/* =========================================
+RESPONSIVE
+========================================= */
+
+@media(max-width:1200px){
+
+.mock-form-grid{
+
+grid-template-columns:
+1fr 1fr;
+
+}
+
+.distribution-options{
 
 grid-template-columns:1fr;
 
-padding:20px;
+}
+
+}
+
+@media(max-width:768px){
+
+.mock-top-stats{
+
+grid-template-columns:1fr;
+
+}
+
+.mock-form-grid{
+
+grid-template-columns:1fr;
 
 }
 
@@ -3426,20 +4117,62 @@ padding:20px;
 
 flex-direction:column;
 
+align-items:stretch;
+
 }
 
-.custom-input-group select,
 .custom-input-group input{
 
 width:100%;
 
 }
 
-.stats-box{
+.distribution-preview{
 
-flex-direction:column;
+grid-template-columns:1fr;
 
-align-items:flex-start;
+}
+
+.generate-btn{
+
+font-size:18px;
+
+height:60px;
+
+}
+
+.mock-config-section,
+.distribution-section{
+
+padding:22px;
+
+}
+
+.section-heading{
+
+font-size:26px;
+
+}
+
+}
+
+@media(max-width:500px){
+
+.mock-stat-card{
+
+padding:20px;
+
+}
+
+.mock-stat-content h2{
+
+font-size:34px;
+
+}
+
+.section-heading{
+
+font-size:22px;
 
 }
 

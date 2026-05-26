@@ -127,7 +127,7 @@ isActive(
 : ""
 }
 >
-Bulk Import TEST
+Bulk Import
 </Link>
 
 {/* ================================= */}

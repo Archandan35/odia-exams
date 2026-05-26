@@ -45,7 +45,7 @@ path:"/admin/exams",
 },
 
 {
-title:"Results",
+title:"Resultsbaba",
 path:"/admin/results",
 },
 

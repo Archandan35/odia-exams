@@ -4,865 +4,754 @@ import {
 } from "react";
 
 import {
-  addDoc,
   collection,
+  onSnapshot,
   deleteDoc,
   doc,
-  onSnapshot,
   updateDoc,
-  query,
-  where,
-  getDocs,
 } from "firebase/firestore";
 
-import toast from "react-hot-toast";
+import {
+  db,
+} from "../firebase/config";
 
-import { db } from "../firebase/config";
+import {
+  listenSubjects,
+} from "../services/subjectService";
 
-import AdminLayout from "./AdminLayout";
+import {
+  listenTopics,
+} from "../services/topicService";
+
+import {
+  listenSubTopics,
+} from "../services/subTopicService";
 
 export default function Exams() {
 
-  const [subjects,setSubjects] =
-    useState([]);
+  // =========================================
+  // STATES
+  // =========================================
 
-  const [topics,setTopics] =
-    useState([]);
+  const [exams,
+    setExams] = useState([]);
 
-  const [subTopics,setSubTopics] =
-    useState([]);
+  const [subjects,
+    setSubjects] = useState([]);
 
-  const [exams,setExams] =
-    useState([]);
+  const [topics,
+    setTopics] = useState([]);
 
-  const [showPopup,
-    setShowPopup] =
-    useState(false);
-
-  const [editingId,
-    setEditingId] =
-    useState(null);
-
-  const [examName,
-    setExamName] =
-    useState("");
-
-  const [examType,
-    setExamType] =
-    useState("subject");
+  const [subTopics,
+    setSubTopics] = useState([]);
 
   const [selectedSubject,
-    setSelectedSubject] =
-    useState("");
+    setSelectedSubject] = useState("");
 
   const [selectedTopic,
-    setSelectedTopic] =
-    useState("");
+    setSelectedTopic] = useState("");
 
   const [selectedSubTopic,
-    setSelectedSubTopic] =
-    useState("");
+    setSelectedSubTopic] = useState("");
 
-  const [questionCount,
-    setQuestionCount] =
-    useState(10);
+  const [showEditModal,
+    setShowEditModal] = useState(false);
 
-  const [duration,
-    setDuration] =
-    useState(30);
+  const [editingExam,
+    setEditingExam] = useState(null);
 
-  const [negativeMarking,
-    setNegativeMarking] =
-    useState(0.25);
+  // =========================================
+  // LOAD EXAMS
+  // =========================================
 
-  const [shuffleQuestions,
-    setShuffleQuestions] =
-    useState(true);
+  useEffect(() => {
 
-  useEffect(()=>{
-
-    const unsubSubjects =
+    const unsubscribe =
       onSnapshot(
-        collection(db,"subjects"),
-        (snapshot)=>{
+        collection(db, "exams"),
+        (snapshot) => {
 
-          setSubjects(
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+          const data =
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
 
+          setExams(data);
         }
       );
 
-    const unsubTopics =
-      onSnapshot(
-        collection(db,"topics"),
-        (snapshot)=>{
+    return () => unsubscribe();
 
-          setTopics(
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+  }, []);
 
-        }
-      );
+  // =========================================
+  // LOAD SUBJECTS
+  // =========================================
 
-    const unsubSubTopics =
-      onSnapshot(
-        collection(db,"subtopics"),
-        (snapshot)=>{
+  useEffect(() => {
 
-          setSubTopics(
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+    const unsubscribe =
+      listenSubjects(setSubjects);
 
-        }
-      );
+    return () => unsubscribe();
 
-    const unsubExams =
-      onSnapshot(
-        collection(db,"exams"),
-        (snapshot)=>{
+  }, []);
 
-          setExams(
-            snapshot.docs.map(
-              (doc)=>({
-                id:doc.id,
-                ...doc.data(),
-              })
-            )
-          );
+  // =========================================
+  // LOAD TOPICS
+  // =========================================
 
-        }
-      );
+  useEffect(() => {
 
-    return ()=>{
+    const unsubscribe =
+      listenTopics(setTopics);
 
-      unsubSubjects();
-      unsubTopics();
-      unsubSubTopics();
-      unsubExams();
+    return () => unsubscribe();
 
-    };
+  }, []);
 
-  },[]);
+  // =========================================
+  // LOAD SUB TOPICS
+  // =========================================
 
-  const filteredTopics =
-    topics.filter(
-      (t)=>
-        t.subjectId ===
+  useEffect(() => {
+
+    const unsubscribe =
+      listenSubTopics(setSubTopics);
+
+    return () => unsubscribe();
+
+  }, []);
+
+  // =========================================
+  // FILTERED EXAMS
+  // =========================================
+
+  const filteredExams =
+    exams.filter((exam) => {
+
+      const subjectMatch =
         selectedSubject
+          ? exam.subjectId === selectedSubject
+          : true;
+
+      const topicMatch =
+        selectedTopic
+          ? exam.topicId === selectedTopic
+          : true;
+
+      const subTopicMatch =
+        selectedSubTopic
+          ? exam.subTopicId === selectedSubTopic
+          : true;
+
+      return (
+        subjectMatch &&
+        topicMatch &&
+        subTopicMatch
+      );
+    });
+
+  // =========================================
+  // HELPERS
+  // =========================================
+
+  function getSubjectName(id) {
+
+    return (
+      subjects.find((s) => s.id === id)
+        ?.name || "-"
     );
-
-  const filteredSubTopics =
-    subTopics.filter(
-      (s)=>
-        s.subjectId ===
-          selectedSubject &&
-        s.topicId ===
-          selectedTopic
-    );
-
-  async function handleAddExam(){
-
-    if(
-      !examName.trim()
-    ){
-
-      toast.error(
-        "Exam name required"
-      );
-
-      return;
-
-    }
-
-    if(
-      Number(questionCount) <= 0
-    ){
-
-      toast.error(
-        "Invalid question count"
-      );
-
-      return;
-
-    }
-
-    if(
-      Number(duration) <= 0
-    ){
-
-      toast.error(
-        "Invalid duration"
-      );
-
-      return;
-
-    }
-
-    if(
-      examType !== "mixed" &&
-      !selectedSubject
-    ){
-
-      toast.error(
-        "Select subject"
-      );
-
-      return;
-
-    }
-
-    if(
-      examType === "topic" &&
-      !selectedTopic
-    ){
-
-      toast.error(
-        "Select topic"
-      );
-
-      return;
-
-    }
-
-    if(
-      examType === "subtopic" &&
-      !selectedSubTopic
-    ){
-
-      toast.error(
-        "Select subtopic"
-      );
-
-      return;
-
-    }
-
-    const duplicateQuery =
-      query(
-        collection(db,"exams"),
-        where(
-          "name",
-          "==",
-          examName.trim()
-        )
-      );
-
-    const duplicate =
-      await getDocs(
-        duplicateQuery
-      );
-
-    if(!duplicate.empty){
-
-      toast.error(
-        "Exam already exists"
-      );
-
-      return;
-
-    }
-
-    await addDoc(
-      collection(db,"exams"),
-      {
-
-        name:
-          examName.trim(),
-
-        examType,
-
-        subjectId:
-          selectedSubject || null,
-
-        topicId:
-          selectedTopic || null,
-
-        subTopicId:
-          selectedSubTopic || null,
-
-        questionCount:
-          Number(questionCount),
-
-        duration:
-          Number(duration),
-
-        negativeMarking:
-          Number(
-            negativeMarking
-          ),
-
-        shuffleQuestions,
-
-        createdAt:
-          Date.now(),
-
-      }
-    );
-
-    toast.success(
-      "Exam Created"
-    );
-
-    resetForm();
-
   }
 
-  async function updateExam(){
+  function getTopicName(id) {
 
-    if(
-      !examName.trim()
-    ){
-
-      toast.error(
-        "Exam name required"
-      );
-
-      return;
-
-    }
-
-    await updateDoc(
-      doc(
-        db,
-        "exams",
-        editingId
-      ),
-      {
-
-        name:
-          examName.trim(),
-
-        examType,
-
-        subjectId:
-          selectedSubject || null,
-
-        topicId:
-          selectedTopic || null,
-
-        subTopicId:
-          selectedSubTopic || null,
-
-        questionCount:
-          Number(questionCount),
-
-        duration:
-          Number(duration),
-
-        negativeMarking:
-          Number(
-            negativeMarking
-          ),
-
-        shuffleQuestions,
-
-      }
+    return (
+      topics.find((t) => t.id === id)
+        ?.name || "-"
     );
-
-    toast.success(
-      "Exam Updated"
-    );
-
-    resetForm();
-
   }
 
-  function editExam(exam){
+  function getSubTopicName(id) {
 
-    setEditingId(exam.id);
-
-    setExamName(exam.name);
-
-    setExamType(
-      exam.examType ||
-      "subject"
+    return (
+      subTopics.find((s) => s.id === id)
+        ?.name || "-"
     );
-
-    setSelectedSubject(
-      exam.subjectId || ""
-    );
-
-    setSelectedTopic(
-      exam.topicId || ""
-    );
-
-    setSelectedSubTopic(
-      exam.subTopicId || ""
-    );
-
-    setQuestionCount(
-      exam.questionCount
-    );
-
-    setDuration(
-      exam.duration
-    );
-
-    setNegativeMarking(
-      exam.negativeMarking
-    );
-
-    setShuffleQuestions(
-      exam.shuffleQuestions
-    );
-
-    setShowPopup(true);
-
   }
 
-  async function handleDelete(id){
+  // =========================================
+  // DELETE
+  // =========================================
+
+  async function handleDelete(id) {
 
     const confirmDelete =
       window.confirm(
-        "Delete Exam?"
+        "Delete this exam?"
       );
 
-    if(!confirmDelete)
-    return;
+    if (!confirmDelete) return;
 
     await deleteDoc(
-      doc(db,"exams",id)
+      doc(db, "exams", id)
     );
-
-    toast.success(
-      "Exam Deleted"
-    );
-
   }
 
-  function resetForm(){
+  // =========================================
+  // EDIT
+  // =========================================
 
-    setExamName("");
+  function handleEdit(exam) {
 
-    setExamType("subject");
+    setEditingExam(exam);
 
-    setQuestionCount(10);
-
-    setDuration(30);
-
-    setNegativeMarking(0.25);
-
-    setShuffleQuestions(true);
-
-    setEditingId(null);
-
-    setShowPopup(false);
-
+    setShowEditModal(true);
   }
 
-  return(
+  // =========================================
+  // SAVE EDIT
+  // =========================================
 
-    <AdminLayout>
+  async function handleSaveEdit() {
 
-      <div className="page-header">
+    if (!editingExam) return;
 
-        <div>
+    await updateDoc(
+      doc(db, "exams", editingExam.id),
+      {
 
-          <h2>
-            Advanced Exams
-          </h2>
+        name:
+          editingExam.name,
 
-          <p>
-            Total Exams:
-            {" "}
-            {exams.length}
-          </p>
+        subjectId:
+          editingExam.subjectId,
 
-        </div>
+        topicId:
+          editingExam.topicId,
 
-        <button
-          onClick={()=>
-            setShowPopup(true)
+        subTopicId:
+          editingExam.subTopicId,
+
+        totalQuestions:
+          Number(
+            editingExam.totalQuestions
+          ),
+
+        duration:
+          Number(
+            editingExam.duration
+          ),
+
+      }
+    );
+
+    alert(
+      "Exam Updated Successfully"
+    );
+
+    setShowEditModal(false);
+  }
+
+  // =========================================
+  // UI
+  // =========================================
+
+  return (
+
+    <div
+      style={{
+        padding: "20px",
+      }}
+    >
+
+      <h1>
+        Exams
+      </h1>
+
+      {/* ===================================== */}
+      {/* FILTERS */}
+      {/* ===================================== */}
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "20px",
+          flexWrap: "wrap",
+        }}
+      >
+
+        {/* SUBJECT */}
+
+        <select
+          value={selectedSubject}
+          onChange={(e) =>
+            setSelectedSubject(
+              e.target.value
+            )
           }
         >
-          + Create Exam
-        </button>
+
+          <option value="">
+            All Subjects
+          </option>
+
+          {subjects.map((subject) => (
+
+            <option
+              key={subject.id}
+              value={subject.id}
+            >
+              {subject.name}
+            </option>
+
+          ))}
+
+        </select>
+
+        {/* TOPIC */}
+
+        <select
+          value={selectedTopic}
+          onChange={(e) =>
+            setSelectedTopic(
+              e.target.value
+            )
+          }
+        >
+
+          <option value="">
+            All Topics
+          </option>
+
+          {topics.map((topic) => (
+
+            <option
+              key={topic.id}
+              value={topic.id}
+            >
+              {topic.name}
+            </option>
+
+          ))}
+
+        </select>
+
+        {/* SUB TOPIC */}
+
+        <select
+          value={selectedSubTopic}
+          onChange={(e) =>
+            setSelectedSubTopic(
+              e.target.value
+            )
+          }
+        >
+
+          <option value="">
+            All Sub Topics
+          </option>
+
+          {subTopics.map((subTopic) => (
+
+            <option
+              key={subTopic.id}
+              value={subTopic.id}
+            >
+              {subTopic.name}
+            </option>
+
+          ))}
+
+        </select>
 
       </div>
 
-      <div className="table-card">
+      {/* ===================================== */}
+      {/* GRID */}
+      {/* ===================================== */}
 
-        <table>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(300px,1fr))",
+          gap: "20px",
+        }}
+      >
 
-          <thead>
+        {filteredExams.map((exam) => (
 
-            <tr>
+          <div
+            key={exam.id}
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              padding: "20px",
+              boxShadow:
+                "0 4px 12px rgba(0,0,0,0.1)",
+              position: "relative",
+            }}
+          >
 
-              <th>
-                Exam
-              </th>
+            {/* BADGE */}
 
-              <th>
-                Type
-              </th>
+            <div
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "#222",
+                color: "white",
+                padding: "6px 10px",
+                borderRadius: "20px",
+                fontSize: "12px",
+              }}
+            >
 
-              <th>
-                Questions
-              </th>
+              {exam.mockType === "full"
+                ? "FULL MOCK"
+                : "SECTIONAL MOCK"}
 
-              <th>
-                Duration
-              </th>
+            </div>
 
-              <th>
+            {/* TITLE */}
+
+            <h2
+              style={{
+                marginBottom: "16px",
+              }}
+            >
+              {exam.name}
+            </h2>
+
+            {/* DETAILS */}
+
+            <p>
+              <strong>
+                Subject:
+              </strong>{" "}
+              {getSubjectName(
+                exam.subjectId
+              )}
+            </p>
+
+            <p>
+              <strong>
+                Topic:
+              </strong>{" "}
+              {getTopicName(
+                exam.topicId
+              )}
+            </p>
+
+            <p>
+              <strong>
+                Sub Topic:
+              </strong>{" "}
+              {getSubTopicName(
+                exam.subTopicId
+              )}
+            </p>
+
+            <p>
+              <strong>
+                Quantity:
+              </strong>{" "}
+              {exam.totalQuestions}
+            </p>
+
+            <p>
+              <strong>
+                Duration:
+              </strong>{" "}
+              {exam.duration} mins
+            </p>
+
+            {/* ACTIONS */}
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "20px",
+              }}
+            >
+
+              <button
+                onClick={() =>
+                  handleEdit(exam)
+                }
+              >
                 Edit
-              </th>
+              </button>
 
-              <th>
+              <button
+                onClick={() =>
+                  handleDelete(exam.id)
+                }
+              >
                 Delete
-              </th>
+              </button>
 
-            </tr>
+            </div>
 
-          </thead>
+          </div>
 
-          <tbody>
-
-            {
-              exams.map((e)=>(
-
-              <tr key={e.id}>
-
-                <td>
-                  {e.name}
-                </td>
-
-                <td>
-                  {e.examType}
-                </td>
-
-                <td>
-                  {e.questionCount}
-                </td>
-
-                <td>
-                  {e.duration}m
-                </td>
-
-                <td>
-
-                  <button
-                    className="edit-btn"
-                    onClick={()=>
-                      editExam(e)
-                    }
-                  >
-                    Edit
-                  </button>
-
-                </td>
-
-                <td>
-
-                  <button
-                    className="delete-btn"
-                    onClick={()=>
-                      handleDelete(e.id)
-                    }
-                  >
-                    Delete
-                  </button>
-
-                </td>
-
-              </tr>
-
-              ))
-            }
-
-          </tbody>
-
-        </table>
+        ))}
 
       </div>
 
-      {
-        showPopup && (
+      {/* ===================================== */}
+      {/* EDIT MODAL */}
+      {/* ===================================== */}
 
-        <div className="popup-overlay">
+      {showEditModal &&
+        editingExam && (
 
-          <div className="
-popup
-large-popup
-">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background:
+              "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
 
-            <h3>
+          <div
+            style={{
+              background: "white",
+              padding: "24px",
+              borderRadius: "16px",
+              width: "400px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+            }}
+          >
 
-              {
-                editingId
-                ?
-                "Edit Exam"
-                :
-                "Create Exam"
-              }
+            <h2>
+              Edit Exam
+            </h2>
 
-            </h3>
+            {/* NAME */}
 
             <input
+              type="text"
               placeholder="Exam Name"
-              value={examName}
-              onChange={(e)=>
-                setExamName(
-                  e.target.value
-                )
+              value={editingExam.name}
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  name:
+                    e.target.value,
+                })
               }
             />
 
+            {/* SUBJECT */}
+
             <select
-              value={examType}
-              onChange={(e)=>
-                setExamType(
-                  e.target.value
-                )
+              value={
+                editingExam.subjectId
+              }
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  subjectId:
+                    e.target.value,
+                })
               }
             >
 
-              <option value="subject">
-                Subject Exam
+              <option value="">
+                Select Subject
               </option>
 
-              <option value="topic">
-                Topic Exam
+              {subjects.map((subject) => (
+
+                <option
+                  key={subject.id}
+                  value={subject.id}
+                >
+                  {subject.name}
+                </option>
+
+              ))}
+
+            </select>
+
+            {/* TOPIC */}
+
+            <select
+              value={
+                editingExam.topicId
+              }
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  topicId:
+                    e.target.value,
+                })
+              }
+            >
+
+              <option value="">
+                Select Topic
               </option>
 
-              <option value="subtopic">
-                SubTopic Exam
+              {topics.map((topic) => (
+
+                <option
+                  key={topic.id}
+                  value={topic.id}
+                >
+                  {topic.name}
+                </option>
+
+              ))}
+
+            </select>
+
+            {/* SUB TOPIC */}
+
+            <select
+              value={
+                editingExam.subTopicId
+              }
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  subTopicId:
+                    e.target.value,
+                })
+              }
+            >
+
+              <option value="">
+                Select Sub Topic
               </option>
 
-              <option value="mixed">
-                Mixed Exam
+              {subTopics.map((subTopic) => (
+
+                <option
+                  key={subTopic.id}
+                  value={subTopic.id}
+                >
+                  {subTopic.name}
+                </option>
+
+              ))}
+
+            </select>
+
+            {/* QUANTITY */}
+
+            <select
+              value={
+                editingExam.totalQuestions
+              }
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  totalQuestions:
+                    e.target.value,
+                })
+              }
+            >
+
+              <option value={100}>
+                100
+              </option>
+
+              <option value={50}>
+                50
+              </option>
+
+              <option value={25}>
+                25
               </option>
 
             </select>
 
-            {
-              examType !== "mixed" && (
+            {/* DURATION */}
 
-              <select
-                value={
-                  selectedSubject
-                }
-                onChange={(e)=>
-                  setSelectedSubject(
-                    e.target.value
-                  )
-                }
-              >
-
-                <option value="">
-                  Select Subject
-                </option>
-
-                {
-                  subjects.map((s)=>(
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                  ))
-                }
-
-              </select>
-
-              )
-            }
-            
-{
-  (examType === "topic" ||
-   examType === "subtopic") &&
-
-  (
-  <select
-    value={
-      selectedTopic
-    }
-    onChange={(e)=>
-      setSelectedTopic(
-        e.target.value
-      )
-    }
-  >
-
-    <option value="">
-      Select Topic
-    </option>
-
-    {
-      filteredTopics.map((t)=>(
-
-      <option
-        key={t.id}
-        value={t.id}
-      >
-        {t.name}
-      </option>
-
-      ))
-    }
-
-  </select>
-  )
-}
-
-            {
-              examType === "subtopic" &&
-              (
-              <select
-                value={
-                  selectedSubTopic
-                }
-                onChange={(e)=>
-                  setSelectedSubTopic(
-                    e.target.value
-                  )
-                }
-              >
-
-                <option value="">
-                  Select SubTopic
-                </option>
-
-                {
-                  filteredSubTopics.map((s)=>(
-
-                  <option
-                    key={s.id}
-                    value={s.id}
-                  >
-                    {s.name}
-                  </option>
-
-                  ))
-                }
-
-              </select>
-              )
-            }
-
-            <input
-              type="number"
-              placeholder="
-Question Count
-"
-              value={questionCount}
-              onChange={(e)=>
-                setQuestionCount(
-                  e.target.value
-                )
+            <select
+              value={
+                editingExam.duration
               }
-            />
-
-            <input
-              type="number"
-              placeholder="
-Duration
-"
-              value={duration}
-              onChange={(e)=>
-                setDuration(
-                  e.target.value
-                )
-              }
-            />
-
-            <input
-              type="number"
-              step="0.25"
-              placeholder="
-Negative Marking
-"
-              value={negativeMarking}
-              onChange={(e)=>
-                setNegativeMarking(
-                  e.target.value
-                )
-              }
-            />
-
-            <label
-              className="checkbox"
-            >
-
-              <input
-                type="checkbox"
-                checked={
-                  shuffleQuestions
-                }
-                onChange={(e)=>
-                  setShuffleQuestions(
-                    e.target.checked
-                  )
-                }
-              />
-
-              Shuffle Questions
-
-            </label>
-
-            {
-              editingId
-              ?
-              (
-              <button
-                onClick={
-                  updateExam
-                }
-              >
-                Update Exam
-              </button>
-              )
-              :
-              (
-              <button
-                onClick={
-                  handleAddExam
-                }
-              >
-                Create Exam
-              </button>
-              )
-            }
-
-            <button
-              className="
-cancel-btn
-"
-              onClick={
-                resetForm
+              onChange={(e) =>
+                setEditingExam({
+                  ...editingExam,
+                  duration:
+                    e.target.value,
+                })
               }
             >
-              Cancel
-            </button>
+
+              <option value={60}>
+                60 mins
+              </option>
+
+              <option value={45}>
+                45 mins
+              </option>
+
+              <option value={30}>
+                30 mins
+              </option>
+
+              <option value={15}>
+                15 mins
+              </option>
+
+              <option value={10}>
+                10 mins
+              </option>
+
+            </select>
+
+            {/* ACTIONS */}
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+              }}
+            >
+
+              <button
+                onClick={
+                  handleSaveEdit
+                }
+              >
+                Save
+              </button>
+
+              <button
+                onClick={() =>
+                  setShowEditModal(
+                    false
+                  )
+                }
+              >
+                Cancel
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
-        )
-      }
+      )}
 
-    </AdminLayout>
-
+    </div>
   );
-
 }

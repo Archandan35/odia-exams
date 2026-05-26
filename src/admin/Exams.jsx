@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -19,14 +20,6 @@ import {
   listenSubjects,
 } from "../services/subjectService";
 
-import {
-  listenTopics,
-} from "../services/topicService";
-
-import {
-  listenSubTopics,
-} from "../services/subTopicService";
-
 export default function Exams() {
 
   // =========================================
@@ -39,26 +32,25 @@ export default function Exams() {
   const [subjects,
     setSubjects] = useState([]);
 
-  const [topics,
-    setTopics] = useState([]);
-
-  const [subTopics,
-    setSubTopics] = useState([]);
-
   const [selectedSubject,
-    setSelectedSubject] = useState("");
+    setSelectedSubject] =
+      useState("");
 
   const [selectedTopic,
-    setSelectedTopic] = useState("");
+    setSelectedTopic] =
+      useState("");
 
   const [selectedSubTopic,
-    setSelectedSubTopic] = useState("");
-
-  const [showEditModal,
-    setShowEditModal] = useState(false);
+    setSelectedSubTopic] =
+      useState("");
 
   const [editingExam,
-    setEditingExam] = useState(null);
+    setEditingExam] =
+      useState(null);
+
+  const [showModal,
+    setShowModal] =
+      useState(false);
 
   // =========================================
   // LOAD EXAMS
@@ -68,13 +60,17 @@ export default function Exams() {
 
     const unsubscribe =
       onSnapshot(
+
         collection(db, "exams"),
+
         (snapshot) => {
 
           const data =
-            snapshot.docs.map((doc) => ({
-              id: doc.id,
+            snapshot.docs.map((doc)=>({
+
+              id:doc.id,
               ...doc.data(),
+
             }));
 
           setExams(data);
@@ -99,51 +95,70 @@ export default function Exams() {
   }, []);
 
   // =========================================
-  // LOAD TOPICS
+  // TOPICS
   // =========================================
 
-  useEffect(() => {
+  const topics =
+    useMemo(()=>{
 
-    const unsubscribe =
-      listenTopics(setTopics);
+      return [
 
-    return () => unsubscribe();
+        ...new Set(
 
-  }, []);
+          exams
+            .map((e)=>e.topicId)
+            .filter(Boolean)
+
+        ),
+
+      ];
+
+    },[exams]);
 
   // =========================================
-  // LOAD SUB TOPICS
+  // SUB TOPICS
   // =========================================
 
-  useEffect(() => {
+  const subTopics =
+    useMemo(()=>{
 
-    const unsubscribe =
-      listenSubTopics(setSubTopics);
+      return [
 
-    return () => unsubscribe();
+        ...new Set(
 
-  }, []);
+          exams
+            .map((e)=>e.subTopicId)
+            .filter(Boolean)
+
+        ),
+
+      ];
+
+    },[exams]);
 
   // =========================================
   // FILTERED EXAMS
   // =========================================
 
   const filteredExams =
-    exams.filter((exam) => {
+    exams.filter((exam)=>{
 
       const subjectMatch =
         selectedSubject
-          ? exam.subjectId === selectedSubject
+          ? exam.subjectId ===
+            selectedSubject
           : true;
 
       const topicMatch =
         selectedTopic
-          ? exam.topicId === selectedTopic
+          ? exam.topicId ===
+            selectedTopic
           : true;
 
       const subTopicMatch =
         selectedSubTopic
-          ? exam.subTopicId === selectedSubTopic
+          ? exam.subTopicId ===
+            selectedSubTopic
           : true;
 
       return (
@@ -157,27 +172,12 @@ export default function Exams() {
   // HELPERS
   // =========================================
 
-  function getSubjectName(id) {
+  function getSubjectName(id){
 
     return (
-      subjects.find((s) => s.id === id)
-        ?.name || "-"
-    );
-  }
-
-  function getTopicName(id) {
-
-    return (
-      topics.find((t) => t.id === id)
-        ?.name || "-"
-    );
-  }
-
-  function getSubTopicName(id) {
-
-    return (
-      subTopics.find((s) => s.id === id)
-        ?.name || "-"
+      subjects.find(
+        (s)=>s.id===id
+      )?.name || "-"
     );
   }
 
@@ -185,17 +185,17 @@ export default function Exams() {
   // DELETE
   // =========================================
 
-  async function handleDelete(id) {
+  async function handleDelete(id){
 
     const confirmDelete =
       window.confirm(
         "Delete this exam?"
       );
 
-    if (!confirmDelete) return;
+    if(!confirmDelete) return;
 
     await deleteDoc(
-      doc(db, "exams", id)
+      doc(db,"exams",id)
     );
   }
 
@@ -203,23 +203,29 @@ export default function Exams() {
   // EDIT
   // =========================================
 
-  function handleEdit(exam) {
+  function handleEdit(exam){
 
     setEditingExam(exam);
 
-    setShowEditModal(true);
+    setShowModal(true);
   }
 
   // =========================================
   // SAVE EDIT
   // =========================================
 
-  async function handleSaveEdit() {
+  async function handleSave(){
 
-    if (!editingExam) return;
+    if(!editingExam) return;
 
     await updateDoc(
-      doc(db, "exams", editingExam.id),
+
+      doc(
+        db,
+        "exams",
+        editingExam.id
+      ),
+
       {
 
         name:
@@ -245,13 +251,14 @@ export default function Exams() {
           ),
 
       }
+
     );
 
     alert(
       "Exam Updated Successfully"
     );
 
-    setShowEditModal(false);
+    setShowModal(false);
   }
 
   // =========================================
@@ -273,7 +280,7 @@ export default function Exams() {
           </h2>
 
           <p>
-            Manage all generated mocks
+            Manage generated mocks
           </p>
 
         </div>
@@ -290,7 +297,7 @@ export default function Exams() {
 
         <select
           value={selectedSubject}
-          onChange={(e) =>
+          onChange={(e)=>
             setSelectedSubject(
               e.target.value
             )
@@ -301,7 +308,7 @@ export default function Exams() {
             All Subjects
           </option>
 
-          {subjects.map((subject) => (
+          {subjects.map((subject)=>(
 
             <option
               key={subject.id}
@@ -318,7 +325,7 @@ export default function Exams() {
 
         <select
           value={selectedTopic}
-          onChange={(e) =>
+          onChange={(e)=>
             setSelectedTopic(
               e.target.value
             )
@@ -329,13 +336,13 @@ export default function Exams() {
             All Topics
           </option>
 
-          {topics.map((topic) => (
+          {topics.map((topic)=>(
 
             <option
-              key={topic.id}
-              value={topic.id}
+              key={topic}
+              value={topic}
             >
-              {topic.name}
+              {topic}
             </option>
 
           ))}
@@ -346,7 +353,7 @@ export default function Exams() {
 
         <select
           value={selectedSubTopic}
-          onChange={(e) =>
+          onChange={(e)=>
             setSelectedSubTopic(
               e.target.value
             )
@@ -357,13 +364,13 @@ export default function Exams() {
             All Sub Topics
           </option>
 
-          {subTopics.map((subTopic) => (
+          {subTopics.map((subTopic)=>(
 
             <option
-              key={subTopic.id}
-              value={subTopic.id}
+              key={subTopic}
+              value={subTopic}
             >
-              {subTopic.name}
+              {subTopic}
             </option>
 
           ))}
@@ -373,12 +380,12 @@ export default function Exams() {
       </div>
 
       {/* ===================================== */}
-      {/* EXAMS GRID */}
+      {/* GRID */}
       {/* ===================================== */}
 
       <div className="exam-grid">
 
-        {filteredExams.map((exam) => (
+        {filteredExams.map((exam)=>(
 
           <div
             key={exam.id}
@@ -404,7 +411,9 @@ export default function Exams() {
             {/* TITLE */}
 
             <h2 className="exam-card-title">
+
               {exam.name}
+
             </h2>
 
             {/* DETAILS */}
@@ -412,44 +421,55 @@ export default function Exams() {
             <div className="exam-details">
 
               <p>
+
                 <strong>
                   Subject:
                 </strong>{" "}
+
                 {getSubjectName(
                   exam.subjectId
                 )}
+
               </p>
 
               <p>
+
                 <strong>
                   Topic:
                 </strong>{" "}
-                {getTopicName(
-                  exam.topicId
-                )}
+
+                {exam.topicId || "-"}
+
               </p>
 
               <p>
+
                 <strong>
                   Sub Topic:
                 </strong>{" "}
-                {getSubTopicName(
-                  exam.subTopicId
-                )}
+
+                {exam.subTopicId || "-"}
+
               </p>
 
               <p>
+
                 <strong>
                   Quantity:
                 </strong>{" "}
+
                 {exam.totalQuestions}
+
               </p>
 
               <p>
+
                 <strong>
                   Duration:
                 </strong>{" "}
+
                 {exam.duration} mins
+
               </p>
 
             </div>
@@ -460,7 +480,7 @@ export default function Exams() {
 
               <button
                 className="edit-btn"
-                onClick={() =>
+                onClick={()=>
                   handleEdit(exam)
                 }
               >
@@ -469,8 +489,10 @@ export default function Exams() {
 
               <button
                 className="delete-btn"
-                onClick={() =>
-                  handleDelete(exam.id)
+                onClick={()=>
+                  handleDelete(
+                    exam.id
+                  )
                 }
               >
                 Delete
@@ -485,10 +507,10 @@ export default function Exams() {
       </div>
 
       {/* ===================================== */}
-      {/* EDIT MODAL */}
+      {/* MODAL */}
       {/* ===================================== */}
 
-      {showEditModal &&
+      {showModal &&
         editingExam && (
 
         <div className="popup-overlay">
@@ -508,11 +530,14 @@ export default function Exams() {
                 type="text"
                 placeholder="Exam Name"
                 value={editingExam.name}
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     name:
                       e.target.value,
+
                   })
                 }
               />
@@ -523,11 +548,14 @@ export default function Exams() {
                 value={
                   editingExam.subjectId
                 }
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     subjectId:
                       e.target.value,
+
                   })
                 }
               >
@@ -536,7 +564,7 @@ export default function Exams() {
                   Select Subject
                 </option>
 
-                {subjects.map((subject) => (
+                {subjects.map((subject)=>(
 
                   <option
                     key={subject.id}
@@ -551,67 +579,43 @@ export default function Exams() {
 
               {/* TOPIC */}
 
-              <select
+              <input
+                type="text"
+                placeholder="Topic"
                 value={
-                  editingExam.topicId
+                  editingExam.topicId || ""
                 }
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     topicId:
                       e.target.value,
+
                   })
                 }
-              >
-
-                <option value="">
-                  Select Topic
-                </option>
-
-                {topics.map((topic) => (
-
-                  <option
-                    key={topic.id}
-                    value={topic.id}
-                  >
-                    {topic.name}
-                  </option>
-
-                ))}
-
-              </select>
+              />
 
               {/* SUB TOPIC */}
 
-              <select
+              <input
+                type="text"
+                placeholder="Sub Topic"
                 value={
-                  editingExam.subTopicId
+                  editingExam.subTopicId || ""
                 }
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     subTopicId:
                       e.target.value,
+
                   })
                 }
-              >
-
-                <option value="">
-                  Select Sub Topic
-                </option>
-
-                {subTopics.map((subTopic) => (
-
-                  <option
-                    key={subTopic.id}
-                    value={subTopic.id}
-                  >
-                    {subTopic.name}
-                  </option>
-
-                ))}
-
-              </select>
+              />
 
               {/* QUANTITY */}
 
@@ -619,11 +623,14 @@ export default function Exams() {
                 value={
                   editingExam.totalQuestions
                 }
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     totalQuestions:
                       e.target.value,
+
                   })
                 }
               >
@@ -648,11 +655,14 @@ export default function Exams() {
                 value={
                   editingExam.duration
                 }
-                onChange={(e) =>
+                onChange={(e)=>
                   setEditingExam({
+
                     ...editingExam,
+
                     duration:
                       e.target.value,
+
                   })
                 }
               >
@@ -687,19 +697,15 @@ export default function Exams() {
 
               <button
                 className="submit-btn"
-                onClick={
-                  handleSaveEdit
-                }
+                onClick={handleSave}
               >
                 Save
               </button>
 
               <button
                 className="cancel-btn"
-                onClick={() =>
-                  setShowEditModal(
-                    false
-                  )
+                onClick={()=>
+                  setShowModal(false)
                 }
               >
                 Cancel

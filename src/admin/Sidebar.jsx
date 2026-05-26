@@ -152,11 +152,11 @@ export default function Sidebar() {
         </Link>
 
         {/* ================================= */}
-        {/* MANAGEMENT */}
+        {/* RESULTS */}
         {/* ================================= */}
 
         <div className="menu-title">
-          Management
+          Results
         </div>
 
         <Link
@@ -170,32 +170,6 @@ export default function Sidebar() {
           }
         >
           Results
-        </Link>
-
-        <Link
-          to="/admin/students"
-          className={
-            isActive(
-              "/admin/students"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Students
-        </Link>
-
-        <Link
-          to="/admin/users"
-          className={
-            isActive(
-              "/admin/users"
-            )
-              ? "active-link"
-              : ""
-          }
-        >
-          Users
         </Link>
 
       </div>

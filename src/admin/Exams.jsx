@@ -9,12 +9,9 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  updateDoc,
 } from "firebase/firestore";
 
-import {
-  db,
-} from "../firebase/config";
+import { db } from "../firebase/config";
 
 import {
   listenSubjects,
@@ -22,136 +19,140 @@ import {
 
 import AdminLayout from "./AdminLayout";
 
-export default function Exams() {
+export default function Exams(){
 
-  // =========================================
-  // STATES
-  // =========================================
+  const [exams,setExams] = useState([]);
+  const [subjects,setSubjects] = useState([]);
 
-  const [exams, setExams]                       = useState([]);
-  const [subjects, setSubjects]                 = useState([]);
-  const [selectedSubject, setSelectedSubject]   = useState("");
-  const [selectedTopic, setSelectedTopic]       = useState("");
-  const [selectedSubTopic, setSelectedSubTopic] = useState("");
-  const [editingExam, setEditingExam]           = useState(null);
-  const [showModal, setShowModal]               = useState(false);
+  const [selectedMockType,setSelectedMockType] = useState("");
+  const [selectedSubject,setSelectedSubject] = useState("");
+  const [selectedTopic,setSelectedTopic] = useState("");
+  const [selectedSubTopic,setSelectedSubTopic] = useState("");
 
-  // =========================================
-  // LOAD EXAMS
-  // =========================================
+  useEffect(()=>{
 
-  useEffect(() => {
     const unsubscribe = onSnapshot(
-      collection(db, "exams"),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
+      collection(db,"exams"),
+      (snapshot)=>{
+
+        const data = snapshot.docs.map((d)=>(
+          {
+            id:d.id,
+            ...d.data(),
+          }
+        ));
+
         setExams(data);
+
       }
     );
-    return () => unsubscribe();
-  }, []);
 
-  // =========================================
-  // LOAD SUBJECTS
-  // =========================================
+    return ()=> unsubscribe();
 
-  useEffect(() => {
+  },[]);
+
+  useEffect(()=>{
+
     const unsubscribe = listenSubjects(setSubjects);
-    return () => unsubscribe();
-  }, []);
 
-  // =========================================
-  // TOPICS (derived from exams)
-  // =========================================
+    return ()=> unsubscribe();
 
-  const topics = useMemo(() => {
-    return [...new Set(exams.map((e) => e.topicName).filter(Boolean))];
-  }, [exams]);
+  },[]);
 
-  // =========================================
-  // SUB TOPICS (derived from exams)
-  // =========================================
+  const filteredTopics = useMemo(()=>{
 
-  const subTopics = useMemo(() => {
-    return [...new Set(exams.map((e) => e.subTopicName).filter(Boolean))];
-  }, [exams]);
+    return [
+      ...new Set(
+        exams
+          .filter((e)=>
+            selectedSubject
+              ? e.subjectId === selectedSubject
+              : true
+          )
+          .map((e)=> e.topicName)
+          .filter(Boolean)
+      )
+    ];
 
-  // =========================================
-  // FILTERED EXAMS
-  // =========================================
+  },[
+    exams,
+    selectedSubject,
+  ]);
 
-  const filteredExams = exams.filter((exam) => {
-    const subjectMatch  = selectedSubject  ? exam.subjectId    === selectedSubject  : true;
-    const topicMatch    = selectedTopic    ? exam.topicName    === selectedTopic    : true;
-    const subTopicMatch = selectedSubTopic ? exam.subTopicName === selectedSubTopic : true;
-    return subjectMatch && topicMatch && subTopicMatch;
+  const filteredSubTopics = useMemo(()=>{
+
+    return [
+      ...new Set(
+        exams
+          .filter((e)=>
+            selectedTopic
+              ? e.topicName === selectedTopic
+              : true
+          )
+          .map((e)=> e.subTopicName)
+          .filter(Boolean)
+      )
+    ];
+
+  },[
+    exams,
+    selectedTopic,
+  ]);
+
+  const filteredExams = exams.filter((exam)=>{
+
+    const mockTypeMatch = selectedMockType
+      ? (exam.mockType || "sectional") === selectedMockType
+      : true;
+
+    const subjectMatch = selectedSubject
+      ? exam.subjectId === selectedSubject
+      : true;
+
+    const topicMatch = selectedTopic
+      ? exam.topicName === selectedTopic
+      : true;
+
+    const subTopicMatch =
+      selectedMockType === "full"
+        ? true
+        : (
+            selectedSubTopic
+              ? exam.subTopicName === selectedSubTopic
+              : true
+          );
+
+    return (
+      mockTypeMatch &&
+      subjectMatch &&
+      topicMatch &&
+      subTopicMatch
+    );
+
   });
 
-  // =========================================
-  // HELPERS
-  // =========================================
-
-  function getSubjectName(id) {
-    return subjects.find((s) => s.id === id)?.name || "-";
+  function getSubjectName(id){
+    return subjects.find((s)=> s.id === id)?.name || "-";
   }
 
-  // =========================================
-  // DELETE
-  // =========================================
+  async function handleDelete(id){
 
-  async function handleDelete(id) {
-    const confirmDelete = window.confirm("Delete this exam?");
-    if (!confirmDelete) return;
-    await deleteDoc(doc(db, "exams", id));
+    const confirmDelete = window.confirm(
+      "Delete this exam?"
+    );
+
+    if(!confirmDelete) return;
+
+    await deleteDoc(doc(db,"exams",id));
+
   }
 
-  // =========================================
-  // EDIT
-  // =========================================
-
-  function handleEdit(exam) {
-    setEditingExam({
-      ...exam,
-      mockType:       exam.mockType       || "sectional",
-      totalQuestions: exam.totalQuestions || exam.questionCount || 0,
-      duration:       exam.duration       || 0,
-    });
-    setShowModal(true);
-  }
-
-  // =========================================
-  // SAVE
-  // =========================================
-
-  async function handleSave() {
-    if (!editingExam) return;
-    await updateDoc(doc(db, "exams", editingExam.id), {
-      name:           editingExam.name,
-      mockType:       editingExam.mockType,
-      subjectId:      editingExam.subjectId,
-      topicName:      editingExam.topicName,
-      subTopicName:   editingExam.subTopicName,
-      totalQuestions: Number(editingExam.totalQuestions),
-      duration:       Number(editingExam.duration),
-    });
-    alert("Exam Updated Successfully");
-    setShowModal(false);
-  }
-
-  // =========================================
-  // UI
-  // =========================================
-
-  return (
+  return(
 
     <AdminLayout>
 
       <div className="page">
 
-        {/* HEADER */}
         <div className="page-header">
           <div>
             <h2>Exams</h2>
@@ -159,77 +160,96 @@ export default function Exams() {
           </div>
         </div>
 
-        {/* FILTERS */}
         <div className="filter-bar">
 
           <select
+            value={selectedMockType}
+            onChange={(e)=>{
+              setSelectedMockType(e.target.value);
+              setSelectedSubTopic("");
+            }}
+          >
+            <option value="">All Mock Types</option>
+            <option value="full">Full Mock</option>
+            <option value="sectional">Sectional Mock</option>
+          </select>
+
+          <select
             value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
+            onChange={(e)=> setSelectedSubject(e.target.value)}
           >
             <option value="">All Subjects</option>
-            {subjects.map((subject) => (
+
+            {subjects.map((subject)=>(
               <option key={subject.id} value={subject.id}>
                 {subject.name}
               </option>
             ))}
+
           </select>
 
           <select
             value={selectedTopic}
-            onChange={(e) => setSelectedTopic(e.target.value)}
+            onChange={(e)=> setSelectedTopic(e.target.value)}
           >
             <option value="">All Topics</option>
-            {topics.map((topic) => (
-              <option key={topic} value={topic}>{topic}</option>
+
+            {filteredTopics.map((topic)=>(
+              <option key={topic} value={topic}>
+                {topic}
+              </option>
             ))}
+
           </select>
 
-          <select
-            value={selectedSubTopic}
-            onChange={(e) => setSelectedSubTopic(e.target.value)}
-          >
-            <option value="">All Sub Topics</option>
-            {subTopics.map((subTopic) => (
-              <option key={subTopic} value={subTopic}>{subTopic}</option>
-            ))}
-          </select>
+          {selectedMockType !== "full" && (
+
+            <select
+              value={selectedSubTopic}
+              onChange={(e)=> setSelectedSubTopic(e.target.value)}
+            >
+              <option value="">All Sub Topics</option>
+
+              {filteredSubTopics.map((subTopic)=>(
+                <option key={subTopic} value={subTopic}>
+                  {subTopic}
+                </option>
+              ))}
+
+            </select>
+
+          )}
 
         </div>
 
-        {/* EXAMS GRID */}
         <div className="exam-grid">
 
-          {filteredExams.map((exam) => (
+          {filteredExams.map((exam)=>(
 
             <div key={exam.id} className="exam-card">
 
-              {/*
-                FIX 1: Badge on RIGHT side of ROW 1.
-                ROW 1 = badge (right-aligned)
-                ROW 2 = full exam title
-                ROW 3 = details
-                ROW 4 = actions
-              */}
-
-              {/* ROW 1 — Badge on RIGHT */}
               <div className="exam-card-badge-row">
-                <div className={`exam-badge ${
-                  (exam.mockType || "sectional") === "full"
-                    ? "full-badge"
-                    : "sectional-badge"
-                }`}>
+
+                <div
+                  className={`exam-badge ${
+                    (exam.mockType || "sectional") === "full"
+                      ? "full-badge"
+                      : "sectional-badge"
+                  }`}
+                >
+
                   {(exam.mockType || "sectional") === "full"
                     ? "FULL MOCK"
                     : "SECTIONAL MOCK"}
+
                 </div>
+
               </div>
 
-              {/* ROW 2 — Full title on its own line */}
               <h2 className="exam-card-title">
                 {exam.name}
               </h2>
 
-              {/* ROW 3 — DETAILS */}
               <div className="exam-details">
 
                 <p>
@@ -239,39 +259,41 @@ export default function Exams() {
 
                 <p>
                   <strong>Topic:</strong>{" "}
-                  {exam.topicName || "Topic Missing"}
+                  {exam.topicName || "-"}
                 </p>
 
-                <p>
-                  <strong>Sub Topic:</strong>{" "}
-                  {exam.subTopicName || "Sub Topic Missing"}
-                </p>
+                {(exam.mockType || "sectional") === "sectional" && (
+
+                  <p>
+                    <strong>Sub Topic:</strong>{" "}
+                    {exam.subTopicName || "-"}
+                  </p>
+
+                )}
 
                 <p>
-                  <strong>Quantity:</strong>{" "}
-                  {exam.totalQuestions || exam.questionCount || 0} Questions
+                  <strong>Questions:</strong>{" "}
+                  {
+                    exam.totalQuestions ||
+                    exam.questionCount ||
+                    exam.questionIds?.length ||
+                    exam.questions?.length ||
+                    0
+                  }
                 </p>
 
                 <p>
                   <strong>Duration:</strong>{" "}
-                  {exam.duration} mins
+                  {exam.duration || 0} mins
                 </p>
 
               </div>
 
-              {/* ROW 4 — ACTIONS */}
               <div className="exam-actions">
 
                 <button
-                  className="edit-btn"
-                  onClick={() => handleEdit(exam)}
-                >
-                  Edit
-                </button>
-
-                <button
                   className="delete-btn"
-                  onClick={() => handleDelete(exam.id)}
+                  onClick={()=> handleDelete(exam.id)}
                 >
                   Delete
                 </button>
@@ -284,149 +306,9 @@ export default function Exams() {
 
         </div>
 
-        {/* EDIT MODAL */}
-        {showModal && editingExam && (
-
-          <div className="popup-overlay">
-
-            <div className="popup exam-edit-modal">
-
-              <h3>Edit Exam</h3>
-
-              <div className="exam-edit-grid">
-
-                {/* NAME */}
-                <input
-                  className="exam-full-width"
-                  type="text"
-                  placeholder="Exam Name"
-                  value={editingExam.name}
-                  onChange={(e) =>
-                    setEditingExam({ ...editingExam, name: e.target.value })
-                  }
-                />
-
-                {/* MOCK TYPE */}
-                <select
-                  value={editingExam.mockType}
-                  onChange={(e) =>
-                    setEditingExam({ ...editingExam, mockType: e.target.value })
-                  }
-                >
-                  <option value="full">Full Mock</option>
-                  <option value="sectional">Sectional Mock</option>
-                </select>
-
-                {/* SUBJECT */}
-                <select
-                  value={editingExam.subjectId}
-                  onChange={(e) =>
-                    setEditingExam({ ...editingExam, subjectId: e.target.value })
-                  }
-                >
-                  <option value="">Select Subject</option>
-                  {subjects.map((subject) => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* TOPIC */}
-                <input
-                  type="text"
-                  placeholder="Topic Name"
-                  value={editingExam.topicName || ""}
-                  onChange={(e) =>
-                    setEditingExam({ ...editingExam, topicName: e.target.value })
-                  }
-                />
-
-                {/* SUB TOPIC */}
-                <input
-                  type="text"
-                  placeholder="Sub Topic Name"
-                  value={editingExam.subTopicName || ""}
-                  onChange={(e) =>
-                    setEditingExam({ ...editingExam, subTopicName: e.target.value })
-                  }
-                />
-
-                {/* QUANTITY */}
-                <div className="custom-input-group">
-                  <select
-                    value={editingExam.totalQuestions}
-                    onChange={(e) =>
-                      setEditingExam({ ...editingExam, totalQuestions: e.target.value })
-                    }
-                  >
-                    <option value={100}>100 Questions</option>
-                    <option value={50}>50 Questions</option>
-                    <option value={25}>25 Questions</option>
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Custom Questions"
-                    value={editingExam.totalQuestions}
-                    onChange={(e) =>
-                      setEditingExam({ ...editingExam, totalQuestions: e.target.value })
-                    }
-                  />
-                </div>
-
-                {/* DURATION */}
-                <div className="custom-input-group">
-                  <select
-                    value={editingExam.duration}
-                    onChange={(e) =>
-                      setEditingExam({ ...editingExam, duration: e.target.value })
-                    }
-                  >
-                    <option value={60}>60 mins</option>
-                    <option value={45}>45 mins</option>
-                    <option value={30}>30 mins</option>
-                    <option value={15}>15 mins</option>
-                    <option value={10}>10 mins</option>
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Custom Duration"
-                    value={editingExam.duration}
-                    onChange={(e) =>
-                      setEditingExam({ ...editingExam, duration: e.target.value })
-                    }
-                  />
-                </div>
-
-              </div>
-
-              {/* ACTIONS */}
-              <div className="exam-actions">
-
-                <button
-                  className="submit-btn"
-                  onClick={handleSave}
-                >
-                  Save
-                </button>
-
-                <button
-                  className="cancel-btn"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )}
-
       </div>
 
     </AdminLayout>
+
   );
 }

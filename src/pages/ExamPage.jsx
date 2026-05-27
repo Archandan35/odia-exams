@@ -1,778 +1,307 @@
 import { useEffect, useState } from "react";
-
 import { useParams, useNavigate } from "react-router-dom";
-
-import {
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-
+import { collection, getDocs, addDoc, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/config";
 
 export default function ExamPage() {
-
   const { examId } = useParams();
-
   const navigate = useNavigate();
 
-  const STORAGE_KEY = `exam_${examId}`;
-
   const [questions, setQuestions] = useState([]);
-
   const [examData, setExamData] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [currentQuestion, setCurrentQuestion] = useState(0);
-
   const [answers, setAnswers] = useState({});
-
   const [visited, setVisited] = useState({});
-
   const [review, setReview] = useState({});
-
-  const [bookmarks, setBookmarks] = useState({});
-
   const [timeLeft, setTimeLeft] = useState(1800);
-
   const [cheatCount, setCheatCount] = useState(0);
 
   /* =========================================
-     FULLSCREEN
+     FULLSCREEN MANAGEMENT
   ========================================= */
-
   useEffect(() => {
-
     const elem = document.documentElement;
-
     if (elem.requestFullscreen) {
-
-      elem.requestFullscreen()
-        .catch(() => {});
-
+      elem.requestFullscreen().catch(() => {});
     }
-
   }, []);
 
   /* =========================================
-     CHEATING DETECTION
+     CHEATING DETECTION (VISIBILITY CHANGE)
   ========================================= */
-
   useEffect(() => {
-
     function handleVisibility() {
-
       if (document.hidden) {
-
-        setCheatCount(prev => {
-
+        setCheatCount((prev) => {
           const next = prev + 1;
-
           if (next >= 3) {
-
-            alert(
-              "Exam auto-submitted due to cheating."
-            );
-
-            submitExam(true);
-
+            alert("Exam auto-submitted due to multiple window switches.");
+            handleSubmitExam();
+          } else {
+            alert(`Warning! Tab switching is tracked. (${next}/3)`);
           }
-          else {
-
-            alert(
-              `Warning ${next}/3 : Tab switching detected`
-            );
-
-          }
-
           return next;
-
         });
-
       }
-
     }
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
-
-    };
-
-  }, []);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [questions, answers]);
 
   /* =========================================
-     LOAD EXAM
+     FETCH DATA
   ========================================= */
-
   useEffect(() => {
-
     async function loadExam() {
-
       try {
-
-        const examRef = doc(
-          db,
-          "exams",
-          examId
-        );
-
+        const examRef = doc(db, "exams", examId);
         const examSnap = await getDoc(examRef);
-
-        if (!examSnap.exists()) {
-
-          setQuestions([]);
-
-          return;
-
+        if (examSnap.exists()) {
+          setExamData(examSnap.data());
+          if (examSnap.data().duration) {
+            setTimeLeft(examSnap.data().duration * 60);
+          }
         }
 
-        const exam = examSnap.data();
+        const qRef = collection(db, "exams", examId, "questions");
+        const qSnap = await getDocs(qRef);
+        const list = qSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setQuestions(list);
 
-        setExamData(exam);
-
-        const questionIds =
-          exam.questionIds ||
-          exam.questions ||
-          [];
-
-        const qSnap = await getDocs(
-          collection(db, "questions")
-        );
-
-        const allQuestions =
-          qSnap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-          }));
-
-        const filteredQuestions =
-          allQuestions.filter((q) =>
-            questionIds.includes(q.id)
-          );
-
-        setQuestions(filteredQuestions);
-
-        const saved =
-          localStorage.getItem(
-            STORAGE_KEY
-          );
-
-        if (saved) {
-
-          const parsed =
-            JSON.parse(saved);
-
-          setAnswers(parsed.answers || {});
-          setReview(parsed.review || {});
-          setVisited(parsed.visited || {});
-          setBookmarks(parsed.bookmarks || {});
-          setTimeLeft(parsed.timeLeft ?? 1800);
-
+        if (list.length > 0) {
+          setVisited({ [list[0].id]: true });
         }
-
-        if (
-          filteredQuestions.length > 0 &&
-          !saved
-        ) {
-
-          setVisited({
-            [filteredQuestions[0].id]: true,
-          });
-
-        }
-
-      }
-      catch (err) {
-
-        console.log(err);
-
-      }
-      finally {
-
+      } catch (err) {
+        console.error("Error loading exam:", err);
+      } finally {
         setLoading(false);
-
       }
-
     }
-
     loadExam();
-
   }, [examId]);
 
   /* =========================================
-     AUTO SAVE
+     TIMER LOGIC
   ========================================= */
-
   useEffect(() => {
-
-    if (
-      loading ||
-      questions.length === 0
-    ) return;
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        answers,
-        review,
-        visited,
-        bookmarks,
-        timeLeft,
-      })
-    );
-
-  }, [
-    answers,
-    review,
-    visited,
-    bookmarks,
-    timeLeft,
-    loading,
-    questions,
-  ]);
-
-  /* =========================================
-     TIMER
-  ========================================= */
-
-  useEffect(() => {
-
-    if (loading) return;
-
+    if (loading || questions.length === 0) return;
     const timer = setInterval(() => {
-
-      setTimeLeft(prev => {
-
+      setTimeLeft((prev) => {
         if (prev <= 1) {
-
           clearInterval(timer);
-
-          submitExam(true);
-
+          handleSubmitExam();
           return 0;
-
         }
-
         return prev - 1;
-
       });
-
     }, 1000);
-
     return () => clearInterval(timer);
+  }, [loading, questions]);
 
-  }, [loading]);
-
-  function formatTime(sec) {
-
-    const m = Math.floor(sec / 60);
-
-    const s = sec % 60;
-
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   }
 
-  function selectOption(index) {
+  /* =========================================
+     SUBMIT EXAM
+  ========================================= */
+  async function handleSubmitExam() {
+    try {
+      const user = auth.currentUser;
+      const submission = {
+        examId,
+        examTitle: examData?.title || "Exam",
+        userId: user ? user.uid : "anonymous",
+        userEmail: user ? user.email : "anonymous@test.com",
+        answers,
+        questions,
+        cheatCount,
+        submittedAt: new Date().toISOString(),
+      };
 
-    const qId =
-      questions[currentQuestion].id;
+      await addDoc(collection(db, "submissions"), submission);
+      navigate("/result", { state: submission });
+    } catch (err) {
+      console.error("Submission failed: ", err);
+      alert("Failed to submit exam cleanly. Please try again.");
+    }
+  }
 
-    setAnswers(prev => ({
-      ...prev,
-      [qId]: index,
-    }));
+  /* =========================================
+     CONTROL ACTIONS
+  ========================================= */
+  function handleOptionSelect(optionIndex) {
+    const activeQ = questions[currentQuestion];
+    setAnswers((prev) => ({ ...prev, [activeQ.id]: optionIndex }));
+  }
 
+  function handleClearAnswer() {
+    const activeQ = questions[currentQuestion];
+    setAnswers((prev) => {
+      const copy = { ...prev };
+      delete copy[activeQ.id];
+      return copy;
+    });
+  }
+
+  function handleToggleReview() {
+    const activeQ = questions[currentQuestion];
+    setReview((prev) => ({ ...prev, [activeQ.id]: !prev[activeQ.id] }));
   }
 
   function handleNext() {
-
-    if (
-      currentQuestion <
-      questions.length - 1
-    ) {
-
-      const next =
-        currentQuestion + 1;
-
-      setCurrentQuestion(next);
-
-      setVisited(prev => ({
-        ...prev,
-        [questions[next].id]: true,
-      }));
-
+    if (currentQuestion < questions.length - 1) {
+      const nextIndex = currentQuestion + 1;
+      setCurrentQuestion(nextIndex);
+      setVisited((prev) => ({ ...prev, [questions[nextIndex].id]: true }));
     }
-
   }
 
   function handlePrev() {
-
     if (currentQuestion > 0) {
-
-      const prev =
-        currentQuestion - 1;
-
-      setCurrentQuestion(prev);
-
+      const prevIndex = currentQuestion - 1;
+      setCurrentQuestion(prevIndex);
+      setVisited((prev) => ({ ...prev, [questions[prevIndex].id]: true }));
     }
-
   }
-
-  function clearResponse() {
-
-    const qId =
-      questions[currentQuestion].id;
-
-    setAnswers(prev => {
-
-      const updated = { ...prev };
-
-      delete updated[qId];
-
-      return updated;
-
-    });
-
-  }
-
-  function toggleReview() {
-
-    const qId =
-      questions[currentQuestion].id;
-
-    setReview(prev => ({
-      ...prev,
-      [qId]: !prev[qId],
-    }));
-
-  }
-
-  function toggleBookmark() {
-
-    const qId =
-      questions[currentQuestion].id;
-
-    setBookmarks(prev => ({
-      ...prev,
-      [qId]: !prev[qId],
-    }));
-
-  }
-
-  /* =========================================
-     SUBMIT
-  ========================================= */
-
-  async function submitExam(
-    isAuto = false
-  ) {
-
-
-    let score = 0;
-
-    questions.forEach(q => {
-
-      const userAns =
-        answers[q.id];
-
-      const map = {
-        A: 0,
-        B: 1,
-        C: 2,
-        D: 3,
-      };
-
-      let correctIndex = 0;
-
-      if (
-        typeof q.correctAnswer ===
-        "number"
-      ) {
-
-        correctIndex =
-          q.correctAnswer;
-
-      }
-      else {
-
-        correctIndex =
-          map[q.correctAnswer] ?? 0;
-
-      }
-
-      if (
-        userAns === correctIndex
-      ) {
-
-        score += 4;
-
-      }
-
-    });
-
-    const resultData = {
-      examId,
-      score,
-      totalMarks:
-        questions.length * 4,
-      answers,
-      questions,
-      submittedAt:
-        new Date().toISOString(),
-    };
-
-    try {
-
-      await addDoc(
-        collection(db, "results"),
-        {
-          ...resultData,
-          userId:
-            auth.currentUser?.uid ||
-            "anonymous",
-        }
-      );
-
-      localStorage.removeItem(
-        STORAGE_KEY
-      );
-
-      if (document.fullscreenElement) {
-
-        await document.exitFullscreen()
-          .catch(() => {});
-
-      }
-
-      navigate("/result", {
-        state: resultData,
-      });
-
-    }
-    catch (err) {
-
-      console.log(err);
-
-    }
-
-  }
-
-  /* =========================================
-     UI
-  ========================================= */
 
   if (loading) {
-
     return (
-      <div className="page">
-        <h2>Loading Exam...</h2>
+      <div className="page" style={{ textAlign: "center", paddingTop: "100px" }}>
+        <h2>Loading Exam Questions...</h2>
       </div>
     );
-
   }
 
   if (questions.length === 0) {
-
     return (
-      <div className="page">
-        <h2>No Questions Found!</h2>
+      <div className="page" style={{ textAlign: "center", paddingTop: "100px" }}>
+        <h2>No questions discovered for this exam challenge.</h2>
       </div>
     );
-
   }
 
-  const currentQ =
-    questions[currentQuestion];
-
-  const selectedOpt =
-    answers[currentQ.id];
+  const activeQuestionItem = questions[currentQuestion];
 
   return (
-
-    <div className="exam-layout">
-
-      {/* LEFT */}
-
-      <div className="exam-main">
-
-        <div className="topbar">
-
-          <div>
-
-            <h2>
-              {examData?.name}
-            </h2>
-
-            <p>
-              {examData?.mockType || "Full"}
-            </p>
-
+    <div className="page">
+      <div className="exam-container">
+        
+        {/* LEFT SECTION: QUESTION PANEL */}
+        <div className="question-panel">
+          <div className="question-header">
+            <h3>Question {currentQuestion + 1} of {questions.length}</h3>
+            {activeQuestionItem.marks && (
+              <span>Marks: +{activeQuestionItem.marks}</span>
+            )}
           </div>
 
-          <div style={{ textAlign:"right" }}>
-
-            <h2>
-              ⏳ {formatTime(timeLeft)}
-            </h2>
-
-            <p>
-              Warnings:
-              {" "}
-              {cheatCount}/3
-            </p>
-
+          <div className="question-body">
+            <p>{activeQuestionItem.questionText}</p>
           </div>
 
-        </div>
-
-        <div className="question-card">
-
-         <div className="question-header-row">
-
- <div className="question-number-box">
-Q.{currentQuestion + 1}
-</div>
-
-  <div className="question-text-main">
-    {currentQ.question || currentQ.text}
-  </div>
-
-</div>
-
-       
           <div className="options-list">
-
-            {(currentQ.options || []).map(
-              (option, idx) => (
-
-                <label
-                  key={idx}
-                  className={
-                    selectedOpt === idx
-                    ? "selected-option"
-                    : "option-card"
-                  }
+            {activeQuestionItem.options?.map((option, idx) => {
+              const isSelected = answers[activeQuestionItem.id] === idx;
+              return (
+                <label 
+                  key={idx} 
+                  className={`option-item ${isSelected ? "selected" : ""}`}
                 >
-
                   <input
                     type="radio"
-                    className="option-radio"
-                    checked={
-                      selectedOpt === idx
-                    }
-                    onChange={() =>
-                      selectOption(idx)
-                    }
+                    name={`question_${activeQuestionItem.id}`}
+                    checked={isSelected}
+                    onChange={() => handleOptionSelect(idx)}
                   />
-
-                 <div className="option-text">
-
-  <div className="option-label-box">
-    {String.fromCharCode(65 + idx)}.
-  </div>
-
-  <div className="option-value">
-    {option}
-  </div>
-
-</div>
-
+                  <span>{option}</span>
                 </label>
-
-              )
-            )}
-
+              );
+            })}
           </div>
 
-          <div className="exam-buttons">
-
-            <button onClick={handlePrev}>
-              Previous
-            </button>
-
-            <button onClick={toggleReview}>
-              Mark Review
-            </button>
-
-            <button onClick={toggleBookmark}>
-              Bookmark
-            </button>
-
-            <button onClick={clearResponse}>
-              Clear Response
-            </button>
-
-            <button onClick={handleNext}>
-              Save & Next
-            </button>
-
-            <button
-              className="submit-btn"
-              onClick={() =>
-                submitExam(false)
-              }
-            >
-              Submit
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* RIGHT */}
-
-      <div className="navigator">
-
-        <h2 className="palette-title">
-          Questions
-        </h2>
-
-        <div className="exam-legend">
-
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-answered">
-              {Object.keys(answers).length}
-            </div>
-            <span>Answered</span>
-          </div>
-
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-marked">
-              {
-                Object.keys(review)
-                  .filter(id => review[id])
-                  .length
-              }
-            </div>
-            <span>Marked</span>
-          </div>
-
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-notanswered">
-              {
-                questions.filter(
-                  q =>
-                    visited[q.id] &&
-                    answers[q.id] === undefined
-                ).length
-              }
-            </div>
-            <span>Not Answered</span>
-          </div>
-
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-notvisited">
-              {
-                questions.filter(
-                  q => !visited[q.id]
-                ).length
-              }
-            </div>
-            <span>Not Visited</span>
-          </div>
-
-        </div>
-
-        <div className="palette-grid">
-
-          {questions.map((q, index) => {
-
-            let btnClass =
-              "palette-btn";
-
-            const answered =
-              answers[q.id] !== undefined;
-
-            const marked =
-              review[q.id];
-
-            const isVisited =
-              visited[q.id];
-
-            if (marked && answered) {
-
-              btnClass +=
-                " marked-answered";
-
-            }
-            else if (marked) {
-
-              btnClass +=
-                " marked";
-
-            }
-            else if (answered) {
-
-              btnClass +=
-                " answered";
-
-            }
-            else if (isVisited) {
-
-              btnClass +=
-                " not-answered";
-
-            }
-            else {
-
-              btnClass +=
-                " not-visited";
-
-            }
-
-            if (
-              currentQuestion === index
-            ) {
-
-              btnClass +=
-                " current";
-
-            }
-
-            return (
-
-              <button
-                key={q.id}
-                className={btnClass}
-                onClick={() => {
-
-                  setCurrentQuestion(index);
-
-                  setVisited(prev => ({
-                    ...prev,
-                    [q.id]: true,
-                  }));
-
-                }}
+          <div className="exam-actions">
+            <div className="nav-btn-group">
+              <button 
+                className="exam-btn" 
+                onClick={handlePrev} 
+                disabled={currentQuestion === 0}
               >
-                {index + 1}
+                Previous
               </button>
+              <button 
+                className="exam-btn" 
+                onClick={handleNext} 
+                disabled={currentQuestion === questions.length - 1}
+              >
+                Next
+              </button>
+            </div>
 
-            );
+            <div className="nav-btn-group">
+              <button className="exam-btn warning" onClick={handleToggleReview}>
+                {review[activeQuestionItem.id] ? "Unmark Review" : "Mark for Review"}
+              </button>
+              <button className="exam-btn" onClick={handleClearAnswer}>
+                Clear Response
+              </button>
+              <button className="exam-btn success" onClick={handleSubmitExam}>
+                Submit Exam
+              </button>
+            </div>
+          </div>
+        </div>
 
-          })}
+        {/* RIGHT SECTION: SIDEBAR PALETTE */}
+        <div className="exam-sidebar">
+          <div className="sidebar-header">
+            <span>Time Left</span>
+            <span className="timer-display">{formatTime(timeLeft)}</span>
+          </div>
 
+          <div className="palette-grid">
+            {questions.map((q, index) => {
+              let btnClass = "palette-btn";
+              const answered = answers[q.id] !== undefined;
+              const marked = review[q.id];
+              const isVisited = visited[q.id];
+
+              if (marked && answered) {
+                btnClass += " marked-answered";
+              } else if (marked) {
+                btnClass += " marked";
+              } else if (answered) {
+                btnClass += " answered";
+              } else if (isVisited) {
+                btnClass += " not-answered";
+              } else {
+                btnClass += " not-visited";
+              }
+
+              if (currentQuestion === index) {
+                btnClass += " current";
+              }
+
+              return (
+                <button
+                  key={q.id}
+                  className={btnClass}
+                  onClick={() => {
+                    setCurrentQuestion(index);
+                    setVisited((prev) => ({ ...prev, [q.id]: true }));
+                  }}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
       </div>
-
     </div>
-
   );
-
 }

@@ -1,1119 +1,562 @@
 import {
-useEffect,
-useState,
+  useEffect,
+  useState,
 } from "react";
 
 import {
-useParams,
-useNavigate,
-} from "react-router-dom";
-
-import {
-collection,
-getDocs,
-addDoc,
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import {
-db,
-auth,
-} from "../firebase/config";
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
+import { db } from "../firebase/config";
 
 export default function ExamPage(){
 
-const { examId } =
-useParams();
+  // =========================================
+  // ROUTER
+  // =========================================
 
-const navigate =
-useNavigate();
+  const { examId } = useParams();
 
-const STORAGE_KEY =
-`exam_${examId}`;
+  const navigate = useNavigate();
 
-const [questions,
-setQuestions] =
-useState([]);
+  // =========================================
+  // STATES
+  // =========================================
 
-const [examData,
-setExamData] =
-useState(null);
+  const [loading,setLoading] = useState(true);
 
-const [loading,
-setLoading] =
-useState(true);
+  const [currentExam,setCurrentExam] = useState(null);
 
-const [currentQuestion,
-setCurrentQuestion] =
-useState(0);
+  const [questions,setQuestions] = useState([]);
 
-const [answers,
-setAnswers] =
-useState({});
+  const [currentQuestionIndex,setCurrentQuestionIndex] =
+    useState(0);
 
-const [visited,
-setVisited] =
-useState({});
+  const [selectedAnswers,setSelectedAnswers] =
+    useState({});
 
-const [review,
-setReview] =
-useState({});
+  const [timeLeft,setTimeLeft] = useState(0);
 
-const [bookmarks,
-setBookmarks] =
-useState({});
+  const [submitted,setSubmitted] = useState(false);
 
-const [timeLeft,
-setTimeLeft] =
-useState(1800);
+  // =========================================
+  // LOAD EXAM
+  // =========================================
 
-const [cheatCount,
-setCheatCount] =
-useState(0);
+  useEffect(()=>{
 
-/* =========================================
-FULLSCREEN
-========================================= */
+    async function loadExam(){
 
-useEffect(()=>{
+      try{
 
-const elem =
-document.documentElement;
+        // ---------------------------------
+        // FETCH EXAM DOCUMENT
+        // ---------------------------------
 
-if(elem.requestFullscreen){
+        const examRef = doc(
+          db,
+          "exams",
+          examId
+        );
 
-elem.requestFullscreen();
+        const examSnap = await getDoc(examRef);
 
-}
+        if(!examSnap.exists()){
 
-},[]);
+          alert("Exam not found");
 
-/* =========================================
-CHEAT DETECTION
-========================================= */
+          navigate("/dashboard");
 
-useEffect(()=>{
+          return;
+        }
 
-function handleVisibility(){
+        const examData = {
+          id:examSnap.id,
+          ...examSnap.data()
+        };
 
-if(document.hidden){
+        setCurrentExam(examData);
 
-handleCheating(
-"Tab Switch Detected"
-);
+      }
+      catch(error){
 
-}
+        console.error(error);
 
-}
+        alert("Failed to load exam");
 
-function handleFullscreen(){
+      }
 
-if(
-!document.fullscreenElement
-){
+    }
 
-handleCheating(
-"Fullscreen Exited"
-);
+    loadExam();
 
-}
+  },[
+    examId,
+    navigate
+  ]);
 
-}
+  // =========================================
+  // LOAD QUESTIONS BASED ON MOCK TYPE
+  // =========================================
 
-document.addEventListener(
-"visibilitychange",
-handleVisibility
-);
+  useEffect(()=>{
 
-document.addEventListener(
-"fullscreenchange",
-handleFullscreen
-);
+    if(!currentExam) return;
 
-return ()=>{
+    const unsubscribe = onSnapshot(
 
-document.removeEventListener(
-"visibilitychange",
-handleVisibility
-);
+      collection(db,"questions"),
 
-document.removeEventListener(
-"fullscreenchange",
-handleFullscreen
-);
+      (snapshot)=>{
 
-};
+        let allQuestions =
+          snapshot.docs.map((doc)=>({
+            id:doc.id,
+            ...doc.data()
+          }));
 
-},[cheatCount]);
+        // =====================================
+        // SECTIONAL MOCK FILTERING
+        // SUBJECT + TOPIC + SUBTOPIC
+        // =====================================
 
-function handleCheating(msg){
+        if(
+          currentExam.mockType === "sectional"
+        ){
 
-const newCount =
-cheatCount + 1;
+          allQuestions = allQuestions.filter(
+            (q)=>
 
-setCheatCount(newCount);
+              String(q.subjectId) ===
+              String(currentExam.subjectId)
 
-alert(
-`${msg}
+              &&
 
-Warning:
-${newCount}/3`
-);
+              String(q.topicId) ===
+              String(currentExam.topicId)
 
-if(newCount >= 3){
+              &&
 
-submitExam(true);
+              String(q.subTopicId) ===
+              String(currentExam.subTopicId)
+          );
 
-}
+        }
 
-}
+        // =====================================
+        // FULL MOCK FILTERING
+        // SUBJECT + TOPIC ONLY
+        // =====================================
 
-/* =========================================
-LOAD EXAM
-========================================= */
+        if(
+          currentExam.mockType === "full"
+        ){
 
-useEffect(()=>{
+          allQuestions = allQuestions.filter(
+            (q)=>
 
-async function loadExam(){
+              String(q.subjectId) ===
+              String(currentExam.subjectId)
 
-try{
+              &&
 
-const saved =
-localStorage.getItem(
-STORAGE_KEY
-);
+              String(q.topicId) ===
+              String(currentExam.topicId)
+          );
 
-if(saved){
+        }
 
-const parsed =
-JSON.parse(saved);
+        // =====================================
+        // FALLBACK
+        // USE SAVED QUESTION IDS
+        // =====================================
 
-setAnswers(
-parsed.answers || {}
-);
+        if(
+          currentExam.questionIds &&
+          currentExam.questionIds.length > 0
+        ){
 
-setVisited(
-parsed.visited || {}
-);
+          allQuestions = allQuestions.filter(
+            (q)=>
+              currentExam.questionIds.includes(q.id)
+          );
 
-setReview(
-parsed.review || {}
-);
+        }
 
-setBookmarks(
-parsed.bookmarks || {}
-);
+        // =====================================
+        // SET QUESTIONS
+        // =====================================
 
-setCurrentQuestion(
-parsed.currentQuestion || 0
-);
+        setQuestions(allQuestions);
 
-setTimeLeft(
-parsed.timeLeft || 1800
-);
+        // =====================================
+        // SET TIMER
+        // =====================================
 
-}
+        setTimeLeft(
+          (currentExam.duration || 0) * 60
+        );
 
-const examSnapshot =
-await getDocs(
-collection(db,"exams")
-);
+        setLoading(false);
 
-const exams =
-examSnapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-);
+      }
 
-const currentExam =
-exams.find(
-(e)=>e.id === examId
-);
+    );
 
-setExamData(currentExam);
+    return ()=> unsubscribe();
 
-if(
-currentExam &&
-!saved
-){
+  },[
+    currentExam
+  ]);
 
-setTimeLeft(
-currentExam.duration * 60
-);
+  // =========================================
+  // TIMER
+  // =========================================
 
-}
+  useEffect(()=>{
 
-const questionSnapshot =
-await getDocs(
-collection(db,"questions")
-);
+    if(submitted) return;
 
-let allQuestions =
-questionSnapshot.docs.map(
-(doc)=>({
-id:doc.id,
-...doc.data(),
-})
-);
+    if(timeLeft <= 0){
 
-/* FILTERING */
+      handleSubmitExam();
 
-if(
-currentExam.examType ===
-"subject"
-){
+      return;
+    }
 
-allQuestions =
-allQuestions.filter(
-(q)=>
-q.subjectId ===
-currentExam.subjectId
-);
+    const timer = setInterval(()=>{
 
-}
+      setTimeLeft((prev)=> prev - 1);
 
-else if(
-currentExam.examType ===
-"topic"
-){
+    },1000);
 
-allQuestions =
-allQuestions.filter(
-(q)=>
-q.topicId ===
-currentExam.topicId
-);
+    return ()=> clearInterval(timer);
 
-}
+  },[
+    timeLeft,
+    submitted
+  ]);
 
-else if(
-currentExam.examType ===
-"subtopic"
-){
+  // =========================================
+  // HANDLE OPTION SELECT
+  // =========================================
 
-allQuestions =
-allQuestions.filter(
-(q)=>
-q.subTopicId ===
-currentExam.subTopicId
-);
+  function handleSelectOption(questionId,option){
 
-}
+    setSelectedAnswers((prev)=>({
 
-else if(
-currentExam.examType ===
-"mixed"
-){
+      ...prev,
 
-allQuestions =
-allQuestions.sort(
-()=>Math.random()-0.5
-);
+      [questionId]:option
 
-}
+    }));
 
-if(
-currentExam.shuffleQuestions
-){
+  }
 
-allQuestions =
-allQuestions.sort(
-()=>Math.random()-0.5
-);
+  // =========================================
+  // NAVIGATION
+  // =========================================
 
-}
+  function nextQuestion(){
 
-allQuestions =
-allQuestions.slice(
-0,
-currentExam.questionCount
-);
+    if(
+      currentQuestionIndex <
+      questions.length - 1
+    ){
 
-setQuestions(allQuestions);
+      setCurrentQuestionIndex(
+        (prev)=> prev + 1
+      );
 
-setLoading(false);
+    }
 
-}catch(error){
+  }
 
-console.error(error);
+  function previousQuestion(){
 
-setLoading(false);
+    if(currentQuestionIndex > 0){
 
-}
+      setCurrentQuestionIndex(
+        (prev)=> prev - 1
+      );
 
-}
+    }
 
-loadExam();
+  }
 
-},[examId]);
+  // =========================================
+  // SUBMIT EXAM
+  // =========================================
 
-/* =========================================
-AUTO SAVE
-========================================= */
+  function handleSubmitExam(){
 
-useEffect(()=>{
+    if(submitted) return;
 
-localStorage.setItem(
+    setSubmitted(true);
 
-STORAGE_KEY,
+    let score = 0;
 
-JSON.stringify({
+    questions.forEach((question)=>{
 
-answers,
-visited,
-review,
-bookmarks,
-currentQuestion,
-timeLeft,
+      const selected =
+        selectedAnswers[question.id];
 
-})
+      if(selected === question.correctAnswer){
 
-);
+        score++;
 
-},[
+      }
 
-answers,
-visited,
-review,
-bookmarks,
-currentQuestion,
-timeLeft,
+    });
 
-]);
+    alert(
+      `Exam Submitted\n\nScore: ${score}/${questions.length}`
+    );
 
-/* =========================================
-TIMER
-========================================= */
+    navigate("/dashboard");
 
-useEffect(()=>{
+  }
 
-if(
-loading ||
-questions.length === 0
-)return;
+  // =========================================
+  // FORMAT TIMER
+  // =========================================
 
-const timer =
-setInterval(()=>{
+  function formatTime(seconds){
 
-setTimeLeft((prev)=>{
+    const mins = Math.floor(seconds / 60);
 
-if(prev <= 1){
+    const secs = seconds % 60;
 
-clearInterval(timer);
+    return `${mins}:${
+      secs < 10 ? "0" : ""
+    }${secs}`;
 
-submitExam(true);
+  }
 
-return 0;
+  // =========================================
+  // LOADING
+  // =========================================
 
-}
+  if(loading){
 
-return prev - 1;
+    return(
 
-});
+      <div className="exam-loading">
 
-},1000);
+        Loading Exam...
 
-return ()=>clearInterval(timer);
+      </div>
 
-},[
-loading,
-questions,
-]);
+    );
 
-/* =========================================
-FORMAT TIME
-========================================= */
+  }
 
-function formatTime(seconds){
+  // =========================================
+  // NO QUESTIONS
+  // =========================================
 
-const hrs =
-Math.floor(seconds/3600);
+  if(questions.length === 0){
 
-const mins =
-Math.floor(
-(seconds%3600)/60
-);
+    return(
 
-const secs =
-seconds%60;
+      <div className="exam-loading">
 
-return `
-${String(hrs)
-.padStart(2,"0")}h
-${String(mins)
-.padStart(2,"0")}m
-${String(secs)
-.padStart(2,"0")}s
-`;
+        No Questions Found
 
-}
+      </div>
 
-/* =========================================
-ANSWER SELECT
-========================================= */
+    );
 
-function selectAnswer(
-qid,
-index
-){
+  }
 
-setAnswers((prev)=>({
+  // =========================================
+  // CURRENT QUESTION
+  // =========================================
 
-...prev,
+  const currentQuestion =
+    questions[currentQuestionIndex];
 
-[qid]:index,
+  // =========================================
+  // UI
+  // =========================================
 
-}));
+  return(
 
-setVisited((prev)=>({
+    <div className="exam-page">
 
-...prev,
+      {/* ================================= */}
+      {/* HEADER */}
+      {/* ================================= */}
 
-[qid]:true,
+      <div className="exam-header">
 
-}));
+        <div>
 
-}
+          <h2>
+            {currentExam?.name}
+          </h2>
 
-/* =========================================
-MARK REVIEW
-========================================= */
+          <p>
+            {
+              currentExam?.mockType === "full"
+                ? "FULL MOCK"
+                : "SECTIONAL MOCK"
+            }
+          </p>
 
-function markReview(qid){
+        </div>
 
-setReview((prev)=>({
+        <div className="exam-timer">
 
-...prev,
+          ⏳ {formatTime(timeLeft)}
 
-[qid]:
-!prev[qid],
+        </div>
 
-}));
+      </div>
 
-}
+      {/* ================================= */}
+      {/* EXAM DETAILS */}
+      {/* ================================= */}
 
-/* =========================================
-BOOKMARK
-========================================= */
+      <div className="exam-info">
 
-function toggleBookmark(qid){
+        <p>
+          <strong>Subject:</strong>{" "}
+          {currentExam?.subject || "-"}
+        </p>
 
-setBookmarks((prev)=>({
+        <p>
+          <strong>Topic:</strong>{" "}
+          {currentExam?.topicName || "-"}
+        </p>
 
-...prev,
+        {
+          currentExam?.mockType ===
+          "sectional" && (
 
-[qid]:
-!prev[qid],
+            <p>
+              <strong>Sub Topic:</strong>{" "}
+              {currentExam?.subTopicName || "-"}
+            </p>
 
-}));
+          )
+        }
 
-}
+        <p>
+          <strong>Total Questions:</strong>{" "}
+          {questions.length}
+        </p>
 
-/* =========================================
-NAVIGATION
-========================================= */
+        <p>
+          <strong>Duration:</strong>{" "}
+          {currentExam?.duration || 0} mins
+        </p>
 
-function nextQuestion(){
+      </div>
 
-if(
-currentQuestion <
-questions.length - 1
-){
+      {/* ================================= */}
+      {/* QUESTION CARD */}
+      {/* ================================= */}
 
-setCurrentQuestion(
-currentQuestion + 1
-);
+      <div className="question-card">
 
-}
+        <h3>
+          Question {currentQuestionIndex + 1}
+        </h3>
 
-}
+        <p className="question-text">
 
-function prevQuestion(){
+          {currentQuestion?.question}
 
-if(currentQuestion > 0){
+        </p>
 
-setCurrentQuestion(
-currentQuestion - 1
-);
+        {/* ============================= */}
+        {/* OPTIONS */}
+        {/* ============================= */}
 
-}
+        <div className="options-container">
 
-}
+          {
+            currentQuestion?.options?.map(
+              (option,index)=>(
 
-/* =========================================
-SUBMIT EXAM
-========================================= */
+                <button
+                  key={index}
+                  className={`option-btn ${
+                    selectedAnswers[
+                      currentQuestion.id
+                    ] === option
+                      ? "selected-option"
+                      : ""
+                  }`}
+                  onClick={()=>
+                    handleSelectOption(
+                      currentQuestion.id,
+                      option
+                    )
+                  }
+                >
 
-async function submitExam(
-autoSubmit=false
-){
+                  {option}
 
-if(!autoSubmit){
+                </button>
 
-const confirmSubmit =
-window.confirm(
-"Submit Exam?"
-);
+              )
+            )
+          }
 
-if(!confirmSubmit)
-return;
+        </div>
 
-}
+      </div>
 
-let correct = 0;
+      {/* ================================= */}
+      {/* NAVIGATION */}
+      {/* ================================= */}
 
-let wrong = 0;
+      <div className="exam-navigation">
 
-questions.forEach((q)=>{
+        <button
+          onClick={previousQuestion}
+          disabled={currentQuestionIndex === 0}
+        >
+          Previous
+        </button>
 
-const ans =
-answers[q.id];
+        {
+          currentQuestionIndex ===
+          questions.length - 1
+            ? (
 
-if(
-ans === undefined
-) return;
+              <button
+                className="submit-btn"
+                onClick={handleSubmitExam}
+              >
+                Submit Exam
+              </button>
 
-let correctIndex = 0;
+            )
+            : (
 
-const answerMap = {
+              <button
+                onClick={nextQuestion}
+              >
+                Next
+              </button>
 
-A:0,
-B:1,
-C:2,
-D:3,
+            )
+        }
 
-};
+      </div>
 
-if(
-typeof q.correctAnswer ===
-"number"
-){
+    </div>
 
-correctIndex =
-q.correctAnswer;
-
-}
-else if(
-typeof q.correctAnswer ===
-"string"
-){
-
-correctIndex =
-answerMap[
-q.correctAnswer
-?.trim()
-?.toUpperCase()
-] ?? 0;
-
-}
-else{
-
-correctIndex =
-answerMap[q.answer] || 0;
-
-}
-
-if(
-correctIndex === ans
-){
-
-correct++;
-
-}else{
-
-wrong++;
-
-}
-
-});
-
-const negative =
-wrong *
-(
-examData
-?.negativeMarking || 0
-);
-
-const finalScore =
-correct - negative;
-
-const accuracy =
-questions.length > 0
-?
-(
-(
-correct /
-questions.length
-) * 100
-).toFixed(2)
-:
-0;
-const resultData = {
-
-userId:
-auth.currentUser?.uid,
-
-examId,
-
-examName:
-examData?.name,
-
-examType:
-examData?.examType,
-
-subject:
-questions?.[0]?.subjectId || "",
-
-topicId:
-questions?.[0]?.topicId || "",
-
-subTopicId:
-questions?.[0]?.subTopicId || "",
-
-totalQuestions:
-questions.length,
-
-correct,
-
-wrong,
-
-unanswered:
-questions.length -
-(
-correct + wrong
-),
-
-score:
-finalScore,
-
-accuracy,
-
-timeTaken:
-examData?.duration
-* 60
-- timeLeft,
-
-cheatCount,
-
-questions,
-
-answers,
-
-bookmarks,
-
-review,
-
-createdAt:
-Date.now(),
-
-};
-  
-await addDoc(
-collection(db,"results"),
-resultData
-);
-
-localStorage.removeItem(
-STORAGE_KEY
-);
-
-navigate(
-"/result",
-{
-state:resultData,
-}
-);
-
-}
-
-/* =========================================
-LOADING
-========================================= */
-
-if(loading){
-
-return(
-
-<div className="page">
-
-<h2>
-Loading Exam...
-</h2>
-
-</div>
-
-);
-
-}
-
-/* =========================================
-CURRENT QUESTION
-========================================= */
-
-const q =
-questions[currentQuestion];
-
-/* =========================================
-LEGEND COUNTS
-========================================= */
-
-const answeredCount =
-Object.keys(answers).filter(
-(key)=>
-answers[key] !== undefined &&
-answers[key] !== null
-).length;
-
-const markedCount =
-Object.keys(review).filter(
-(key)=>review[key]
-).length;
-
-const markedAnsweredCount =
-Object.keys(review).filter(
-(key)=>
-review[key] &&
-answers[key] !== undefined &&
-answers[key] !== null
-).length;
-
-const notAnsweredCount =
-Object.keys(visited).filter(
-(key)=>
-visited[key] &&
-(
-answers[key] === undefined ||
-answers[key] === null
-)
-).length;
-
-const notVisitedCount =
-questions.length -
-Object.keys(visited).length;
-
-/* =========================================
-UI
-========================================= */
-
-return(
-
-<div className="exam-layout">
-
-<div className="exam-main">
-
-<div className="topbar">
-
-<div>
-
-<h2>
-{examData?.name}
-</h2>
-
-<p>
-{examData?.examType}
-Exam
-</p>
-
-</div>
-
-<div>
-
-<h2>
-
-⏳
-
-{
-formatTime(
-timeLeft
-)
-}
-
-</h2>
-
-<p>
-Warnings:
-{" "}
-{cheatCount}/3
-</p>
-
-</div>
-
-</div>
-
-{
-q && (
-
-<div className="question-card">
-
-<h3>
-
-Question
-{" "}
-{
-currentQuestion + 1
-}
-
-</h3>
-
-<h2>
-{q.question}
-</h2>
-
-<div className="options-list">
-
-{
-q.options?.map(
-(
-option,
-index
-)=>(
-
-<label
-key={index}
-className={
-answers[q.id]
-=== index
-?
-"selected-option"
-:
-"option-card"
-}
->
-
-<input
-type="radio"
-className="option-radio"
-checked={
-answers[q.id]
-=== index
-}
-onChange={()=>
-selectAnswer(
-q.id,
-index
-)
-}
-/>
-
-<div className="option-text">
-
-<span className="option-label">
-
-{
-String.fromCharCode(
-65 + index
-)
-}.
-
-</span>
-
-{option}
-
-</div>
-
-</label>
-
-))
-}
-
-</div>
-
-<div className="exam-buttons">
-
-<button
-onClick={
-prevQuestion
-}
->
-Previous
-</button>
-
-<button
-onClick={()=>markReview(
-q.id
-)}
->
-
-{
-review[q.id]
-?
-"Remove Review"
-:
-"Mark Review"
-}
-
-</button>
-
-<button
-onClick={()=>toggleBookmark(
-q.id
-)}
->
-
-{
-bookmarks[q.id]
-?
-"Bookmarked"
-:
-"Bookmark"
-}
-
-</button>
-
-<button
-onClick={
-nextQuestion
-}
->
-Save & Next
-</button>
-
-<button
-className="submit-btn"
-onClick={
-submitExam
-}
->
-Submit
-</button>
-
-</div>
-
-</div>
-
-)
-}
-
-</div>
-
-<div className="navigator">
-
-<h3 className="palette-title">
-Questions
-</h3>
-
-<div className="exam-legend">
-
-<div className="exam-legend-item">
-<div className="exam-legend-badge legend-answered">
-{answeredCount}
-</div>
-<span>Answered</span>
-</div>
-
-<div className="exam-legend-item">
-<div className="exam-legend-badge legend-marked">
-{markedCount}
-</div>
-<span>Marked</span>
-</div>
-
-<div className="exam-legend-item">
-<div className="exam-legend-badge legend-markedanswered">
-{markedAnsweredCount}
-</div>
-<span>Marked & Answered</span>
-</div>
-
-<div className="exam-legend-item">
-<div className="exam-legend-badge legend-notanswered">
-{notAnsweredCount}
-</div>
-<span>Not Answered</span>
-</div>
-
-<div className="exam-legend-item">
-<div className="exam-legend-badge legend-notvisited">
-{notVisitedCount}
-</div>
-<span>Not Visited</span>
-</div>
-
-</div>
-
-<div className="palette-grid">
-
-{questions.map((question,index)=>{
-
-const answered =
-answers[question.id] !== undefined;
-
-const marked =
-review[question.id];
-
-const visitedQuestion =
-visited[question.id];
-
-let btnClass =
-"palette-btn";
-
-if(
-marked &&
-answered
-){
-
-btnClass +=
-" marked-answered";
-
-}
-else if(marked){
-
-btnClass +=
-" marked";
-
-}
-else if(answered){
-
-btnClass +=
-" answered";
-
-}
-else if(visitedQuestion){
-
-btnClass +=
-" not-answered";
-
-}
-else{
-
-btnClass +=
-" not-visited";
-
-}
-
-if(
-currentQuestion === index
-){
-
-btnClass +=
-" current";
-
-}
-
-return(
-
-<button
-key={question.id}
-className={btnClass}
-onClick={()=>
-setCurrentQuestion(index)
-}
->
-
-{index + 1}
-
-</button>
-
-);
-
-})}
-
-</div>
-
-</div>
-
-</div>
-
-);
+  );
 }

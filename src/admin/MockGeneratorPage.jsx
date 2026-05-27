@@ -4,8 +4,7 @@ useMemo,
 useState,
 } from "react";
 
-import AdminLayout
-from "./AdminLayout";
+import AdminLayout from "./AdminLayout";
 
 import {
 collection,
@@ -13,9 +12,7 @@ getDocs,
 onSnapshot,
 } from "firebase/firestore";
 
-import {
-db,
-} from "../firebase/config";
+import { db } from "../firebase/config";
 
 import {
 listenSubjects,
@@ -43,7 +40,7 @@ const [mockName,setMockName] =
 useState("");
 
 const [mockType,setMockType] =
-useState("full");
+useState("sectional");
 
 const [subjectId,setSubjectId] =
 useState("");
@@ -55,7 +52,7 @@ const [subTopic,setSubTopic] =
 useState("");
 
 const [quantity,setQuantity] =
-useState(100);
+useState(25);
 
 const [duration,setDuration] =
 useState(60);
@@ -98,7 +95,7 @@ generatedMocks,
 setGeneratedMocks
 ] = useState([]);
 
-/* LOAD SUBJECTS */
+/* SUBJECTS */
 
 useEffect(()=>{
 
@@ -109,7 +106,7 @@ return ()=>unsubscribe();
 
 },[]);
 
-/* LOAD TOPICS */
+/* TOPICS */
 
 useEffect(()=>{
 
@@ -134,7 +131,7 @@ return ()=>unsub();
 
 },[]);
 
-/* LOAD SUBTOPICS */
+/* SUBTOPICS */
 
 useEffect(()=>{
 
@@ -159,7 +156,7 @@ return ()=>unsub();
 
 },[]);
 
-/* LOAD QUESTIONS */
+/* QUESTIONS */
 
 useEffect(()=>{
 
@@ -186,7 +183,7 @@ loadQuestions();
 
 },[]);
 
-/* FILTERED TOPICS */
+/* FILTER TOPICS */
 
 const filteredTopics =
 topics.filter(
@@ -195,7 +192,7 @@ String(t.subjectId) ===
 String(subjectId)
 );
 
-/* FILTERED SUBTOPICS */
+/* FILTER SUBTOPICS */
 
 const filteredSubTopics =
 subTopics.filter(
@@ -405,6 +402,16 @@ if(!subjectId){
 
 alert(
 "Select subject"
+);
+
+return;
+
+}
+
+if(quantity > totalQuestions){
+
+alert(
+`Only ${totalQuestions} questions available`
 );
 
 return;
@@ -764,13 +771,28 @@ Questions Per Mock
 
 <select
 value={quantity}
-onChange={(e)=>
-setQuantity(
+onChange={(e)=>{
+
+const value =
 Number(
 e.target.value
-)
-)
+);
+
+if(
+value > totalQuestions
+){
+
+alert(
+`Only ${totalQuestions} questions available`
+);
+
+return;
+
 }
+
+setQuantity(value);
+
+}}
 >
 
 <option value={100}>
@@ -801,13 +823,28 @@ e.target.value
 <input
 type="number"
 value={quantity}
-onChange={(e)=>
-setQuantity(
+onChange={(e)=>{
+
+const value =
 Number(
 e.target.value
-)
-)
+);
+
+if(
+value > totalQuestions
+){
+
+alert(
+`Only ${totalQuestions} questions available`
+);
+
+return;
+
 }
+
+setQuantity(value);
+
+}}
 />
 
 </div>
@@ -1115,8 +1152,6 @@ Mock {index + 1}
 
 </div>
 
-{/* GENERATE */}
-
 <button
 className="generate-btn"
 onClick={handleGenerate}
@@ -1131,15 +1166,13 @@ disabled={loading}
 
 </button>
 
-{/* GENERATED */}
-
 {generatedMocks.length > 0 && (
 
 <div className="mock-section">
 
-<h2>
-Successfully Generated
-</h2>
+<div className="mock-section-title">
+✅ Generated Successfully
+</div>
 
 <div className="distribution-preview">
 

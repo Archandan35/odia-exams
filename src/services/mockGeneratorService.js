@@ -17,7 +17,11 @@ function shuffleArray(array) {
 
   const arr = [...array];
 
-  for (let i = arr.length - 1; i > 0; i--) {
+  for (
+    let i = arr.length - 1;
+    i > 0;
+    i--
+  ) {
 
     const j =
       Math.floor(
@@ -36,9 +40,11 @@ function shuffleArray(array) {
 // ========================================
 
 export async function getFilteredQuestions({
-  subjectId,
-  topicId,
-  subTopicId,
+
+  subject,
+  topic,
+  subTopic,
+
 }) {
 
   const ref =
@@ -46,35 +52,50 @@ export async function getFilteredQuestions({
 
   const conditions = [];
 
-  if (subjectId) {
+  // SUBJECT
+
+  if (
+    subject &&
+    subject !== ""
+  ) {
 
     conditions.push(
       where(
-        "subjectId",
+        "subject",
         "==",
-        subjectId
+        subject
       )
     );
   }
 
-  if (topicId) {
+  // TOPIC
+
+  if (
+    topic &&
+    topic !== ""
+  ) {
 
     conditions.push(
       where(
-        "topicId",
+        "topic",
         "==",
-        topicId
+        topic
       )
     );
   }
 
-  if (subTopicId) {
+  // SUBTOPIC
+
+  if (
+    subTopic &&
+    subTopic !== ""
+  ) {
 
     conditions.push(
       where(
-        "subTopicId",
+        "subTopic",
         "==",
-        subTopicId
+        subTopic
       )
     );
   }
@@ -85,10 +106,14 @@ export async function getFilteredQuestions({
   const snapshot =
     await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs.map(
+    (doc)=>({
+
+      id:doc.id,
+      ...doc.data(),
+
+    })
+  );
 }
 
 // ========================================
@@ -100,14 +125,9 @@ export async function generateMocks({
   mockName,
   mockType,
 
-  subjectId,
-  subjectName,
-
-  topicId,
-  topicName,
-
-  subTopicId,
-  subTopicName,
+  subject,
+  topic,
+  subTopic,
 
   duration,
 
@@ -124,13 +144,15 @@ export async function generateMocks({
     const questions =
       await getFilteredQuestions({
 
-        subjectId,
-        topicId,
-        subTopicId,
+        subject,
+        topic,
+        subTopic,
 
       });
 
-    if (!questions.length) {
+    if (
+      !questions.length
+    ) {
 
       throw new Error(
         "No questions found"
@@ -138,11 +160,13 @@ export async function generateMocks({
     }
 
     // ====================================
-    // SHUFFLE QUESTIONS
+    // SHUFFLE
     // ====================================
 
     const shuffledQuestions =
-      shuffleArray(questions);
+      shuffleArray(
+        questions
+      );
 
     let currentIndex = 0;
 
@@ -161,58 +185,55 @@ export async function generateMocks({
 
       const selectedQuestions =
         shuffledQuestions.slice(
+
           currentIndex,
+
           currentIndex +
-            questionCount
+          questionCount
+
         );
 
       currentIndex +=
         questionCount;
 
-      // ================================
+      // =================================
       // SAVE EXAM
-      // ================================
+      // =================================
 
       await addDoc(
         collection(db, "exams"),
         {
+
+          // BASIC
 
           name:
             `${mockName} ${i + 1}`,
 
           mockType,
 
-          // IDs
+          // SUBJECTS
 
-          subjectId:
-            subjectId || "",
+          subject:
+            subject || "",
 
-          topicId:
-            topicId || "",
+          topic:
+            topic || "",
 
-          subTopicId:
-            subTopicId || "",
+          subTopic:
+            subTopic || "",
 
-          // Names
-
-          subjectName:
-            subjectName || "",
-
-          topicName:
-            topicName || "",
-
-          subTopicName:
-            subTopicName || "",
-
-          // Questions
+          // QUESTIONS
 
           totalQuestions:
             questionCount,
 
           questionIds:
             selectedQuestions.map(
-              (q) => q.id
+              (q)=>q.id
             ),
+
+          questions:
+            selectedQuestions,
 
           duration,
 
@@ -225,17 +246,14 @@ export async function generateMocks({
 
     return {
 
-      success: true,
+      success:true,
 
       totalMocks:
         distribution.length,
 
-      totalQuestions:
-        shuffledQuestions.length,
-
     };
 
-  } catch (error) {
+  } catch(error) {
 
     console.error(
       "MOCK GENERATION ERROR:",

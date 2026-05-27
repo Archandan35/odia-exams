@@ -497,19 +497,71 @@ currentName,
 
 mockType,
 
+subject:
+
+filteredQuestions[0]?.subject ||
+
+subjects.find(
+(s)=>
+s.id === subjectId
+)?.name ||
+
+subjects.find(
+(s)=>
+s.id === subjectId
+)?.title ||
+
+"",
+
+topic:
+
+filteredQuestions[0]?.topic ||
+
+filteredTopics.find(
+(item)=>
+item.id === topic
+)?.name ||
+
+filteredTopics.find(
+(item)=>
+item.id === topic
+)?.title ||
+
+"",
+
+subTopic:
+
+filteredQuestions[0]?.subTopic ||
+
+filteredSubTopics.find(
+(item)=>
+item.id === subTopic
+)?.name ||
+
+filteredSubTopics.find(
+(item)=>
+item.id === subTopic
+)?.title ||
+
+"",
+
 subjectId,
 
+topicId:
 topic,
 
+subTopicId:
 subTopic,
-
-quantity:
-finalDistribution[i],
 
 duration:
 Number(duration),
 
-desiredMocks:1,
+distribution:[
+finalDistribution[i]
+],
+
+questions:
+filteredQuestions,
 
 });
 
@@ -518,7 +570,16 @@ currentName
 );
 
 setGenerationProgress(
-i + 1
+
+Math.floor(
+
+((i + 1) /
+finalDistribution.length)
+
+* 100
+
+)
+
 );
 
 }

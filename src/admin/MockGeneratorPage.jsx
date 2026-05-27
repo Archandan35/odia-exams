@@ -254,40 +254,10 @@ selectedSubject?.name || ""
 :
 true;
 
-const topicMatch =
-topic
-?
-String(q.topic || "")
-.trim()
-.toLowerCase()
+const topicMatch = true;
 
-===
-
-String(
-selectedTopic?.name || ""
-)
-.trim()
-.toLowerCase()
-:
-true;
-
-const subTopicMatch =
-subTopic
-?
-String(q.subTopic || "")
-.trim()
-.toLowerCase()
-
-===
-
-String(
-selectedSubTopic?.name || ""
-)
-.trim()
-.toLowerCase()
-:
-true;
-
+const subTopicMatch = true;
+ 
 return (
 subjectMatch &&
 topicMatch &&

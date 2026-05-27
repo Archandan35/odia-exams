@@ -123,7 +123,7 @@ String.fromCharCode(
 65 + userAnswer
 )
 :
-"Not Ans";
+"Not-Ans";
 
 const correctLetter =
 String.fromCharCode(
@@ -362,7 +362,7 @@ userAnswer === undefined
 {
 userAnswer === undefined
 ?
-"Un ans"
+"Un-ans"
 :
 isCorrect
 ?
@@ -594,7 +594,6 @@ current.explanation
 )
 }
 
-  </div>
 
 <div className="review-navigation">
 

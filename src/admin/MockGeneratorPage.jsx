@@ -193,8 +193,13 @@ loadQuestions();
 const filteredTopics =
 topics.filter(
 (t)=>
-String(t.subjectId) ===
-String(subjectId)
+
+t.subject === subjectId ||
+
+t.subjectName === subjectId ||
+
+t.name === subjectId
+
 );
 
 /* FILTER SUBTOPICS */
@@ -203,11 +208,23 @@ const filteredSubTopics =
 subTopics.filter(
 (st)=>
 
-String(st.subjectId) ===
-String(subjectId) &&
+(
 
-String(st.topicId) ===
-String(topic)
+st.subject === subjectId ||
+
+st.subjectName === subjectId
+
+)
+
+&&
+
+(
+
+st.topic === topic ||
+
+st.topicName === topic
+
+)
 
 );
 

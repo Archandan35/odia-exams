@@ -336,7 +336,8 @@ export default function StudentDashboard() {
               {!isFullMock(exam) && (
                 <p>
                   <strong>Sub Topic:</strong>{" "}
-                  {exam.subTopicId ? getSubTopicName(exam.subTopicId) : "-"}
+                  {/* This fallback handles if Firestore saved it as subtopicId or subTopicId */}
+                  {getSubTopicName(exam.subTopicId || exam.subtopicId)}
                 </p>
               )}
 

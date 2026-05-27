@@ -12,7 +12,8 @@ getDocs,
 onSnapshot,
 } from "firebase/firestore";
 
-import { db } from "../firebase/config";
+import { db }
+from "../firebase/config";
 
 import {
 listenSubjects,
@@ -23,6 +24,10 @@ generateMocks,
 } from "../services/mockGeneratorService";
 
 export default function MockGeneratorPage(){
+
+/* =========================================
+STATE
+========================================= */
 
 const [subjects,setSubjects] =
 useState([]);
@@ -52,7 +57,7 @@ const [subTopic,setSubTopic] =
 useState("");
 
 const [quantity,setQuantity] =
-useState(25);
+useState(100);
 
 const [duration,setDuration] =
 useState(60);
@@ -197,7 +202,7 @@ loadQuestions();
 },[]);
 
 /* =========================================
-FILTER TOPICS
+FILTERED TOPICS
 ========================================= */
 
 const filteredTopics =
@@ -208,7 +213,7 @@ String(subjectId)
 );
 
 /* =========================================
-FILTER SUBTOPICS
+FILTERED SUBTOPICS
 ========================================= */
 
 const filteredSubTopics =
@@ -224,7 +229,7 @@ String(topic)
 );
 
 /* =========================================
-FILTER QUESTIONS
+FILTERED QUESTIONS
 ========================================= */
 
 const filteredQuestions =
@@ -477,8 +482,6 @@ setLoading(true);
 
 setGenerationProgress(0);
 
-const generated = [];
-
 const finalDistribution =
 
 includeAllQuestions
@@ -492,19 +495,10 @@ distributionPreview
 Array(desiredMocks)
 .fill(quantity);
 
-for(
-let i=0;
-i<finalDistribution.length;
-i++
-){
-
-const currentName =
-`${mockName} ${i + 1}`;
-
+const response =
 await generateMocks({
 
-mockName:
-currentName,
+mockName,
 
 mockType,
 
@@ -512,56 +506,63 @@ subject:
 subjects.find(
 (s)=>
 s.id === subjectId
-)?.name || "",
+)?.name ||
+
+subjects.find(
+(s)=>
+s.id === subjectId
+)?.title ||
+
+"",
 
 topic:
 filteredTopics.find(
 (item)=>
 item.id === topic
-)?.name || "",
+)?.name ||
+
+filteredTopics.find(
+(item)=>
+item.id === topic
+)?.title ||
+
+"",
 
 subTopic:
 filteredSubTopics.find(
 (item)=>
 item.id === subTopic
-)?.name || "",
+)?.name ||
+
+filteredSubTopics.find(
+(item)=>
+item.id === subTopic
+)?.title ||
+
+"",
 
 duration:
 Number(duration),
 
-distribution:[
-finalDistribution[i]
-],
+distribution:
+finalDistribution,
 
 questions:
 filteredQuestions,
 
 });
 
-generated.push(
-currentName
-);
-
-setGenerationProgress(
-i + 1
-);
-
-}
-
 setGeneratedMocks(
-generated
+response.generatedMocks
 );
 
 alert(
-`${generated.length} mocks generated successfully`
+`${response.generatedMocks.length} mocks generated successfully`
 );
 
 }catch(error){
 
-console.error(
-"GENERATION ERROR:",
-error
-);
+console.error(error);
 
 alert(
 error.message ||
@@ -727,7 +728,8 @@ key={subject.id}
 value={subject.id}
 >
 
-{subject.name}
+{subject.name ||
+subject.title}
 
 </option>
 
@@ -767,7 +769,8 @@ key={item.id}
 value={item.id}
 >
 
-{item.name}
+{item.name ||
+item.title}
 
 </option>
 
@@ -803,7 +806,8 @@ key={item.id}
 value={item.id}
 >
 
-{item.name}
+{item.name ||
+item.title}
 
 </option>
 
@@ -938,12 +942,22 @@ e.target.value
 15 mins
 </option>
 
+{
+![60,45,30,15]
+.includes(duration) && (
+
+<option value={duration}>
+{duration} mins
+</option>
+
+)
+}
+
 </select>
 
 <input
 type="number"
 value={duration}
-placeholder={`${calculatedMinutes} mins`}
 onChange={(e)=>
 setDuration(
 Number(
@@ -978,9 +992,7 @@ e.target.value
 }
 />
 
-<div
-className="auto-duration-box"
->
+<div className="auto-duration-box">
 
 Suggested:
 {" "}
@@ -1005,16 +1017,197 @@ Desired Mock Quantity
 <input
 type="number"
 value={desiredMocks}
-onChange={(e)=>
-setDesiredMocks(
+max={totalMocks}
+onChange={(e)=>{
+
+const value =
 Number(
 e.target.value
-)
+);
+
+if(
+value > totalMocks
+){
+
+alert(
+`Maximum ${totalMocks} mocks possible`
+);
+
+return;
+
+}
+
+setDesiredMocks(value);
+
+}}
+/>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="mock-section">
+
+<div className="mock-section-title">
+🎯 Distribution & Strategy
+</div>
+
+<label className="checkbox-label">
+
+<input
+type="checkbox"
+checked={includeAllQuestions}
+onChange={(e)=>
+setIncludeAllQuestions(
+e.target.checked
 )
 }
 />
 
+Include All Available Questions
+
+</label>
+
+<div className="recommend-box">
+
+⭐ Recommended:
+{" "}
+
+{
+recommendedStrategy ===
+"balanced"
+
+?
+
+"Balanced Distribution"
+
+:
+
+"Create Extra Mock"
+
+}
+
 </div>
+
+<div className="distribution-options">
+
+<button
+className={
+distributionMode ===
+"balanced"
+
+?
+
+"distribution-btn active"
+
+:
+
+"distribution-btn"
+}
+onClick={()=>
+setDistributionMode(
+"balanced"
+)
+}
+>
+
+Balanced Distribution
+
+</button>
+
+<button
+className={
+distributionMode ===
+"extra"
+
+?
+
+"distribution-btn active"
+
+:
+
+"distribution-btn"
+}
+onClick={()=>
+setDistributionMode(
+"extra"
+)
+}
+>
+
+Create Extra Mock
+
+</button>
+
+<button
+className={
+distributionMode ===
+"manual"
+
+?
+
+"distribution-btn active"
+
+:
+
+"distribution-btn"
+}
+onClick={()=>
+setDistributionMode(
+"manual"
+)
+}
+>
+
+Manual Distribution
+
+</button>
+
+</div>
+
+{
+distributionMode ===
+"manual" && (
+
+<input
+type="text"
+placeholder="100,100,19"
+value={manualDistribution}
+onChange={(e)=>
+setManualDistribution(
+e.target.value
+)
+}
+/>
+
+)
+}
+
+<div className="distribution-preview">
+
+{
+distributionPreview.map(
+(item,index)=>(
+
+<div
+className="distribution-card"
+key={index}
+>
+
+<h4>
+Mock {index + 1}
+</h4>
+
+<p>
+{item} Questions
+</p>
+
+</div>
+
+)
+}
 
 </div>
 
@@ -1026,11 +1219,18 @@ onClick={handleGenerate}
 disabled={loading}
 >
 
-{loading
+{
+loading
+
 ?
+
 `Generating ${generationProgress}...`
+
 :
-"🚀 Generate Mocks"}
+
+"🚀 Generate Mocks"
+
+}
 
 </button>
 

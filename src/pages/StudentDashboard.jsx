@@ -134,13 +134,6 @@ export default function StudentDashboard() {
     return subTopics.find((s) => s.id === id)?.name || "-";
   }
 
-  /**
-   * Resolves question count from any known Firestore field name:
-   *   totalQuestions  – explicit number
-   *   questionCount   – explicit number
-   *   questionIds     – array of IDs
-   *   questions       – array of embedded objects
-   */
   function getQuestionCount(exam) {
 
     if (typeof exam.totalQuestions === "number" && exam.totalQuestions > 0)
@@ -165,7 +158,6 @@ export default function StudentDashboard() {
 
   /* =========================================
     FILTERED TOPICS & SUBTOPICS
-    (cascade based on selections)
   ========================================= */
 
   const filteredTopics = useMemo(() => {
@@ -196,7 +188,6 @@ export default function StudentDashboard() {
     const topicMatch = !selectedTopic ||
       exam.topicId === selectedTopic;
 
-    // Sub topic filter only applies to sectional mocks
     const subTopicMatch =
       isFullMock(exam)
         ? true
@@ -218,13 +209,11 @@ export default function StudentDashboard() {
 
       {/* ── Page Header ── */}
       <div className="page-header">
-
         <div>
           <h2>Student Dashboard</h2>
           <p>Available Exams</p>
         </div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="header-actions">
           <button onClick={() => navigate("/leaderboard")}>
             Leaderboard
           </button>
@@ -232,15 +221,12 @@ export default function StudentDashboard() {
             My Profile
           </button>
         </div>
-
       </div>
 
-      {/* ── Filter Bar ──
-           Order: Mock Type → Subject → Topic → Sub Topic
-           Sub Topic hidden when Full Mock is selected          */}
+      {/* ── Filter Bar ── */}
       <div className="filter-grid">
 
-        {/* 1. Mock Type  ← NEW */}
+        {/* 1. Mock Type */}
         <select
           value={selectedMockType}
           onChange={(e) => {
@@ -264,7 +250,7 @@ export default function StudentDashboard() {
           }}
           className="filter-select"
         >
-          <option value="">All Subject</option>
+          <option value="">All Subjects</option>
           {subjects.map((subject) => (
             <option key={subject.id} value={subject.id}>
               {subject.name}
@@ -272,7 +258,7 @@ export default function StudentDashboard() {
           ))}
         </select>
 
-        {/* 3. Topic — filtered by selected subject */}
+        {/* 3. Topic */}
         <select
           value={selectedTopic}
           onChange={(e) => {
@@ -281,7 +267,7 @@ export default function StudentDashboard() {
           }}
           className="filter-select"
         >
-          <option value="">All Topic</option>
+          <option value="">All Topics</option>
           {filteredTopics.map((topic) => (
             <option key={topic.id} value={topic.id}>
               {topic.name}
@@ -289,14 +275,14 @@ export default function StudentDashboard() {
           ))}
         </select>
 
-        {/* 4. Sub Topic — hidden when Full Mock is selected */}
+        {/* 4. Sub Topic */}
         {selectedMockType !== "full" && (
           <select
             value={selectedSubTopic}
             onChange={(e) => setSelectedSubTopic(e.target.value)}
             className="filter-select"
           >
-            <option value="">All SubTopic</option>
+            <option value="">All SubTopics</option>
             {filteredSubTopics.map((sub) => (
               <option key={sub.id} value={sub.id}>
                 {sub.name}
@@ -312,7 +298,7 @@ export default function StudentDashboard() {
 
         {filteredExams.length === 0 ? (
 
-          <div style={{ padding: "40px", fontSize: "20px", fontWeight: "600" }}>
+          <div className="no-exams-msg">
             No Exams Found
           </div>
 
@@ -322,7 +308,6 @@ export default function StudentDashboard() {
 
             <div key={exam.id} className="subject-card glass-card">
 
-              {/* Mock type badge */}
               <div className="exam-card-badge-row">
                 <div
                   className={`exam-badge ${
@@ -333,22 +318,18 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              {/* 1. Exam Name */}
               <h3>{exam.name}</h3>
 
-              {/* 2. Subject */}
               <p>
                 <strong>Subject:</strong>{" "}
                 {getSubjectName(exam.subjectId)}
               </p>
 
-              {/* 3. Topic */}
               <p>
                 <strong>Topic:</strong>{" "}
                 {exam.topicId ? getTopicName(exam.topicId) : "-"}
               </p>
 
-              {/* 4. Sub Topic — hidden for Full Mock */}
               {!isFullMock(exam) && (
                 <p>
                   <strong>Sub Topic:</strong>{" "}
@@ -356,19 +337,16 @@ export default function StudentDashboard() {
                 </p>
               )}
 
-              {/* 5. Questions — reads all possible field names */}
               <p>
                 <strong>Questions:</strong>{" "}
                 {getQuestionCount(exam)}
               </p>
 
-              {/* 6. Duration */}
               <p>
                 <strong>Duration:</strong>{" "}
                 {exam.duration || 0} mins
               </p>
 
-              {/* 7. Start Exam */}
               <button onClick={() => navigate(`/exam/${exam.id}`)}>
                 Start Exam
               </button>
@@ -384,5 +362,4 @@ export default function StudentDashboard() {
     </div>
 
   );
-
 }

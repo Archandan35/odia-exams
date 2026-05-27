@@ -380,16 +380,6 @@ export default function ExamPage() {
     isAuto = false
   ) {
 
-    if (!isAuto) {
-
-      const confirmSubmit =
-        window.confirm(
-          "Are you sure you want to submit the exam?"
-        );
-
-      if (!confirmSubmit) return;
-
-    }
 
     let score = 0;
 
@@ -550,20 +540,19 @@ export default function ExamPage() {
 
         <div className="question-card">
 
-          <h2>
-            Question {currentQuestion + 1}
-          </h2>
+         <div className="question-header-row">
 
-          <p
-            style={{
-              marginTop:"18px",
-              lineHeight:"1.8",
-              fontSize:"18px",
-            }}
-          >
-            {currentQ.question || currentQ.text}
-          </p>
+  <div className="question-number-box">
+    Q.{currentQuestion + 1}
+  </div>
 
+  <div className="question-text-main">
+    {currentQ.question || currentQ.text}
+  </div>
+
+</div>
+
+       
           <div className="options-list">
 
             {(currentQ.options || []).map(
@@ -589,15 +578,17 @@ export default function ExamPage() {
                     }
                   />
 
-                  <div className="option-text">
+                 <div className="option-text">
 
-                    <span className="option-label">
-                      {String.fromCharCode(65 + idx)}.
-                    </span>
+  <div className="option-label-box">
+    {String.fromCharCode(65 + idx)}.
+  </div>
 
-                    {option}
+  <div className="option-value">
+    {option}
+  </div>
 
-                  </div>
+</div>
 
                 </label>
 

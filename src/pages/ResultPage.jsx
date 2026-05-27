@@ -123,7 +123,7 @@ String.fromCharCode(
 65 + userAnswer
 )
 :
-"Not Answered";
+"Not Ans";
 
 const correctLetter =
 String.fromCharCode(
@@ -275,6 +275,18 @@ Dashboard
 <div className="analytics-mini-card">
 
 <span>
+Marks
+</span>
+
+<h3>
+{result.score || 0}/{result.totalMarks || (questions.length * 2)}
+</h3>
+
+</div>
+  
+<div className="analytics-mini-card">
+
+<span>
 Time Taken
 </span>
 
@@ -350,7 +362,7 @@ userAnswer === undefined
 {
 userAnswer === undefined
 ?
-"Unanswered"
+"Un ans"
 :
 isCorrect
 ?
@@ -437,8 +449,7 @@ Performance
 </span>
 
 <h3>
-Better than 
-{performance}%
+Top {100 - performance}%
 </h3>
 
 </div>

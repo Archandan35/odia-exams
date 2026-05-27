@@ -98,13 +98,13 @@ export default function StudentDashboard() {
   }, []);
 
   /* =========================================
-    LOAD SUBTOPICS
+    LOAD SUBTOPICS (FIXED: lowercase collection name to match Admin)
   ========================================= */
 
   useEffect(() => {
 
     const unsub = onSnapshot(
-      collection(db, "subTopics"),
+      collection(db, "subtopics"), // Matches Questions.jsx
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -131,10 +131,7 @@ export default function StudentDashboard() {
   }
 
   function getSubTopicName(id) {
-    if (!id) return "-";
-    // This safely checks against both 'subTopics' collection data items
-    const found = subTopics.find((s) => s.id === id);
-    return found ? found.name : "-";
+    return subTopics.find((s) => s.id === id)?.name || "-";
   }
 
   function getQuestionCount(exam) {
@@ -160,7 +157,7 @@ export default function StudentDashboard() {
   }
 
   /* =========================================
-    FILTERED TOPICS & SUBTOPICS
+    FILTERED TOPICS & SUBTOPICS (FIXED: Matches Admin layout logic)
   ========================================= */
 
   const filteredTopics = useMemo(() => {
@@ -170,10 +167,19 @@ export default function StudentDashboard() {
   }, [topics, selectedSubject]);
 
   const filteredSubTopics = useMemo(() => {
-    return subTopics.filter((s) =>
-      !selectedTopic || s.topicId === selectedTopic
-    );
-  }, [subTopics, selectedTopic]);
+    return subTopics.filter((st) => {
+      const subSubject = String(st.subjectId || "").trim();
+      const subTopic = String(st.topicId || "").trim();
+      
+      const currentSubject = String(selectedSubject || "").trim();
+      const currentTopic = String(selectedTopic || "").trim();
+
+      const sameSubject = !currentSubject || subSubject === currentSubject;
+      const sameTopic = !currentTopic || subTopic === currentTopic;
+
+      return sameSubject && sameTopic;
+    });
+  }, [subTopics, selectedSubject, selectedTopic]);
 
   /* =========================================
     FILTER EXAMS
@@ -191,10 +197,11 @@ export default function StudentDashboard() {
     const topicMatch = !selectedTopic ||
       exam.topicId === selectedTopic;
 
-    const subTopicMatch =
-      isFullMock(exam)
-        ? true
-        : (!selectedSubTopic || exam.subTopicId === selectedSubTopic);
+    // Normalizing camelCase or lowercase field access safely
+    const actualSubTopicId = exam.subTopicId || exam.subtopicId;
+    const subTopicMatch = isFullMock(exam)
+      ? true
+      : (!selectedSubTopic || actualSubTopicId === selectedSubTopic);
 
     return mockTypeMatch && subjectMatch && topicMatch && subTopicMatch;
 
@@ -253,7 +260,7 @@ export default function StudentDashboard() {
           }}
           className="filter-select"
         >
-          <option value="">All Subjects</option>
+          <option value="">All Subject</option>
           {subjects.map((subject) => (
             <option key={subject.id} value={subject.id}>
               {subject.name}
@@ -270,7 +277,7 @@ export default function StudentDashboard() {
           }}
           className="filter-select"
         >
-          <option value="">All Topics</option>
+          <option value="">All Topic</option>
           {filteredTopics.map((topic) => (
             <option key={topic.id} value={topic.id}>
               {topic.name}
@@ -285,7 +292,7 @@ export default function StudentDashboard() {
             onChange={(e) => setSelectedSubTopic(e.target.value)}
             className="filter-select"
           >
-            <option value="">All SubTopics</option>
+            <option value="">All SubTopic</option>
             {filteredSubTopics.map((sub) => (
               <option key={sub.id} value={sub.id}>
                 {sub.name}
@@ -336,7 +343,6 @@ export default function StudentDashboard() {
               {!isFullMock(exam) && (
                 <p>
                   <strong>Sub Topic:</strong>{" "}
-                  {/* This fallback handles if Firestore saved it as subtopicId or subTopicId */}
                   {getSubTopicName(exam.subTopicId || exam.subtopicId)}
                 </p>
               )}

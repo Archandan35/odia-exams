@@ -3804,4 +3804,83 @@ color:white;
 font-size:15px;
 }
 
+/* =========================================
+   EXAM PAGE FINAL FIX
+========================================= */
+
+.exam-main{
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+.question-card{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.options-list{
+flex:1;
+}
+
+.exam-buttons{
+margin-top:auto;
+padding-top:25px;
+}
+
+.navigator{
+width:380px;
+min-width:380px;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+}
+
+.palette-grid{
+display:grid;
+grid-template-columns:
+repeat(5,minmax(56px,1fr));
+
+gap:14px;
+
+overflow-y:auto;
+overflow-x:hidden;
+
+max-height:
+calc(100vh - 260px);
+
+padding-right:6px;
+}
+
+.palette-btn{
+height:54px;
+font-size:16px;
+border-radius:14px;
+}
+
+.exam-buttons button{
+min-width:140px;
+}
+
+@media(max-width:1200px){
+
+.navigator{
+width:100%;
+min-width:100%;
+}
+
+.palette-grid{
+max-height:none;
+overflow:visible;
+}
+
+}
+
+
+
+
+
+
+
 

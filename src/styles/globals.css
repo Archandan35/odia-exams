@@ -483,20 +483,21 @@ line-height:1.9;
 /* OPTIONS */
 
 .options-list{
-display:flex;
-flex-direction:column;
-gap:18px;
-margin-top:30px;
 
-flex:1;
+display:flex;
+
+flex-direction:column;
+
+gap:18px;
+
+margin-top:30px;
 
 overflow-y:auto;
 
 overflow-x:hidden;
 
-padding-right:8px;
+padding-right:4px;
 
-min-height:0;
 }
 
 .option-card,
@@ -510,9 +511,6 @@ cursor:pointer;
 transition:0.2s;
 border:2px solid transparent;
 
-min-height:72px;
-
-flex-shrink:0;
 }
 
 .option-card{
@@ -548,19 +546,19 @@ flex-shrink:0;
 }
 
 .option-text{
+
 flex:1;
 
 font-size:18px;
 
 line-height:1.7;
 
-overflow-y:auto;
-
-max-height:66px;
-
-padding-right:4px;
-
 word-break:break-word;
+
+overflow:visible;
+
+max-height:none;
+
 }
 
 .option-label{

@@ -119,7 +119,7 @@ export default function ExamPage(){
           setTimeLeft((currentExam.duration || 30) * 60);
         }
 
-        // Prioritize pre-generated questions saved by the mock generator
+        // FIX: Prioritize pre-generated questions saved by the mock generator
         if (Array.isArray(currentExam.questions) && currentExam.questions.length > 0) {
           setQuestions(currentExam.questions);
         } else {
@@ -255,18 +255,6 @@ export default function ExamPage(){
     }
   }
 
-  /* Added manual assignment to visited for layout updates */
-  function selectQuestionIndex(index) {
-    const targetQuestion = questions[index];
-    if (targetQuestion) {
-      setVisited((prev) => ({
-        ...prev,
-        [targetQuestion.id]: true,
-      }));
-    }
-    setCurrentQuestion(index);
-  }
-
   function prevQuestion(){
     if(currentQuestion > 0){
       setCurrentQuestion(currentQuestion - 1);
@@ -311,14 +299,10 @@ export default function ExamPage(){
 
     const negative = wrong * (examData?.negativeMarking || 0);
     const finalScore = correct - negative;
-    const maximumPossibleMarks = questions.length * 1; // 1 mark per question base
 
     const accuracy = questions.length > 0
       ? ((correct / questions.length) * 100).toFixed(2)
       : 0;
-
-    // Fixed spacing requirement "Better than XX%"
-    const performanceText = `Better than ${accuracy}%`;
 
     const resultData = {
       userId: auth.currentUser?.uid,
@@ -333,9 +317,7 @@ export default function ExamPage(){
       wrong,
       unanswered: questions.length - (correct + wrong),
       score: finalScore,
-      totalMarksObtained: `${finalScore}/${maximumPossibleMarks}`, // Add tile info explicitly
       accuracy,
-      performanceMessage: performanceText,
       timeTaken: (examData?.duration || 0) * 60 - timeLeft,
       cheatCount,
       questions,
@@ -394,7 +376,7 @@ export default function ExamPage(){
      UI RENDER
   ========================================= */
   return(
-    <div className="exam-layout-horizontal">
+    <div className="exam-layout">
       <div className="exam-main">
         <div className="topbar">
           <div>
@@ -404,36 +386,6 @@ export default function ExamPage(){
           <div>
             <h2>⏳ {formatTime(timeLeft)}</h2>
             <p>Warnings: {cheatCount}/3</p>
-          </div>
-        </div>
-
-        {/* HORIZONTAL PALETTE SLIDER CONTAINER (Screenshot 167 Style) */}
-        <div className="palette-horizontal-wrapper">
-          <div className="palette-scroll-container">
-            {questions.map((question, index)=>{
-              const answered = answers[question.id] !== undefined;
-              const marked = review[question.id];
-              const visitedQuestion = visited[question.id];
-
-              let btnClass = "palette-slider-btn";
-              if(marked && answered){ btnClass += " marked-answered"; }
-              else if(marked){ btnClass += " marked"; }
-              else if(answered){ btnClass += " answered"; }
-              else if(visitedQuestion){ btnClass += " not-answered"; }
-              else { btnClass += " not-visited"; }
-
-              if(currentQuestion === index){ btnClass += " current"; }
-
-              return(
-                <button
-                  key={question.id}
-                  className={btnClass}
-                  onClick={()=> selectQuestionIndex(index)}
-                >
-                  {index + 1}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -481,8 +433,8 @@ export default function ExamPage(){
         )}
       </div>
 
-      <div className="navigator-summary-panel">
-        <h3 className="palette-title">Status Summary</h3>
+      <div className="navigator">
+        <h3 className="palette-title">Questions</h3>
         <div className="exam-legend">
           <div className="exam-legend-item">
             <div className="exam-legend-badge legend-answered">{answeredCount}</div>
@@ -505,7 +457,35 @@ export default function ExamPage(){
             <span>Not Visited</span>
           </div>
         </div>
+
+        <div className="palette-grid">
+          {questions.map((question, index)=>{
+            const answered = answers[question.id] !== undefined;
+            const marked = review[question.id];
+            const visitedQuestion = visited[question.id];
+
+            let btnClass = "palette-btn";
+            if(marked && answered){ btnClass += " marked-answered"; }
+            else if(marked){ btnClass += " marked"; }
+            else if(answered){ btnClass += " answered"; }
+            else if(visitedQuestion){ btnClass += " not-answered"; }
+            else { btnClass += " not-visited"; }
+
+            if(currentQuestion === index){ btnClass += " current"; }
+
+            return(
+              <button
+                key={question.id}
+                className={btnClass}
+                onClick={()=> setCurrentQuestion(index)}
+              >
+                {index + 1}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
+

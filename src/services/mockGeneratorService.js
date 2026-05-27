@@ -10,7 +10,7 @@ import {
 import { db } from "../firebase/config";
 
 // ========================================
-// Fisher-Yates Shuffle
+// SHUFFLE
 // ========================================
 
 function shuffleArray(array) {
@@ -32,7 +32,7 @@ function shuffleArray(array) {
 }
 
 // ========================================
-// Fetch Questions
+// GET FILTERED QUESTIONS
 // ========================================
 
 export async function getFilteredQuestions({
@@ -41,7 +41,7 @@ export async function getFilteredQuestions({
   subTopicId,
 }) {
 
-  let q =
+  const ref =
     collection(db, "questions");
 
   const conditions = [];
@@ -79,11 +79,11 @@ export async function getFilteredQuestions({
     );
   }
 
-  const finalQuery =
-    query(q, ...conditions);
+  const q =
+    query(ref, ...conditions);
 
   const snapshot =
-    await getDocs(finalQuery);
+    await getDocs(q);
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -92,103 +92,156 @@ export async function getFilteredQuestions({
 }
 
 // ========================================
-// Generate Mocks
+// GENERATE MOCKS
 // ========================================
 
 export async function generateMocks({
 
+  mockName,
   mockType,
+
   subjectId,
+  subjectName,
+
   topicId,
+  topicName,
+
   subTopicId,
-  quantity,
+  subTopicName,
+
   duration,
+
+  distribution,
 
 }) {
 
-  // Fetch all matching questions
+  try {
 
-  const questions =
-    await getFilteredQuestions({
+    // ====================================
+    // FETCH QUESTIONS
+    // ====================================
 
-      subjectId,
-      topicId,
-      subTopicId,
-
-    });
-
-  // Shuffle ONCE
-
-  const shuffledQuestions =
-    shuffleArray(questions);
-
-  // Calculate total mocks
-
-  const totalMocks =
-    Math.floor(
-      shuffledQuestions.length /
-      quantity
-    );
-
-  // Create all mocks
-
-  for (
-    let i = 0;
-    i < totalMocks;
-    i++
-  ) {
-
-    const start =
-      i * quantity;
-
-    const end =
-      start + quantity;
-
-    const mockQuestions =
-      shuffledQuestions.slice(
-        start,
-        end
-      );
-
-    await addDoc(
-      collection(db, "exams"),
-      {
-
-        name:
-          `${mockType === "full"
-            ? "Full Mock"
-            : "Sectional Mock"
-          } ${i + 1}`,
-
-        mockType,
+    const questions =
+      await getFilteredQuestions({
 
         subjectId,
-
         topicId,
-
         subTopicId,
 
-        totalQuestions:
-          quantity,
+      });
 
-        duration,
+    if (!questions.length) {
 
-        questionIds:
-          mockQuestions.map(
-            (q) => q.id
-          ),
+      throw new Error(
+        "No questions found"
+      );
+    }
 
-        createdAt:
-          serverTimestamp(),
+    // ====================================
+    // SHUFFLE QUESTIONS
+    // ====================================
 
-      }
+    const shuffledQuestions =
+      shuffleArray(questions);
+
+    let currentIndex = 0;
+
+    // ====================================
+    // CREATE MOCKS
+    // ====================================
+
+    for (
+      let i = 0;
+      i < distribution.length;
+      i++
+    ) {
+
+      const questionCount =
+        distribution[i];
+
+      const selectedQuestions =
+        shuffledQuestions.slice(
+          currentIndex,
+          currentIndex +
+            questionCount
+        );
+
+      currentIndex +=
+        questionCount;
+
+      // ================================
+      // SAVE EXAM
+      // ================================
+
+      await addDoc(
+        collection(db, "exams"),
+        {
+
+          name:
+            `${mockName} ${i + 1}`,
+
+          mockType,
+
+          // IDs
+
+          subjectId:
+            subjectId || "",
+
+          topicId:
+            topicId || "",
+
+          subTopicId:
+            subTopicId || "",
+
+          // Names
+
+          subjectName:
+            subjectName || "",
+
+          topicName:
+            topicName || "",
+
+          subTopicName:
+            subTopicName || "",
+
+          // Questions
+
+          totalQuestions:
+            questionCount,
+
+          questionIds:
+            selectedQuestions.map(
+              (q) => q.id
+            ),
+
+          duration,
+
+          createdAt:
+            serverTimestamp(),
+
+        }
+      );
+    }
+
+    return {
+
+      success: true,
+
+      totalMocks:
+        distribution.length,
+
+      totalQuestions:
+        shuffledQuestions.length,
+
+    };
+
+  } catch (error) {
+
+    console.error(
+      "MOCK GENERATION ERROR:",
+      error
     );
+
+    throw error;
   }
-
-  return {
-    totalQuestions:
-      shuffledQuestions.length,
-
-    totalMocks,
-  };
 }

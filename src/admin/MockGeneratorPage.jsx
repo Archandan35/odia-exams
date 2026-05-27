@@ -490,26 +490,50 @@ i++
 const currentName =
 `${mockName} ${i + 1}`;
 
-await generateMocks({
+const result = await generateMocks({
 
-mockName:
-currentName,
+  mockName,
 
-mockType,
+  mockType:
+    mockType ===
+    "Full Mock"
+      ? "full"
+      : "sectional",
 
-subjectId,
+  subjectId:
+    selectedSubject,
 
-topic,
+  subjectName:
+    subjects.find(
+      (s) =>
+        s.id ===
+        selectedSubject
+    )?.name || "",
 
-subTopic,
+  topicId:
+    selectedTopic,
 
-quantity:
-finalDistribution[i],
+  topicName:
+    topics.find(
+      (t) =>
+        t.id ===
+        selectedTopic
+    )?.name || "",
 
-duration:
-Number(duration),
+  subTopicId:
+    selectedSubTopic,
 
-desiredMocks:1,
+  subTopicName:
+    subTopics.find(
+      (s) =>
+        s.id ===
+        selectedSubTopic
+    )?.name || "",
+
+  duration:
+    customDuration,
+
+  distribution,
 
 });
 

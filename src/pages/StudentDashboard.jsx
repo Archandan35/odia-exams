@@ -28,8 +28,9 @@ export default function StudentDashboard() {
   const [topics,    setTopics]    = useState([]);
   const [subTopics, setSubTopics] = useState([]);
 
-  // Filters
+  // Filters & Sorting
   const [selectedMockType,  setSelectedMockType]  = useState("");
+  const [sortOrder,         setSortOrder]         = useState("default"); // "default" or "recent"
   const [selectedSubject,   setSelectedSubject]   = useState("");
   const [selectedTopic,     setSelectedTopic]     = useState("");
   const [selectedSubTopic,  setSelectedSubTopic]  = useState("");
@@ -157,7 +158,7 @@ export default function StudentDashboard() {
   }
 
   /* =========================================
-    FILTERED TOPICS & SUBTOPICS (FIXED: Matches Admin layout logic)
+    FILTERED TOPICS & SUBTOPICS
   ========================================= */
 
   const filteredTopics = useMemo(() => {
@@ -182,30 +183,47 @@ export default function StudentDashboard() {
   }, [subTopics, selectedSubject, selectedTopic]);
 
   /* =========================================
-    FILTER EXAMS
+    FILTER & SORT EXAMS
   ========================================= */
 
-  const filteredExams = exams.filter((exam) => {
+  const filteredAndSortedExams = useMemo(() => {
+    // 1. Filter implementation
+    const filtered = exams.filter((exam) => {
+      const mockTypeMatch = selectedMockType
+        ? (exam.mockType || "sectional") === selectedMockType
+        : true;
 
-    const mockTypeMatch = selectedMockType
-      ? (exam.mockType || "sectional") === selectedMockType
-      : true;
+      const subjectMatch = !selectedSubject || exam.subjectId === selectedSubject;
+      const topicMatch = !selectedTopic || exam.topicId === selectedTopic;
 
-    const subjectMatch = !selectedSubject ||
-      exam.subjectId === selectedSubject;
+      const actualSubTopicId = exam.subTopicId || exam.subtopicId;
+      const subTopicMatch = isFullMock(exam)
+        ? true
+        : (!selectedSubTopic || actualSubTopicId === selectedSubTopic);
 
-    const topicMatch = !selectedTopic ||
-      exam.topicId === selectedTopic;
+      return mockTypeMatch && subjectMatch && topicMatch && subTopicMatch;
+    });
 
-    // Normalizing camelCase or lowercase field access safely
-    const actualSubTopicId = exam.subTopicId || exam.subtopicId;
-    const subTopicMatch = isFullMock(exam)
-      ? true
-      : (!selectedSubTopic || actualSubTopicId === selectedSubTopic);
-
-    return mockTypeMatch && subjectMatch && topicMatch && subTopicMatch;
-
-  });
+    // 2. Sort implementation
+    return filtered.sort((a, b) => {
+      if (sortOrder === "recent") {
+        // Fallback checks for Firebase timestamps or numeric timestamps
+        const timeA = a.createdAt?.seconds || a.createdAt || 0;
+        const timeB = b.createdAt?.seconds || b.createdAt || 0;
+        
+        if (timeB !== timeA) {
+          return timeB - timeA; // Descending order (newest first)
+        }
+        // tie-breaker if creation times are missing/identical
+        return String(b.id).localeCompare(String(a.id));
+      } else {
+        // Default alphanumeric ascending sort: 1, 2, 3... 10
+        const nameA = a.name || "";
+        const nameB = b.name || "";
+        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+    });
+  }, [exams, selectedMockType, selectedSubject, selectedTopic, selectedSubTopic, sortOrder]);
 
   /* =========================================
     UI
@@ -250,7 +268,17 @@ export default function StudentDashboard() {
           <option value="sectional">Sectional Mock</option>
         </select>
 
-        {/* 2. Subject */}
+        {/* 2. Sorting Filter (Placed after Mock Type and before Subject) */}
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          className="filter-select"
+        >
+          <option value="default">Sort: Default (Ascending)</option>
+          <option value="recent">Sort: Recently Added</option>
+        </select>
+
+        {/* 3. Subject */}
         <select
           value={selectedSubject}
           onChange={(e) => {
@@ -268,7 +296,7 @@ export default function StudentDashboard() {
           ))}
         </select>
 
-        {/* 3. Topic */}
+        {/* 4. Topic */}
         <select
           value={selectedTopic}
           onChange={(e) => {
@@ -285,7 +313,7 @@ export default function StudentDashboard() {
           ))}
         </select>
 
-        {/* 4. Sub Topic */}
+        {/* 5. Sub Topic */}
         {selectedMockType !== "full" && (
           <select
             value={selectedSubTopic}
@@ -306,7 +334,7 @@ export default function StudentDashboard() {
       {/* ── Exam Cards ── */}
       <div className="subject-grid">
 
-        {filteredExams.length === 0 ? (
+        {filteredAndSortedExams.length === 0 ? (
 
           <div className="no-exams-msg">
             No Exams Found
@@ -314,7 +342,7 @@ export default function StudentDashboard() {
 
         ) : (
 
-          filteredExams.map((exam) => (
+          filteredAndSortedExams.map((exam) => (
 
             <div key={exam.id} className="subject-card glass-card">
 

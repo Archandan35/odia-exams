@@ -1,26 +1,9 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db, auth } from "../firebase/config";
 
-import {
-  useParams,
-  useNavigate,
-} from "react-router-dom";
-
-import {
-  collection,
-  getDocs,
-  addDoc,
-} from "firebase/firestore";
-
-import {
-  db,
-  auth,
-} from "../firebase/config";
-
-export default function ExamPage(){
-
+export default function ExamPage() {
   const { examId } = useParams();
   const navigate = useNavigate();
 
@@ -40,452 +23,368 @@ export default function ExamPage(){
   /* =========================================
      FULLSCREEN
   ========================================= */
-  useEffect(()=>{
+  useEffect(() => {
     const elem = document.documentElement;
-    if(elem.requestFullscreen){
+    if (elem.requestFullscreen) {
       elem.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
     }
-  },[]);
+  }, []);
 
   /* =========================================
      CHEAT DETECTION
   ========================================= */
-  useEffect(()=>{
-    function handleVisibility(){
-      if(document.hidden){
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.hidden) {
         handleCheating("Tab Switch Detected");
       }
     }
-
-    function handleFullscreen(){
-      if(!document.fullscreenElement){
-        handleCheating("Fullscreen Exited");
-      }
+    function handleBlur() {
+      handleCheating("Window Focus Lost");
     }
-
     document.addEventListener("visibilitychange", handleVisibility);
-    document.addEventListener("fullscreenchange", handleFullscreen);
-
-    return ()=>{
+    window.addEventListener("blur", handleBlur);
+    return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
-      document.removeEventListener("fullscreenchange", handleFullscreen);
+      window.removeEventListener("blur", handleBlur);
     };
-  },[cheatCount]);
+  }, [cheatCount]);
 
-  function handleCheating(msg){
-    const newCount = cheatCount + 1;
-    setCheatCount(newCount);
-
-    alert(`${msg}\n\nWarning: ${newCount}/3`);
-
-    if(newCount >= 3){
-      submitExam(true);
-    }
+  function handleCheating(reason) {
+    setCheatCount(prev => {
+      const next = prev + 1;
+      alert(`Warning ${next}/3: ${reason}. Switching tabs or exiting full screen is strictly monitored!`);
+      if (next >= 3) {
+        alert("Exam auto-submitted due to multiple cheating infractions.");
+        submitExam(true);
+      }
+      return next;
+    });
   }
 
   /* =========================================
-     LOAD EXAM
+     FETCH DATA & RESTORE STATE
   ========================================= */
-  useEffect(()=>{
-    async function loadExam(){
-      try{
+  useEffect(() => {
+    async function loadExam() {
+      try {
+        const qSnap = await getDocs(collection(db, `exams/${examId}/questions`));
+        const list = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setQuestions(list);
+
         const saved = localStorage.getItem(STORAGE_KEY);
-        if(saved){
+        if (saved) {
           const parsed = JSON.parse(saved);
           setAnswers(parsed.answers || {});
-          setVisited(parsed.visited || {});
           setReview(parsed.review || {});
+          setVisited(parsed.visited || {});
           setBookmarks(parsed.bookmarks || {});
-          setCurrentQuestion(parsed.currentQuestion || 0);
-          setTimeLeft(parsed.timeLeft || 1800);
-        }
-
-        const examSnapshot = await getDocs(collection(db,"exams"));
-        const exams = examSnapshot.docs.map((doc)=>({
-          id:doc.id,
-          ...doc.data(),
-        }));
-
-        const currentExam = exams.find((e)=>e.id === examId);
-        if (!currentExam) {
-          alert("Exam not found!");
-          setLoading(false);
-          return;
+          setTimeLeft(parsed.timeLeft ?? 1800);
+          setCheatCount(parsed.cheatCount || 0);
         }
         
-        setExamData(currentExam);
-
-        if(!saved){
-          setTimeLeft((currentExam.duration || 30) * 60);
+        if (list.length > 0 && !saved) {
+          setVisited({ [list[0].id]: true });
         }
-
-        // FIX: Prioritize pre-generated questions saved by the mock generator
-        if (Array.isArray(currentExam.questions) && currentExam.questions.length > 0) {
-          setQuestions(currentExam.questions);
-        } else {
-          // Fallback legacy logic for manually configured exam types
-          const questionSnapshot = await getDocs(collection(db,"questions"));
-          let allQuestions = questionSnapshot.docs.map((doc)=>({
-            id:doc.id,
-            ...doc.data(),
-          }));
-
-          if(currentExam.examType === "subject"){
-            allQuestions = allQuestions.filter((q)=> q.subjectId === currentExam.subjectId);
-          }
-          else if(currentExam.examType === "topic"){
-            allQuestions = allQuestions.filter((q)=> q.topicId === currentExam.topicId);
-          }
-          else if(currentExam.examType === "subtopic"){
-            allQuestions = allQuestions.filter((q)=> q.subTopicId === currentExam.subTopicId);
-          }
-          else if(currentExam.examType === "mixed"){
-            allQuestions = allQuestions.sort(()=>Math.random()-0.5);
-          }
-
-          if(currentExam.shuffleQuestions){
-            allQuestions = allQuestions.sort(()=>Math.random()-0.5);
-          }
-
-          const limit = currentExam.questionCount || currentExam.totalQuestions || currentExam.quantity || 10;
-          allQuestions = allQuestions.slice(0, limit);
-          setQuestions(allQuestions);
-        }
-
-        setLoading(false);
-      }catch(error){
-        console.error("Error loading exam:", error);
+      } catch (err) {
+        console.error(err);
+      } finally {
         setLoading(false);
       }
     }
-
     loadExam();
   }, [examId]);
 
   /* =========================================
-     AUTO SAVE
+     AUTO SAVE TO LOCALSTORAGE
   ========================================= */
-  useEffect(()=>{
-    if (loading) return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        answers,
-        visited,
-        review,
-        bookmarks,
-        currentQuestion,
-        timeLeft,
-      })
-    );
-  },[answers, visited, review, bookmarks, currentQuestion, timeLeft, loading]);
+  useEffect(() => {
+    if (loading || questions.length === 0) return;
+    const stateObj = { answers, review, visited, bookmarks, timeLeft, cheatCount };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+  }, [answers, review, visited, bookmarks, timeLeft, cheatCount, loading, questions]);
 
   /* =========================================
      TIMER
   ========================================= */
-  useEffect(()=>{
-    if(loading || questions.length === 0) return;
-
-    const timer = setInterval(()=>{
-      setTimeLeft((prev)=>{
-        if(prev <= 1){
+  useEffect(() => {
+    if (loading) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
           clearInterval(timer);
           submitExam(true);
           return 0;
         }
         return prev - 1;
       });
-    },1000);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loading]);
 
-    return ()=>clearInterval(timer);
-  },[loading, questions]);
-
-  /* =========================================
-     FORMAT TIME
-  ========================================= */
-  function formatTime(seconds){
-    const hrs = Math.floor(seconds/3600);
-    const mins = Math.floor((seconds%3600)/60);
-    const secs = seconds%60;
-
-    return `${String(hrs).padStart(2,"0")}h ${String(mins).padStart(2,"0")}m ${String(secs).padStart(2,"0")}s`;
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
   /* =========================================
-     ANSWER SELECT
+     NAVIGATION ACTIONS
   ========================================= */
-  function selectAnswer(qid, index){
-    setAnswers((prev)=>({
-      ...prev,
-      [qid]:index,
-    }));
-
-    setVisited((prev)=>({
-      ...prev,
-      [qid]:true,
-    }));
-  }
-
-  /* =========================================
-     MARK REVIEW
-  ========================================= */
-  function markReview(qid){
-    setReview((prev)=>({
-      ...prev,
-      [qid]: !prev[qid],
-    }));
-  }
-
-  /* =========================================
-     BOOKMARK
-  ========================================= */
-  function toggleBookmark(qid){
-    setBookmarks((prev)=>({
-      ...prev,
-      [qid]: !prev[qid],
-    }));
-  }
-
-  /* =========================================
-     NAVIGATION
-  ========================================= */
-  function nextQuestion(){
-    if(currentQuestion < questions.length - 1){
-      setCurrentQuestion(currentQuestion + 1);
+  function markVisited(idx) {
+    if (questions[idx]) {
+      setVisited(prev => ({ ...prev, [questions[idx].id]: true }));
     }
   }
 
-  function prevQuestion(){
-    if(currentQuestion > 0){
-      setCurrentQuestion(currentQuestion - 1);
+  function handleNext() {
+    if (currentQuestion < questions.length - 1) {
+      const nextIdx = currentQuestion + 1;
+      setCurrentQuestion(nextIdx);
+      markVisited(nextIdx);
     }
+  }
+
+  function handlePrev() {
+    if (currentQuestion > 0) {
+      const prevIdx = currentQuestion - 1;
+      setCurrentQuestion(prevIdx);
+      markVisited(prevIdx);
+    }
+  }
+
+  function selectOption(optIndex) {
+    const qId = questions[currentQuestion].id;
+    setAnswers(prev => ({ ...prev, [qId]: optIndex }));
+  }
+
+  function clearResponse() {
+    const qId = questions[currentQuestion].id;
+    setAnswers(prev => {
+      const updated = { ...prev };
+      delete updated[qId];
+      return updated;
+    });
+  }
+
+  function toggleMarkForReview() {
+    const qId = questions[currentQuestion].id;
+    setReview(prev => ({ ...prev, [qId]: !prev[qId] }));
+  }
+
+  function toggleBookmark() {
+    const qId = questions[currentQuestion].id;
+    setBookmarks(prev => ({ ...prev, [qId]: !prev[qId] }));
   }
 
   /* =========================================
      SUBMIT EXAM
   ========================================= */
-  async function submitExam(autoSubmit=false){
-    if(!autoSubmit){
-      const confirmSubmit = window.confirm("Submit Exam?");
-      if(!confirmSubmit) return;
+  async function submitExam(isAuto = false) {
+    if (!isAuto) {
+      const confirmSub = window.confirm("Are you sure you want to finish and submit your exam?");
+      if (!confirmSub) return;
     }
 
-    let correct = 0;
-    let wrong = 0;
+    let score = 0;
+    questions.forEach(q => {
+      const uAns = answers[q.id];
+      if (uAns !== undefined) {
+        const map = { A: 0, B: 1, C: 2, D: 3 };
+        let cIndex = 0;
+        if (typeof q.correctAnswer === "number") cIndex = q.correctAnswer;
+        else if (typeof q.correctAnswer === "string") cIndex = map[q.correctAnswer.trim().toUpperCase()] ?? 0;
+        else cIndex = map[q.answer] || 0;
 
-    questions.forEach((q)=>{
-      const ans = answers[q.id];
-      if(ans === undefined) return;
-
-      let correctIndex = 0;
-      const answerMap = { A:0, B:1, C:2, D:3 };
-
-      if(typeof q.correctAnswer === "number"){
-        correctIndex = q.correctAnswer;
-      }
-      else if(typeof q.correctAnswer === "string"){
-        correctIndex = answerMap[q.correctAnswer?.trim()?.toUpperCase()] ?? 0;
-      }
-      else{
-        correctIndex = answerMap[q.answer] || 0;
-      }
-
-      if(correctIndex === ans){
-        correct++;
-      }else{
-        wrong++;
+        if (uAns === cIndex) {
+          score += 4; // Assuming standard 4 marks per correct response
+        }
       }
     });
 
-    const negative = wrong * (examData?.negativeMarking || 0);
-    const finalScore = correct - negative;
+    const totalMarksMax = questions.length * 4;
+    const answeredCount = Object.keys(answers).length;
+    const accuracy = answeredCount > 0 ? Math.round((score / (answeredCount * 4)) * 100) : 0;
+    const timeTakenSec = 1800 - timeLeft;
 
-    const accuracy = questions.length > 0
-      ? ((correct / questions.length) * 100).toFixed(2)
-      : 0;
-
-    const resultData = {
-      userId: auth.currentUser?.uid,
+    const finalResult = {
       examId,
-      examName: examData?.name,
-      examType: examData?.examType || examData?.mockType || "mock",
-      subject: questions?.[0]?.subjectId || examData?.subjectId || "",
-      topicId: questions?.[0]?.topicId || examData?.topicId || "",
-      subTopicId: questions?.[0]?.subTopicId || examData?.subTopicId || "",
-      totalQuestions: questions.length,
-      correct,
-      wrong,
-      unanswered: questions.length - (correct + wrong),
-      score: finalScore,
+      score,
+      totalMarks: totalMarksMax,
+      timeTaken: timeTakenSec,
       accuracy,
-      timeTaken: (examData?.duration || 0) * 60 - timeLeft,
-      cheatCount,
-      questions,
       answers,
-      bookmarks,
-      review,
-      createdAt: Date.now(),
+      questions,
+      submittedAt: new Date().toISOString(),
     };
-  
+
     try {
-      await addDoc(collection(db,"results"), resultData);
+      const user = auth.currentUser;
+      await addDoc(collection(db, "results"), {
+        ...finalResult,
+        userId: user ? user.uid : "anonymous",
+      });
       localStorage.removeItem(STORAGE_KEY);
-      navigate("/result", { state: resultData });
-    } catch (e) {
-      console.error("Error saving exam results:", e);
-      alert("Failed to submit results safely. Please check connection.");
+      
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.log(err));
+      }
+
+      navigate("/result", { state: finalResult });
+    } catch (err) {
+      console.error("Error archiving your test record: ", err);
+      alert("Submission failed. Saving backup locally.");
+      navigate("/result", { state: finalResult });
     }
   }
 
-  /* =========================================
-     LOADING STATE
-  ========================================= */
-  if(loading){
-    return(
-      <div className="page">
-        <h2>Loading Exam...</h2>
-      </div>
-    );
-  }
+  if (loading) return <div className="page"><h2>Loading Exam Questions...</h2></div>;
+  if (questions.length === 0) return <div className="page"><h2>No Questions Found in Exam!</h2></div>;
 
-  /* =========================================
-     CURRENT QUESTION
-  ========================================= */
-  const q = questions[currentQuestion];
+  const currentQ = questions[currentQuestion];
+  const selectedOpt = answers[currentQ.id];
 
-  /* =========================================
-     LEGEND COUNTS
-  ========================================= */
-  const answeredCount = Object.keys(answers).filter(
-    (key)=> answers[key] !== undefined && answers[key] !== null
-  ).length;
+  // Counter Calculations
+  let answeredCount = 0;
+  let markedCount = 0;
+  let markedAnsweredCount = 0;
+  let notAnsweredCount = 0;
+  let notVisitedCount = 0;
 
-  const markedCount = Object.keys(review).filter((key)=>review[key]).length;
+  questions.forEach(q => {
+    const hasAns = answers[q.id] !== undefined;
+    const hasMark = review[q.id];
+    const hasVisit = visited[q.id];
 
-  const markedAnsweredCount = Object.keys(review).filter(
-    (key)=> review[key] && answers[key] !== undefined && answers[key] !== null
-  ).length;
+    if (hasMark && hasAns) markedAnsweredCount++;
+    else if (hasMark) markedCount++;
+    else if (hasAns) answeredCount++;
+    else if (hasVisit) notAnsweredCount++;
+    else notVisitedCount++;
+  });
 
-  const notAnsweredCount = Object.keys(visited).filter(
-    (key)=> visited[key] && (answers[key] === undefined || answers[key] === null)
-  ).length;
-
-  const notVisitedCount = questions.length - Object.keys(visited).length;
-
-  /* =========================================
-     UI RENDER
-  ========================================= */
-  return(
-    <div className="exam-layout">
-      <div className="exam-main">
-        <div className="topbar">
-          <div>
-            <h2>{examData?.name}</h2>
-            <p>{examData?.examType || examData?.mockType || "Mock"} Exam</p>
-          </div>
-          <div>
-            <h2>⏳ {formatTime(timeLeft)}</h2>
-            <p>Warnings: {cheatCount}/3</p>
-          </div>
+  return (
+    <div className="exam-layout-grid">
+      <div className="exam-workspace-pane">
+        <div className="workspace-header">
+          <div className="section-label-chip">Section: General Proficiency</div>
+          <button 
+            className={`bookmark-toggle-btn ${bookmarks[currentQ.id] ? "active" : ""}`}
+            onClick={toggleBookmark}
+          >
+            {bookmarks[currentQ.id] ? "⭐ Bookmarked" : "☆ Bookmark"}
+          </button>
         </div>
 
-        {q ? (
-          <div className="question-card">
-            <h3>Question {currentQuestion + 1}</h3>
-            <h2>{q.question}</h2>
+        <div className="question-body-card">
+          <h3 className="question-number-heading">Question {currentQuestion + 1}</h3>
+          <p className="question-text-paragraph">{currentQ.text || currentQ.question}</p>
 
-            <div className="options-list">
-              {q.options?.map((option, index)=>(
-                <label
-                  key={index}
-                  className={answers[q.id] === index ? "selected-option" : "option-card"}
-                >
-                  <input
-                    type="radio"
-                    className="option-radio"
-                    checked={answers[q.id] === index}
-                    onChange={()=> selectAnswer(q.id, index)}
-                  />
-                  <div className="option-text">
-                    <span className="option-label">{String.fromCharCode(65 + index)}.</span>
-                    {option}
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            <div className="exam-buttons">
-              <button onClick={prevQuestion}>Previous</button>
-              <button onClick={()=>markReview(q.id)}>
-                {review[q.id] ? "Remove Review" : "Mark Review"}
-              </button>
-              <button onClick={()=>toggleBookmark(q.id)}>
-                {bookmarks[q.id] ? "Bookmarked" : "Bookmark"}
-              </button>
-              <button onClick={nextQuestion}>Save & Next</button>
-              <button className="submit-btn" onClick={() => submitExam(false)}>Submit</button>
-            </div>
-          </div>
-        ) : (
-          <div className="question-card">
-            <h2>No questions loaded for this exam.</h2>
-          </div>
-        )}
-      </div>
-
-      <div className="navigator">
-        <h3 className="palette-title">Questions</h3>
-        <div className="exam-legend">
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-answered">{answeredCount}</div>
-            <span>Answered</span>
-          </div>
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-marked">{markedCount}</div>
-            <span>Marked</span>
-          </div>
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-markedanswered">{markedAnsweredCount}</div>
-            <span>Marked & Answered</span>
-          </div>
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-notanswered">{notAnsweredCount}</div>
-            <span>Not Answered</span>
-          </div>
-          <div className="exam-legend-item">
-            <div className="exam-legend-badge legend-notvisited">{notVisitedCount}</div>
-            <span>Not Visited</span>
-          </div>
-        </div>
-
-        <div className="palette-grid">
-          {questions.map((question, index)=>{
-            const answered = answers[question.id] !== undefined;
-            const marked = review[question.id];
-            const visitedQuestion = visited[question.id];
-
-            let btnClass = "palette-btn";
-            if(marked && answered){ btnClass += " marked-answered"; }
-            else if(marked){ btnClass += " marked"; }
-            else if(answered){ btnClass += " answered"; }
-            else if(visitedQuestion){ btnClass += " not-answered"; }
-            else { btnClass += " not-visited"; }
-
-            if(currentQuestion === index){ btnClass += " current"; }
-
-            return(
-              <button
-                key={question.id}
-                className={btnClass}
-                onClick={()=> setCurrentQuestion(index)}
+          <div className="options-vertical-stack">
+            {(currentQ.options || []).map((option, idx) => (
+              <label 
+                key={idx} 
+                className={`option-row-card ${selectedOpt === idx ? "selected" : ""}`}
               >
-                {index + 1}
-              </button>
-            );
-          })}
+                <input 
+                  type="radio" 
+                  name="exam-option-group" 
+                  checked={selectedOpt === idx} 
+                  onChange={() => selectOption(idx)} 
+                />
+                <span className="option-prefix-icon">{String.fromCharCode(65 + idx)}</span>
+                <span className="option-text-label">{option}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="workspace-action-footer">
+          <div className="footer-left-actions">
+            <button className="action-btn secondary" onClick={toggleMarkForReview}>
+              {review[currentQ.id] ? "Unmark Review" : "Mark for Review & Next"}
+            </button>
+            <button className="action-btn danger" onClick={clearResponse}>Clear Response</button>
+          </div>
+          <div className="footer-right-actions">
+            <button className="action-btn primary" onClick={handlePrev} disabled={currentQuestion === 0}>Previous</button>
+            <button className="action-btn primary" onClick={handleNext} disabled={currentQuestion === questions.length - 1}>Save & Next</button>
+            <button className="action-btn success submit" onClick={() => submitExam(false)}>Submit Exam</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Structured vertical sidebar wrapper to constrain height overflow */}
+      <div className="exam-sidebar-pane">
+        <div className="timer-countdown-card">
+          <span className="timer-label">Time Remaining</span>
+          <span className="timer-clock">{formatTime(timeLeft)}</span>
+        </div>
+
+        <div className="candidate-profile-summary">
+          <div className="avatar-placeholder">👤</div>
+          <div className="candidate-info">
+            <h4>Anonymous Contender</h4>
+            <span>Assessment Room Active</span>
+          </div>
+        </div>
+
+        {/* Scrollable container setup for indicators and numbers grid */}
+        <div className="sidebar-scrollable-container">
+          <div className="exam-status-legend-grid">
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-answered">{answeredCount}</div>
+              <span>Answered</span>
+            </div>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-marked">{markedCount}</div>
+              <span>Marked</span>
+            </div>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-markedanswered">{markedAnsweredCount}</div>
+              <span>Marked & Answered</span>
+            </div>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-notanswered">{notAnsweredCount}</div>
+              <span>Not Answered</span>
+            </div>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-notvisited">{notVisitedCount}</div>
+              <span>Not Visited</span>
+            </div>
+          </div>
+
+          <div className="palette-grid">
+            {questions.map((question, index) => {
+              const answered = answers[question.id] !== undefined;
+              const marked = review[question.id];
+              const visitedQuestion = visited[question.id];
+
+              let btnClass = "palette-btn";
+              if (marked && answered) { btnClass += " marked-answered"; }
+              else if (marked) { btnClass += " marked"; }
+              else if (answered) { btnClass += " answered"; }
+              else if (visitedQuestion) { btnClass += " not-answered"; }
+              else { btnClass += " not-visited"; }
+
+              if (currentQuestion === index) { btnClass += " current"; }
+
+              return (
+                <button
+                  key={question.id}
+                  className={btnClass}
+                  onClick={() => {
+                    setCurrentQuestion(index);
+                    markVisited(index);
+                  }}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

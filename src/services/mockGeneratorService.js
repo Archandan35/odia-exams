@@ -6,10 +6,6 @@ import {
 
 import { db } from "../firebase/config";
 
-/* =========================================
-   SHUFFLE ARRAY
-========================================= */
-
 function shuffleArray(array){
 
   const arr = [...array];
@@ -23,10 +19,6 @@ function shuffleArray(array){
 
   return arr;
 }
-
-/* =========================================
-   GENERATE MOCKS
-========================================= */
 
 export async function generateMocks({
 
@@ -58,26 +50,20 @@ export async function generateMocks({
 
       name: mockName,
 
-      /* IMPORTANT */
-      mockType: mockType || "sectional",
+      mockType,
 
-      /* SUBJECT */
       subject: subject || "",
       subjectId: subjectId || "",
 
-      /* TOPIC */
       topicName: topic || "",
       topicId: topicId || "",
 
-      /* SUBTOPIC */
       subTopicName:
-
         mockType === "sectional"
           ? subTopic || ""
           : "",
 
       subTopicId:
-
         mockType === "sectional"
           ? subTopicId || ""
           : "",
@@ -88,8 +74,9 @@ export async function generateMocks({
 
       totalQuestions: shuffledQuestions.length,
 
-      questionIds:
-        shuffledQuestions.map((q)=> q.id),
+      questionCount: shuffledQuestions.length,
+
+      questionIds: shuffledQuestions.map((q)=> q.id),
 
       questions: shuffledQuestions,
 
@@ -103,25 +90,19 @@ export async function generateMocks({
     );
 
     return {
-
       success:true,
-
       generatedMocks:[
         {
           id:docRef.id,
           ...examData,
         }
       ],
-
     };
 
   }catch(error){
 
-    console.error(
-      "MOCK GENERATION ERROR:",
-      error
-    );
-
+    console.error(error);
     throw error;
+
   }
 }

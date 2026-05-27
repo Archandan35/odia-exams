@@ -28,13 +28,13 @@ export default function Exams() {
   // STATES
   // =========================================
 
-  const [exams, setExams]                     = useState([]);
-  const [subjects, setSubjects]               = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedTopic, setSelectedTopic]     = useState("");
+  const [exams, setExams]                       = useState([]);
+  const [subjects, setSubjects]                 = useState([]);
+  const [selectedSubject, setSelectedSubject]   = useState("");
+  const [selectedTopic, setSelectedTopic]       = useState("");
   const [selectedSubTopic, setSelectedSubTopic] = useState("");
-  const [editingExam, setEditingExam]         = useState(null);
-  const [showModal, setShowModal]             = useState(false);
+  const [editingExam, setEditingExam]           = useState(null);
+  const [showModal, setShowModal]               = useState(false);
 
   // =========================================
   // LOAD EXAMS
@@ -203,13 +203,13 @@ export default function Exams() {
 
             <div key={exam.id} className="exam-card">
 
-              {/* CARD HEADER — title left, badge right, fully CSS-driven */}
-              <div className="exam-card-header">
+              {/*
+                FIX 4: Badge on ROW 1, title on ROW 2, details below.
+                Uses flex-direction:column so nothing overlaps.
+              */}
 
-                <h2 className="exam-card-title">
-                  {exam.name}
-                </h2>
-
+              {/* ROW 1 — Badge only */}
+              <div className="exam-card-badge-row">
                 <div className={`exam-badge ${
                   (exam.mockType || "sectional") === "full"
                     ? "full-badge"
@@ -219,8 +219,12 @@ export default function Exams() {
                     ? "FULL MOCK"
                     : "SECTIONAL MOCK"}
                 </div>
-
               </div>
+
+              {/* ROW 2 — Full title on its own line */}
+              <h2 className="exam-card-title">
+                {exam.name}
+              </h2>
 
               {/* DETAILS */}
               <div className="exam-details">

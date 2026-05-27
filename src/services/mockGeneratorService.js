@@ -1,265 +1,155 @@
 import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  serverTimestamp,
+addDoc,
+collection,
+serverTimestamp,
 } from "firebase/firestore";
 
-import { db } from "../firebase/config";
+import { db }
+from "../firebase/config";
 
-// ========================================
-// SHUFFLE
-// ========================================
+/* =========================================
+SHUFFLE
+========================================= */
 
-function shuffleArray(array) {
+function shuffleArray(array){
 
-  const arr = [...array];
+const arr = [...array];
 
-  for (
-    let i = arr.length - 1;
-    i > 0;
-    i--
-  ) {
+for(
+let i = arr.length - 1;
+i > 0;
+i--
+){
 
-    const j =
-      Math.floor(
-        Math.random() * (i + 1)
-      );
+const j =
+Math.floor(
+Math.random() * (i + 1)
+);
 
-    [arr[i], arr[j]] =
-      [arr[j], arr[i]];
-  }
+[arr[i],arr[j]] =
+[arr[j],arr[i]];
 
-  return arr;
 }
 
-// ========================================
-// GET FILTERED QUESTIONS
-// ========================================
+return arr;
 
-export async function getFilteredQuestions({
-
-  subject,
-  topic,
-  subTopic,
-
-}) {
-
-  const ref =
-    collection(db, "questions");
-
-  const conditions = [];
-
-  // SUBJECT
-
-  if (
-    subject &&
-    subject !== ""
-  ) {
-
-    conditions.push(
-      where(
-        "subject",
-        "==",
-        subject
-      )
-    );
-  }
-
-  // TOPIC
-
-  if (
-    topic &&
-    topic !== ""
-  ) {
-
-    conditions.push(
-      where(
-        "topic",
-        "==",
-        topic
-      )
-    );
-  }
-
-  // SUBTOPIC
-
-  if (
-    subTopic &&
-    subTopic !== ""
-  ) {
-
-    conditions.push(
-      where(
-        "subTopic",
-        "==",
-        subTopic
-      )
-    );
-  }
-
-  const q =
-    query(ref, ...conditions);
-
-  const snapshot =
-    await getDocs(q);
-
-  return snapshot.docs.map(
-    (doc)=>({
-
-      id:doc.id,
-      ...doc.data(),
-
-    })
-  );
 }
 
-// ========================================
-// GENERATE MOCKS
-// ========================================
+/* =========================================
+GENERATE MOCKS
+========================================= */
 
 export async function generateMocks({
 
-  mockName,
-  mockType,
+mockName,
+mockType,
 
-  subject,
-  topic,
-  subTopic,
+subject,
+topic,
+subTopic,
 
-  duration,
+duration,
 
-  distribution,
+distribution,
 
-}) {
+questions,
 
-  try {
+}){
 
-    // ====================================
-    // FETCH QUESTIONS
-    // ====================================
+try{
 
-    const questions =
-      await getFilteredQuestions({
+if(
+!questions ||
+questions.length === 0
+){
 
-        subject,
-        topic,
-        subTopic,
+throw new Error(
+"No questions found"
+);
 
-      });
+}
 
-    if (
-      !questions.length
-    ) {
+const shuffledQuestions =
+shuffleArray(questions);
 
-      throw new Error(
-        "No questions found"
-      );
-    }
+let currentIndex = 0;
 
-    // ====================================
-    // SHUFFLE
-    // ====================================
+for(
+let i=0;
+i<distribution.length;
+i++
+){
 
-    const shuffledQuestions =
-      shuffleArray(
-        questions
-      );
+const questionCount =
+distribution[i];
 
-    let currentIndex = 0;
+const selectedQuestions =
+shuffledQuestions.slice(
 
-    // ====================================
-    // CREATE MOCKS
-    // ====================================
+currentIndex,
 
-    for (
-      let i = 0;
-      i < distribution.length;
-      i++
-    ) {
+currentIndex +
+questionCount
 
-      const questionCount =
-        distribution[i];
+);
 
-      const selectedQuestions =
-        shuffledQuestions.slice(
+currentIndex +=
+questionCount;
 
-          currentIndex,
+await addDoc(
+collection(db,"exams"),
+{
 
-          currentIndex +
-          questionCount
+name:
+`${mockName} ${i + 1}`,
 
-        );
+mockType,
 
-      currentIndex +=
-        questionCount;
+subject:
+subject || "",
 
-      // =================================
-      // SAVE EXAM
-      // =================================
+topic:
+topic || "",
 
-      await addDoc(
-        collection(db, "exams"),
-        {
+subTopic:
+subTopic || "",
 
-          // BASIC
+duration,
 
-          name:
-            `${mockName} ${i + 1}`,
+totalQuestions:
+questionCount,
 
-          mockType,
+questionIds:
+selectedQuestions.map(
+(q)=>q.id
+),
 
-          // SUBJECTS
+questions:
+selectedQuestions,
 
-          subject:
-            subject || "",
+createdAt:
+serverTimestamp(),
 
-          topic:
-            topic || "",
+}
+);
 
-          subTopic:
-            subTopic || "",
+}
 
-          // QUESTIONS
+return {
 
-          totalQuestions:
-            questionCount,
+success:true,
 
-          questionIds:
-            selectedQuestions.map(
-              (q)=>q.id
-            ),
+};
 
-          questions:
-            selectedQuestions,
+}catch(error){
 
-          duration,
+console.error(
+"MOCK GENERATION ERROR:",
+error
+);
 
-          createdAt:
-            serverTimestamp(),
+throw error;
 
-        }
-      );
-    }
+}
 
-    return {
-
-      success:true,
-
-      totalMocks:
-        distribution.length,
-
-    };
-
-  } catch(error) {
-
-    console.error(
-      "MOCK GENERATION ERROR:",
-      error
-    );
-
-    throw error;
-  }
 }

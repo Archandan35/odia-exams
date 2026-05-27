@@ -55,11 +55,13 @@ export default function MockGeneratorPage(){
   const [generationProgress,setGenerationProgress] = useState(0);
   const [generatedMocks,setGeneratedMocks]         = useState([]);
 
+  /* SUBJECTS */
   useEffect(()=>{
     const unsubscribe = listenSubjects(setSubjects);
     return ()=>unsubscribe();
   },[]);
 
+  /* TOPICS */
   useEffect(()=>{
     const unsub = onSnapshot(
       collection(db,"topics"),
@@ -70,6 +72,7 @@ export default function MockGeneratorPage(){
     return ()=>unsub();
   },[]);
 
+  /* SUBTOPICS */
   useEffect(()=>{
     const unsub = onSnapshot(
       collection(db,"subtopics"),
@@ -80,6 +83,7 @@ export default function MockGeneratorPage(){
     return ()=>unsub();
   },[]);
 
+  /* QUESTIONS */
   useEffect(()=>{
     async function loadQuestions(){
       const snapshot = await getDocs(collection(db,"questions"));
@@ -88,6 +92,7 @@ export default function MockGeneratorPage(){
     loadQuestions();
   },[]);
 
+  /* EXAMS — for duplicate check and unique question logic */
   useEffect(()=>{
     const unsub = onSnapshot(
       collection(db,"exams"),
@@ -98,6 +103,7 @@ export default function MockGeneratorPage(){
     return ()=>unsub();
   },[]);
 
+  /* DERIVED SELECTIONS */
   const filteredTopics =
     topics.filter((t)=> String(t.subjectId) === String(subjectId));
 
@@ -111,323 +117,347 @@ export default function MockGeneratorPage(){
   const selectedTopic    = filteredTopics.find((t)=> String(t.id) === String(topic));
   const selectedSubTopic = filteredSubTopics.find((st)=> String(st.id) === String(subTopic));
 
+  /* FILTERED QUESTIONS — Fetching matches based on active mockType filters.
+     Full Mock skips Sub Topic assessment.
+  */
   const filteredQuestions = useMemo(()=>{
-
     return questions.filter((q)=>{
-
       const subjectMatch = subjectId
         ? String(q.subjectId||"").trim() === String(subjectId).trim()
         : true;
-
       const topicMatch = topic
         ? String(q.topicId||"").trim() === String(topic).trim()
         : true;
-
-      const subTopicMatch =
-        mockType === "sectional"
-          ? (
-              subTopic
-                ? String(q.subTopicId||"").trim() === String(subTopic).trim()
-                : true
-            )
-          : true;
+      
+      // Subtopic condition strictly restricted to sectional mocks
+      const subTopicMatch = (mockType === "sectional" && subTopic)
+        ? String(q.subTopicId||"").trim() === String(subTopic).trim()
+        : true;
 
       return subjectMatch && topicMatch && subTopicMatch;
-
     });
-
-  },[
-    questions,
-    mockType,
-    subjectId,
-    topic,
-    subTopic,
-  ]);
+  },[questions, subjectId, topic, subTopic, mockType]);
 
   const totalQuestions = filteredQuestions.length;
+
+  /* =========================================
+     HELPERS
+  ========================================= */
 
   function escapeRegex(str){
     return str.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   }
 
-  function resolveBaseName(rawName){
-
-    if(!rawName){
-      return { baseName: rawName, nextNumber: 1 };
-    }
+  /**
+   * Independent logic based on active mockType selection
+   */
+  function resolveBaseName(rawName, currentMockType){
+    if(!rawName) return { baseName: rawName, nextNumber: 1 };
 
     const normalised = rawName.trim().replace(/\s+/g, " ");
     const stripped   = normalised.replace(/ [0-9]+$/, "").trim();
 
     let max = 0;
-
-    const pattern = new RegExp(
-      `^${escapeRegex(stripped)} ([0-9]+)$`
-    );
-
-    exams
-      .filter((exam)=>(exam.mockType || "sectional") === mockType)
-      .forEach((exam)=>{
-
-        const normExamName =
-          (exam.name || "")
-            .trim()
-            .replace(/\s+/g, " ");
-
+    const pattern = new RegExp(`^${escapeRegex(stripped)} ([0-9]+)$`);
+    
+    exams.forEach((exam)=>{
+      // Only process existing entries belonging to the targeted Mock Type
+      const examMockType = exam.mockType || "sectional";
+      if (examMockType === currentMockType) {
+        const normExamName = (exam.name || "").trim().replace(/\s+/g, " ");
         const match = normExamName.match(pattern);
-
         if(match){
-          const num = parseInt(match[1],10);
+          const num = parseInt(match[1], 10);
           if(num > max) max = num;
         }
+      }
+    });
 
-      });
-
-    return {
-      baseName: stripped,
-      nextNumber: max + 1,
-    };
+    return { baseName: stripped, nextNumber: max + 1 };
   }
 
-  function getUsedQuestionIds(baseName){
-
+  /**
+   * Tracks question IDs linked specifically to the designated Mock Type series
+   */
+  function getUsedQuestionIds(baseName, currentMockType){
     const usedIds = new Set();
-
     if(!baseName) return usedIds;
-
-    if(mockType === "full"){
-      return usedIds;
-    }
-
     const normBase = baseName.trim().replace(/\s+/g, " ");
-
-    const pattern = new RegExp(
-      `^${escapeRegex(normBase)} [0-9]+$`
-    );
-
-    exams
-      .filter((exam)=>(exam.mockType || "sectional") === "sectional")
-      .forEach((exam)=>{
-
-        const normName =
-          (exam.name || "")
-            .trim()
-            .replace(/\s+/g, " ");
-
+    const pattern  = new RegExp(`^${escapeRegex(normBase)} [0-9]+$`);
+    
+    exams.forEach((exam)=>{
+      const examMockType = exam.mockType || "sectional";
+      // Ensure cross-type name series do not step on each other
+      if (examMockType === currentMockType) {
+        const normName = (exam.name || "").trim().replace(/\s+/g, " ");
         if(pattern.test(normName)){
-
           if(Array.isArray(exam.questionIds)){
             exam.questionIds.forEach((id)=> usedIds.add(id));
           }
-
           if(Array.isArray(exam.questions)){
-            exam.questions.forEach((q)=>
-              usedIds.add(typeof q === "string" ? q : q.id)
-            );
+            exam.questions.forEach((q)=> usedIds.add(typeof q === "string" ? q : q.id));
           }
         }
-
-      });
-
+      }
+    });
     return usedIds;
   }
 
-  const {
-    baseName: resolvedBase,
-    nextNumber,
-  } = useMemo(()=>{
+  /* =========================================
+     RESOLVED BASE + NEXT NUMBER
+  ========================================= */
+  const { baseName: resolvedBase, nextNumber } = useMemo(()=>{
+    return resolveBaseName(mockName.trim(), mockType);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[mockName, exams, mockType]);
 
-    return resolveBaseName(mockName.trim());
-
-  },[
-    mockName,
-    exams,
-    mockType,
-  ]);
-
+  /* =========================================
+     AVAILABLE (remaining unique) questions
+  ========================================= */
   const usedIdsForSeries = useMemo(()=>{
-
-    if(mockType === "full"){
-      return new Set();
-    }
-
-    if(!mockName.trim()){
-      return new Set();
-    }
-
-    return getUsedQuestionIds(resolvedBase);
-
-  },[
-    resolvedBase,
-    exams,
-    mockName,
-    mockType,
-  ]);
+    if(!mockName.trim()) return new Set();
+    return getUsedQuestionIds(resolvedBase, mockType);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[resolvedBase, exams, mockType]);
 
   const availableQuestions = useMemo(()=>{
-
-    if(mockType === "full"){
-      return filteredQuestions;
-    }
-
-    return filteredQuestions.filter(
-      (q)=> !usedIdsForSeries.has(q.id)
-    );
-
-  },[
-    filteredQuestions,
-    usedIdsForSeries,
-    mockType,
-  ]);
+    return filteredQuestions.filter((q)=> !usedIdsForSeries.has(q.id));
+  },[filteredQuestions, usedIdsForSeries]);
 
   const availableCount = availableQuestions.length;
 
+  /* Auto-default quantity when filter or series changes */
   useEffect(()=>{
-
     const val = availableCount > 0 ? availableCount : 0;
-
     setQuantity(val);
     setQuantityInput(String(val));
     setQuantityError("");
-
   },[availableCount]);
 
+  /* Derived stats */
+  const totalMocks        = quantity > 0 ? Math.floor(availableCount / quantity) : 0;
+  const remainder         = quantity > 0 ? availableCount % quantity : 0;
+  const calculatedMinutes = Math.ceil((quantity * secondsPerQuestion) / 60);
+  const recommendedStrategy = remainder > 0 ? "balanced" : "extra";
+
+  /* AUTO DURATION */
   useEffect(()=>{
-
-    setMockNameError("");
-
-    const trimmed = mockName.trim();
-
-    if(!trimmed) return;
-
-    const exactMatch = exams.find(
-      (ex)=>
-        (ex.mockType || "sectional") === mockType &&
-        (ex.name||"").trim().toLowerCase() === trimmed.toLowerCase()
-    );
-
-    if(exactMatch){
-
-      setMockNameError(
-        `A ${mockType} mock named "${trimmed}" already exists.`
-      );
-
+    if(calculatedMinutes > 0){
+      setDuration(calculatedMinutes);
     }
+  },[calculatedMinutes]);
 
-  },[
-    mockName,
-    exams,
-    mockType,
-  ]);
-
+  /* =========================================
+     DISTRIBUTION PREVIEW
+  ========================================= */
   useEffect(()=>{
 
-    if(mockType === "full"){
-      setUniqueWarning("");
+    if(!includeAllQuestions || availableCount <= 0 || quantity <= 0){
+      setDistributionPreview([]);
       return;
     }
 
-    setUniqueWarning("");
+    if(distributionMode === "balanced"){
+      const totalCount = Math.ceil(availableCount / quantity);
+      const base  = Math.floor(availableCount / totalCount);
+      const extra = availableCount % totalCount;
+      const arr = [];
+      for(let i=0; i<totalCount; i++){
+        arr.push(base + (i < extra ? 1 : 0));
+      }
+      setDistributionPreview(arr);
+    }
 
+    if(distributionMode === "extra"){
+      const arr  = [];
+      const full = Math.floor(availableCount / quantity);
+      for(let i=0; i<full; i++) arr.push(quantity);
+      if(remainder > 0) arr.push(remainder);
+      setDistributionPreview(arr);
+    }
+
+    if(distributionMode === "manual"){
+      const arr = manualDistribution
+        .split(",")
+        .map((n)=> Number(n.trim()))
+        .filter(Boolean);
+      setDistributionPreview(arr);
+    }
+
+  },[includeAllQuestions, distributionMode, manualDistribution, availableCount, quantity, remainder]);
+
+  /* quantity input handler */
+  function handleQuantityChange(raw){
+    setQuantityInput(raw);
+    setQuantityError("");
+    const value = Number(raw);
+    if(!raw || isNaN(value) || value <= 0) return;
+    if(value > availableCount){
+      setQuantityError(`Max allowed: ${availableCount} remaining unique questions`);
+      return;
+    }
+    setQuantity(value);
+  }
+
+  /* =========================================
+     Type-isolated duplicate name warning
+  ========================================= */
+  useEffect(()=>{
+    setMockNameError("");
     const trimmed = mockName.trim();
-
     if(!trimmed) return;
 
+    // Search collision specifically inside the matching mockType context
+    const exactMatch = exams.find(
+      (ex)=> (ex.name||"").trim().toLowerCase() === trimmed.toLowerCase() &&
+             (ex.mockType || "sectional") === mockType
+    );
+    if(exactMatch){
+      setMockNameError(
+        `A ${mockType} mock test named "${trimmed}" already exists. ` +
+        `The series will auto-number from ${resolvedBase} ${nextNumber}.`
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[mockName, exams, resolvedBase, nextNumber, mockType]);
+
+  useEffect(()=>{
+    setUniqueWarning("");
+    const trimmed = mockName.trim();
+    if(!trimmed) return;
     if(mockNameError) return;
 
     if(usedIdsForSeries.size > 0 && availableCount === 0){
-
       setUniqueWarning(
-        `All questions already used in sectional mock series.`
+        `All ${usedIdsForSeries.size} questions for "${resolvedBase}" ${mockType} series are already used. ` +
+        `No unique questions available — generation cannot proceed.`
       );
-
-    }
-    else if(usedIdsForSeries.size > 0){
-
+    } else if(usedIdsForSeries.size > 0){
       setUniqueWarning(
-        `${usedIdsForSeries.size} questions already used. ${availableCount} unique questions remaining.`
+        `${usedIdsForSeries.size} questions already used in existing "${resolvedBase}" ${mockType} mocks. ` +
+        `${availableCount} unique questions remain available.`
       );
-
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[mockName, exams, availableCount, usedIdsForSeries, resolvedBase, mockNameError, mockType]);
 
-  },[
-    mockType,
-    mockName,
-    mockNameError,
-    availableCount,
-    usedIdsForSeries,
-  ]);
-
+  /* =========================================
+     GENERATE
+  ========================================= */
   async function handleGenerate(){
 
     if(!mockName.trim()){
       alert("Enter mock name");
       return;
     }
-
+    if(mockNameError){
+      alert(mockNameError);
+      return;
+    }
     if(!subjectId){
       alert("Select subject");
       return;
     }
-
-    if(!topic){
-      alert("Select topic");
+    if(availableCount === 0){
+      alert("No unique questions available for the selected filters and series");
+      return;
+    }
+    if(quantity <= 0 || quantity > availableCount){
+      alert(`Questions per mock must be between 1 and ${availableCount}`);
+      return;
+    }
+    if(desiredMocksError){
+      alert(desiredMocksError);
       return;
     }
 
-    if(mockType === "sectional" && !subTopic){
-      alert("Select sub topic");
+    const baseName    = resolvedBase;
+    const startNumber = nextNumber;
+
+    if(usedIdsForSeries.size > 0 && availableCount === 0){
+      alert(
+        `All questions for the "${baseName}" series are already used.\n` +
+        `No unique questions available — generation cannot proceed.`
+      );
       return;
     }
 
-    if(quantity <= 0){
-      alert("Invalid question quantity");
+    if(desiredMocks > totalMocks && !includeAllQuestions){
+      alert(`Maximum mocks possible is ${totalMocks}`);
       return;
     }
 
     try{
-
       setLoading(true);
+      setGenerationProgress(0);
 
-      const finalName = `${resolvedBase} ${nextNumber}`;
+      const generated = [];
 
-      await generateMocks({
+      const finalDistribution =
+        includeAllQuestions
+        ? distributionPreview
+        : Array(desiredMocks).fill(quantity);
 
-        mockName: finalName,
-        mockType,
+      let availablePool = [...availableQuestions].sort(()=> Math.random() - 0.5);
+      let poolIndex = 0;
 
-        subject: selectedSubject?.name || "",
-        topic: selectedTopic?.name || "",
-        subTopic:
-          mockType === "sectional"
-            ? selectedSubTopic?.name || ""
-            : "",
+      for(let i=0; i<finalDistribution.length; i++){
 
-        subjectId,
-        topicId: topic,
-        subTopicId:
-          mockType === "sectional"
-            ? subTopic
-            : "",
+        const currentNumber = startNumber + i;
+        const currentName   = `${baseName} ${currentNumber}`;
 
-        duration,
-        questions: availableQuestions.slice(0, quantity),
+        const nameConflict = exams.find(
+          (e)=> (e.name||"").trim().toLowerCase() === currentName.toLowerCase() &&
+                 (e.mockType || "sectional") === mockType
+        );
+        if(nameConflict){
+          alert(`"${currentName}" (${mockType}) already exists. Stopping generation.`);
+          break;
+        }
 
-      });
+        const count = finalDistribution[i];
+        const questionsForThisMock = availablePool.slice(poolIndex, poolIndex + count);
+        poolIndex += count;
 
-      alert("Mock Generated Successfully");
+        if(questionsForThisMock.length === 0){
+          alert(`No unique questions left for mock ${currentNumber}. Stopping.`);
+          break;
+        }
 
-      setGeneratedMocks([finalName]);
+        await generateMocks({
+          mockName:     currentName,
+          mockType,
+          subject:      selectedSubject?.name  || "",
+          topic:        selectedTopic?.name    || "",
+          subTopic:     mockType === "sectional" ? (selectedSubTopic?.name || "") : "",
+          subjectId,
+          topicId:      topic,
+          subTopicId:   mockType === "sectional" ? subTopic : "",
+          duration:     Number(duration),
+          distribution: [questionsForThisMock.length],
+          questions:    questionsForThisMock,
+        });
+
+        generated.push(currentName);
+
+        setGenerationProgress(
+          Math.floor(((i + 1) / finalDistribution.length) * 100)
+        );
+
+      }
+
+      setGeneratedMocks(generated);
+      if(generated.length > 0){
+        alert(`${generated.length} mock(s) generated successfully`);
+      }
 
     }catch(error){
-
       console.error(error);
-
-      alert("Generation Failed");
-
+      alert("Failed to generate mocks");
     }finally{
       setLoading(false);
     }
+
   }
 
   return(
@@ -436,46 +466,99 @@ export default function MockGeneratorPage(){
 
       <div className="page mock-generator-page">
 
+        {/* HEADER */}
         <div className="page-header">
           <div>
-            <h2>Mock Generator</h2>
+            <h2>Mock Generator ({mockType === "sectional" ? "Sectional" : "Full"})</h2>
             <p>Generate intelligent mock tests automatically</p>
           </div>
         </div>
 
+        {/* TOP STATS */}
+        <div className="mock-top-stats">
+
+          <div className="mock-stat-card">
+            <div className="mock-stat-icon">📄</div>
+            <div className="mock-stat-content">
+              <span>Total Questions</span>
+              <h2>{totalQuestions}</h2>
+            </div>
+          </div>
+
+          <div className="mock-stat-card">
+            <div className="mock-stat-icon green">📋</div>
+            <div className="mock-stat-content">
+              <span>
+                {usedIdsForSeries.size > 0
+                  ? "Remaining Unique"
+                  : "Maximum Mocks"}
+              </span>
+              <h2>
+                {usedIdsForSeries.size > 0
+                  ? availableCount
+                  : totalMocks}
+              </h2>
+            </div>
+          </div>
+
+        </div>
+
+        {/* CONFIGURATION */}
         <div className="mock-section">
 
-          <div className="mock-section-title">
-            ⚙️ Mock Configuration
-          </div>
+          <div className="mock-section-title">⚙️ Mock Configuration</div>
 
           <div className="mock-generator-grid">
 
-            <div className="form-group">
-              <label>Mock Name</label>
-              <input
-                type="text"
-                value={mockName}
-                onChange={(e)=> setMockName(e.target.value)}
-                placeholder="Enter Mock Name"
-              />
-            </div>
-
+            {/* MOCK TYPE FILTER (Order #1) */}
             <div className="form-group">
               <label>Mock Type</label>
-              <select
-                value={mockType}
-                onChange={(e)=>{
-                  setMockType(e.target.value);
-                  setSubTopic("");
-                  setGeneratedMocks([]);
-                }}
-              >
+              <select value={mockType} onChange={(e)=> {
+                setMockType(e.target.value);
+                setSubTopic(""); // Clear subtopic when toggling type
+              }}>
                 <option value="sectional">Sectional Mock</option>
                 <option value="full">Full Mock</option>
               </select>
             </div>
 
+            {/* MOCK NAME INPUT */}
+            <div className="form-group">
+              <label>Mock Name</label>
+              <input
+                type="text"
+                placeholder="Enter Mock Name"
+                value={mockName}
+                style={{ borderColor: mockNameError ? "#ef4444" : undefined }}
+                onChange={(e)=>{
+                  setMockName(e.target.value);
+                  setUniqueWarning("");
+                }}
+              />
+              {mockName.trim() && !mockNameError && (
+                <p style={{ fontSize:"12px", color:"#94a3b8", marginTop:"4px" }}>
+                  Next mock will be named:{" "}
+                  <strong>{resolvedBase} {nextNumber}</strong>
+                </p>
+              )}
+              {mockNameError && (
+                <p style={{ color:"#ef4444", fontSize:"12px", marginTop:"4px", fontWeight:"500" }}>
+                  ⚠️ {mockNameError}
+                </p>
+              )}
+              {uniqueWarning && !mockNameError && (
+                <p style={{
+                  color: uniqueWarning.includes("cannot proceed") ? "#ef4444" : "#f59e0b",
+                  fontSize:"12px",
+                  marginTop:"4px",
+                  fontWeight:"500"
+                }}>
+                  ⚠️ {uniqueWarning}
+                </p>
+              )}
+            </div>
+
+            {/* SUBJECT FILTER (Order #2) */}
             <div className="form-group">
               <label>Subject</label>
               <select
@@ -487,16 +570,15 @@ export default function MockGeneratorPage(){
                 }}
               >
                 <option value="">Select Subject</option>
-
                 {subjects.map((subject)=>(
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
                 ))}
-
               </select>
             </div>
 
+            {/* TOPIC FILTER (Order #3) */}
             <div className="form-group">
               <label>Topic</label>
               <select
@@ -506,95 +588,303 @@ export default function MockGeneratorPage(){
                   setSubTopic("");
                 }}
               >
-                <option value="">Select Topic</option>
-
+                <option value="">All Topics</option>
                 {filteredTopics.map((t)=>(
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
+                  <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
-
               </select>
             </div>
 
+            {/* SUB TOPIC FILTER (Order #4) - CONDITIONAL RENDERING */}
             {mockType === "sectional" && (
-
               <div className="form-group">
                 <label>Sub Topic</label>
                 <select
                   value={subTopic}
                   onChange={(e)=> setSubTopic(e.target.value)}
                 >
-                  <option value="">Select Sub Topic</option>
-
+                  <option value="">All Sub Topics</option>
                   {filteredSubTopics.map((st)=>(
-                    <option key={st.id} value={st.id}>
-                      {st.name}
-                    </option>
+                    <option key={st.id} value={st.id}>{st.name}</option>
                   ))}
-
                 </select>
               </div>
-
             )}
 
+            {/* QUESTIONS PER MOCK */}
             <div className="form-group">
-              <label>Questions Per Mock</label>
-              <input
-                type="number"
-                value={quantityInput}
-                onChange={(e)=>{
-                  setQuantityInput(e.target.value);
-                  setQuantity(Number(e.target.value));
-                }}
-              />
+              <label>
+                Questions Per Mock
+                {availableCount > 0 && (
+                  <span style={{
+                    marginLeft:"8px",
+                    fontSize:"12px",
+                    color: usedIdsForSeries.size > 0 ? "#f59e0b" : "var(--color-primary,#6366f1)",
+                    fontWeight:"500"
+                  }}>
+                    {usedIdsForSeries.size > 0
+                      ? `(${availableCount}/${totalQuestions} remaining)`
+                      : `(Max: ${availableCount})`
+                    }
+                  </span>
+                )}
+              </label>
+              <div className="custom-input-group">
+                <select
+                  value={[100,50,25].includes(quantity) ? quantity : "custom"}
+                  onChange={(e)=>{
+                    if(e.target.value === "custom") return;
+                    const value = Number(e.target.value);
+                    if(value > availableCount){
+                      setQuantityError(`Max allowed: ${availableCount} remaining unique questions`);
+                      return;
+                    }
+                    setQuantityError("");
+                    setQuantity(value);
+                    setQuantityInput(String(value));
+                  }}
+                >
+                  <option value={100} disabled={availableCount < 100}>100 Questions</option>
+                  <option value={50}  disabled={availableCount < 50}>50 Questions</option>
+                  <option value={25}  disabled={availableCount < 25}>25 Questions</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  max={availableCount}
+                  value={quantityInput}
+                  onChange={(e)=> handleQuantityChange(e.target.value)}
+                  style={{ borderColor: quantityError ? "#ef4444" : undefined }}
+                />
+              </div>
+              {quantityError && (
+                <p style={{
+                  color:"#ef4444",
+                  fontSize:"12px",
+                  marginTop:"4px",
+                  fontWeight:"500"
+                }}>
+                  ⚠️ {quantityError}
+                </p>
+              )}
             </div>
 
+            {/* DURATION */}
             <div className="form-group">
               <label>Duration</label>
+              <div className="custom-input-group">
+                <select
+                  value={duration}
+                  onChange={(e)=> setDuration(Number(e.target.value))}
+                >
+                  <option value={60}>60 mins</option>
+                  <option value={45}>45 mins</option>
+                  <option value={30}>30 mins</option>
+                  <option value={15}>15 mins</option>
+                  {![60,45,30,15].includes(duration) && (
+                    <option value={duration}>{duration} mins</option>
+                  )}
+                </select>
+                <input
+                  type="number"
+                  value={duration}
+                  placeholder={`${calculatedMinutes} mins`}
+                  onChange={(e)=> setDuration(Number(e.target.value))}
+                />
+              </div>
+            </div>
+
+            {/* SECONDS PER QUESTION */}
+            <div className="form-group">
+              <label>Seconds Per Question</label>
+              <div className="custom-input-group">
+                <input
+                  type="number"
+                  placeholder="30"
+                  value={secondsPerQuestion}
+                  onChange={(e)=> setSecondsPerQuestion(Number(e.target.value))}
+                />
+                <div className="auto-duration-box">
+                  Suggested: <strong>{calculatedMinutes} mins</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* DESIRED MOCK QUANTITY */}
+            <div className="form-group">
+              <label>Desired Mock Quantity</label>
               <input
                 type="number"
-                value={duration}
-                onChange={(e)=> setDuration(Number(e.target.value))}
+                value={desiredMocks}
+                min={1}
+                style={{ borderColor: desiredMocksError ? "#ef4444" : undefined }}
+                onChange={(e)=>{
+                  const value = Number(e.target.value);
+                  if(value > totalMocks){
+                    setDesiredMocksError(`Maximum mocks possible: ${totalMocks}`);
+                    setDesiredMocks(value);
+                    return;
+                  }
+                  setDesiredMocksError("");
+                  setDesiredMocks(value);
+                }}
               />
+              {desiredMocksError && (
+                <p style={{ color:"#ef4444", fontSize:"12px", marginTop:"4px", fontWeight:"500" }}>
+                  ⚠️ {desiredMocksError}
+                </p>
+              )}
             </div>
 
           </div>
-
-          {mockType === "sectional" && uniqueWarning && (
-            <div className="recommended-box">
-              ⚠️ {uniqueWarning}
-            </div>
-          )}
 
         </div>
 
-        <button
-          className="generate-btn"
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? "Generating..." : "🚀 Generate Mock"}
-        </button>
+        {/* DISTRIBUTION */}
+        <div className="mock-section">
 
-        {generatedMocks.length > 0 && (
+          <div className="mock-section-title">🎯 Distribution & Strategy</div>
 
-          <div className="mock-section">
-
-            <div className="mock-section-title">
-              Generated Successfully
+          {/* Conditional Info Banner based on remaining unique questions in active series */}
+          {usedIdsForSeries.size > 0 && availableCount > 0 && (
+            <div style={{
+              background: "linear-gradient(90deg,rgba(245,158,11,0.12),rgba(251,191,36,0.06))",
+              border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: "14px",
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#fcd34d",
+              marginBottom: "14px"
+            }}>
+              ℹ️ Showing distribution for <strong>{availableCount}</strong> remaining unique questions
+              ({usedIdsForSeries.size} already used in existing "{resolvedBase}" {mockType} mocks).
+              Previously used questions will not be repeated.
             </div>
+          )}
 
-            {generatedMocks.map((mock)=>(
-              <div key={mock} className="distribution-card">
-                <div className="distribution-info">
-                  <h4>{mock}</h4>
+          <div className="distribution-container">
+
+            <label className="include-row">
+              <input
+                type="checkbox"
+                checked={includeAllQuestions}
+                onChange={(e)=> setIncludeAllQuestions(e.target.checked)}
+              />
+              Include All Available{usedIdsForSeries.size > 0 ? " Remaining" : ""} Questions
+            </label>
+
+            {includeAllQuestions && (
+              <>
+
+                <div className="recommended-box">
+                  ⭐ Recommended:{" "}
+                  {recommendedStrategy === "balanced"
+                    ? "Balanced Distribution"
+                    : "Create Extra Mock"}
                 </div>
-              </div>
-            ))}
+
+                <div className="distribution-options">
+
+                  <div
+                    className={`distribution-option ${distributionMode === "balanced" ? "active" : ""}`}
+                    onClick={()=> setDistributionMode("balanced")}
+                  >
+                    <input type="radio" checked={distributionMode === "balanced"} readOnly />
+                    Balanced Distribution
+                  </div>
+
+                  <div
+                    className={`distribution-option ${distributionMode === "extra" ? "active" : ""}`}
+                    onClick={()=> setDistributionMode("extra")}
+                  >
+                    <input type="radio" checked={distributionMode === "extra"} readOnly />
+                    Create Extra Mock
+                  </div>
+
+                  <div
+                    className={`distribution-option ${distributionMode === "manual" ? "active" : ""}`}
+                    onClick={()=> setDistributionMode("manual")}
+                  >
+                    <input type="radio" checked={distributionMode === "manual"} readOnly />
+                    Manual Distribution
+                  </div>
+
+                </div>
+
+                {distributionMode === "manual" && (
+                  <input
+                    type="text"
+                    placeholder="e.g. 25,25,17"
+                    value={manualDistribution}
+                    onChange={(e)=> setManualDistribution(e.target.value)}
+                  />
+                )}
+
+                {/* DISTRIBUTION PREVIEW */}
+                <div className="distribution-preview">
+                  {distributionPreview.map((q,index)=>(
+                    <div key={index} className="distribution-card">
+                      <div className="distribution-icon">📄</div>
+                      <div className="distribution-info">
+                        <h4>{resolvedBase} {nextNumber + index}</h4>
+                        <p>{q} Questions</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </>
+            )}
 
           </div>
 
+        </div>
+
+        {/* GENERATE BUTTON */}
+        <button
+          className="generate-btn"
+          onClick={handleGenerate}
+          disabled={
+            loading ||
+            !!quantityError ||
+            !!mockNameError ||
+            !!desiredMocksError ||
+            (uniqueWarning && uniqueWarning.includes("cannot proceed"))
+          }
+        >
+          {loading
+            ? `Generating ${generationProgress}%...`
+            : "🚀 Generate Mocks"}
+        </button>
+
+        {/* GENERATED LIST */}
+        {generatedMocks.length > 0 && (
+          <div className="mock-section">
+
+            <div className="mock-section-title">✅ Generated Successfully</div>
+
+            <div className="distribution-preview">
+              {generatedMocks.map((m)=>(
+                <div key={m} className="distribution-card">
+                  <div className="distribution-icon">✅</div>
+                  <div className="distribution-info">
+                    <h4>{m}</h4>
+                    <p>Generated Successfully</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              className="generate-btn"
+              onClick={()=> window.location.href = "/admin/exams"}
+            >
+              View Mock Tests
+            </button>
+
+          </div>
         )}
 
       </div>
@@ -602,4 +892,5 @@ export default function MockGeneratorPage(){
     </AdminLayout>
 
   );
+
 }

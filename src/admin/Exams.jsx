@@ -204,11 +204,14 @@ export default function Exams() {
             <div key={exam.id} className="exam-card">
 
               {/*
-                FIX 4: Badge on ROW 1, title on ROW 2, details below.
-                Uses flex-direction:column so nothing overlaps.
+                FIX 1: Badge on RIGHT side of ROW 1.
+                ROW 1 = badge (right-aligned)
+                ROW 2 = full exam title
+                ROW 3 = details
+                ROW 4 = actions
               */}
 
-              {/* ROW 1 — Badge only */}
+              {/* ROW 1 — Badge on RIGHT */}
               <div className="exam-card-badge-row">
                 <div className={`exam-badge ${
                   (exam.mockType || "sectional") === "full"
@@ -226,7 +229,7 @@ export default function Exams() {
                 {exam.name}
               </h2>
 
-              {/* DETAILS */}
+              {/* ROW 3 — DETAILS */}
               <div className="exam-details">
 
                 <p>
@@ -256,7 +259,7 @@ export default function Exams() {
 
               </div>
 
-              {/* ACTIONS */}
+              {/* ROW 4 — ACTIONS */}
               <div className="exam-actions">
 
                 <button

@@ -3056,11 +3056,10 @@ border-radius:22px;
 
 padding:24px;
 
-position:relative;
+/* no position:relative — badge no longer absolute */
+/* no overflow:hidden  — was clipping the absolute badge */
 
 transition:0.3s;
-
-overflow:hidden;
 
 display:flex;
 
@@ -3084,17 +3083,54 @@ rgba(0,0,0,0.35);
 
 }
 
-/* BADGE */
+/* CARD HEADER — flex row: title left, badge right */
+
+.exam-card-header{
+
+display:flex;
+
+align-items:flex-start;
+
+justify-content:space-between;
+
+gap:12px;
+
+}
+
+/* TITLE */
+
+.exam-card-title{
+
+font-size:24px;
+
+font-weight:700;
+
+line-height:1.4;
+
+/* flex child: shrinks and wraps, never pushes badge off */
+flex:1;
+
+min-width:0;
+
+word-break:break-word;
+
+/* no padding-right — badge is in the flex row, not floating over */
+
+}
+
+/* BADGE — sits in flex row, never overlaps title */
 
 .exam-badge{
 
-position:absolute;
+display:inline-flex;
 
-top:18px;
+align-items:center;
 
-right:18px;
+flex-shrink:0;
 
-padding:8px 14px;
+white-space:nowrap;
+
+padding:6px 12px;
 
 border-radius:999px;
 
@@ -3107,6 +3143,8 @@ letter-spacing:0.5px;
 text-transform:uppercase;
 
 color:white;
+
+/* no position:absolute / top / right */
 
 }
 
@@ -3133,20 +3171,6 @@ linear-gradient(
 #7c3aed,
 #9333ea
 );
-
-}
-
-/* TITLE */
-
-.exam-card-title{
-
-font-size:24px;
-
-font-weight:700;
-
-padding-right:90px;
-
-line-height:1.4;
 
 }
 
@@ -3258,9 +3282,7 @@ grid-template-columns:1fr;
 
 font-size:20px;
 
-padding-right:0;
-
-margin-top:34px;
+/* no margin-top:34px — was compensating for the old absolute badge */
 
 }
 

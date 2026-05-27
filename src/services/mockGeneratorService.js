@@ -4,8 +4,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-import { db }
-from "../firebase/config";
+import { db } from "../firebase/config";
 
 /* =========================================
    SHUFFLE ARRAY
@@ -15,28 +14,18 @@ function shuffleArray(array){
 
   const arr = [...array];
 
-  for(
-    let i = arr.length - 1;
-    i > 0;
-    i--
-  ){
+  for(let i = arr.length - 1; i > 0; i--){
 
-    const j =
-      Math.floor(
-        Math.random() * (i + 1)
-      );
+    const j = Math.floor(Math.random() * (i + 1));
 
-    [arr[i],arr[j]] =
-    [arr[j],arr[i]];
-
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 
   return arr;
-
 }
 
 /* =========================================
-   GENERATE SINGLE MOCK
+   GENERATE MOCKS
 ========================================= */
 
 export async function generateMocks({
@@ -53,117 +42,65 @@ export async function generateMocks({
   subTopicId,
 
   duration,
-
   questions,
 
 }){
 
   try{
 
-    /* VALIDATION */
-
-    if(
-      !questions ||
-      questions.length === 0
-    ){
-
-      throw new Error(
-        "No questions found"
-      );
-
+    if(!questions || questions.length === 0){
+      throw new Error("No questions found");
     }
 
-    /* SHUFFLE QUESTIONS */
-
-    const shuffledQuestions =
-      shuffleArray(questions);
-
-    /* EXAM DATA */
+    const shuffledQuestions = shuffleArray(questions);
 
     const examData = {
 
-      /* =====================================
-         IMPORTANT FIX:
-         DO NOT APPEND:
-         ${mockName} ${i + 1}
+      name: mockName,
 
-         Frontend already generates:
-         ବେଣୁଧର ରାଉତ 1
-         ବେଣୁଧର ରାଉତ 2
-         etc.
+      /* IMPORTANT */
+      mockType: mockType || "sectional",
 
-         So save EXACT name only.
-      ===================================== */
+      /* SUBJECT */
+      subject: subject || "",
+      subjectId: subjectId || "",
 
-      name:
-        mockName,
+      /* TOPIC */
+      topicName: topic || "",
+      topicId: topicId || "",
 
-      mockType:
-
-        mockType || "sectional",
-
-      subject:
-
-        subject || "",
-
-      subjectId:
-
-        subjectId || "",
-
-      topicName:
-
-        topic || "",
-
-      topicId:
-
-        topicId || "",
-
+      /* SUBTOPIC */
       subTopicName:
 
-        subTopic || "",
+        mockType === "sectional"
+          ? subTopic || ""
+          : "",
 
       subTopicId:
 
-        subTopicId || "",
+        mockType === "sectional"
+          ? subTopicId || ""
+          : "",
 
-      duration:
+      duration: Number(duration) || 0,
 
-        Number(duration) || 0,
+      quantity: shuffledQuestions.length,
 
-      quantity:
-
-        shuffledQuestions.length,
-
-      totalQuestions:
-
-        shuffledQuestions.length,
+      totalQuestions: shuffledQuestions.length,
 
       questionIds:
+        shuffledQuestions.map((q)=> q.id),
 
-        shuffledQuestions.map(
-          (q)=> q.id
-        ),
+      questions: shuffledQuestions,
 
-      questions:
-
-        shuffledQuestions,
-
-      createdAt:
-
-        serverTimestamp(),
+      createdAt: serverTimestamp(),
 
     };
 
-    /* SAVE TO FIRESTORE */
-
-    const docRef =
-
-      await addDoc(
-        collection(db,"exams"),
-        examData
-      );
-
-    /* RETURN RESULT */
+    const docRef = await addDoc(
+      collection(db,"exams"),
+      examData
+    );
 
     return {
 
@@ -186,7 +123,5 @@ export async function generateMocks({
     );
 
     throw error;
-
   }
-
 }

@@ -117,7 +117,7 @@ export default function MockGeneratorPage(){
   const selectedTopic    = filteredTopics.find((t)=> String(t.id) === String(topic));
   const selectedSubTopic = filteredSubTopics.find((st)=> String(st.id) === String(subTopic));
 
-  /* FILTERED QUESTIONS */
+  /* FILTERED QUESTIONS — ALL questions matching current filters */
   const filteredQuestions = useMemo(()=>{
     return questions.filter((q)=>{
       const subjectMatch = subjectId
@@ -135,82 +135,26 @@ export default function MockGeneratorPage(){
 
   const totalQuestions = filteredQuestions.length;
 
-  /* Auto-default quantity = totalQuestions when filter changes */
-  useEffect(()=>{
-    const val = totalQuestions > 0 ? totalQuestions : 0;
-    setQuantity(val);
-    setQuantityInput(String(val));
-    setQuantityError("");
-  },[totalQuestions]);
+  /* =========================================
+     HELPERS
+  ========================================= */
 
-  const totalMocks        = quantity > 0 ? Math.floor(totalQuestions / quantity) : 0;
-  const remainder         = quantity > 0 ? totalQuestions % quantity : 0;
-  const calculatedMinutes = Math.ceil((quantity * secondsPerQuestion) / 60);
-  const recommendedStrategy = remainder > 0 ? "balanced" : "extra";
-
-  /* AUTO DURATION */
-  useEffect(()=>{
-    if(calculatedMinutes > 0){
-      setDuration(calculatedMinutes);
-    }
-  },[calculatedMinutes]);
-
-  /* DISTRIBUTION */
-  useEffect(()=>{
-
-    if(!includeAllQuestions || totalQuestions <= 0 || quantity <= 0){
-      setDistributionPreview([]);
-      return;
-    }
-
-    if(distributionMode === "balanced"){
-      const totalCount = Math.ceil(totalQuestions / quantity);
-      const base  = Math.floor(totalQuestions / totalCount);
-      const extra = totalQuestions % totalCount;
-      const arr = [];
-      for(let i=0; i<totalCount; i++){
-        arr.push(base + (i < extra ? 1 : 0));
-      }
-      setDistributionPreview(arr);
-    }
-
-    if(distributionMode === "extra"){
-      const arr  = [];
-      const full = Math.floor(totalQuestions / quantity);
-      for(let i=0; i<full; i++) arr.push(quantity);
-      if(remainder > 0) arr.push(remainder);
-      setDistributionPreview(arr);
-    }
-
-    if(distributionMode === "manual"){
-      const arr = manualDistribution
-        .split(",")
-        .map((n)=> Number(n.trim()))
-        .filter(Boolean);
-      setDistributionPreview(arr);
-    }
-
-  },[includeAllQuestions, distributionMode, manualDistribution, totalQuestions, quantity, remainder]);
-
-  /* HELPERS */
   function escapeRegex(str){
     return str.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   }
 
   /**
-   * FIX 2 & 5: Find the true base name (strip any trailing number)
-   * and return the next available sequential number across ALL
-   * existing exams that match "<baseName> <N>".
+   * Strip trailing " <number>" from name to get the base name,
+   * then find the highest existing number for that base across all exams.
+   * Returns { baseName, nextNumber }.
    *
    * Examples:
-   *   user types "ବେଣୁଧର ରାଉତ"   → strips nothing   → checks for "ବେଣୁଧର ରାଉତ 1", "ବେଣୁଧର ରାଉତ 2", …
-   *   user types "ବେଣୁଧର ରାଉତ 1" → strips " 1"       → checks for "ବେଣୁଧର ରାଉତ 1", "ବେଣୁଧର ରାଉତ 2", …
-   *   user types "ବେଣୁଧର ରାଉତ 3" → strips " 3"       → checks for existing 1,2,3,… → returns max+1
+   *   "ବେଣୁଧର ରାଉତ"   → baseName="ବେଣୁଧର ରାଉତ", scans for max N → nextNumber = max+1
+   *   "ବେଣୁଧର ରାଉତ 1" → strips " 1" → same baseName → correct nextNumber
+   *   "ବେଣୁଧର ରାଉତ 3" → strips " 3" → same baseName → correct nextNumber
    */
   function resolveBaseName(rawName){
     if(!rawName) return { baseName: rawName, nextNumber: 1 };
-    // Strip any trailing " <number>" so user can type either the base
-    // name OR an already-numbered name and we still do the right thing.
     const stripped = rawName.trim().replace(/\s+\d+$/, "").trim();
     let max = 0;
     exams.forEach((exam)=>{
@@ -225,8 +169,9 @@ export default function MockGeneratorPage(){
   }
 
   /**
-   * FIX 3: Collect all question IDs already used in any exam whose
-   * name matches "<baseName> <N>" (any number).
+   * FIX 5 & 6: Collect all question IDs already used in ANY exam
+   * whose name matches "<baseName> <N>" (any number).
+   * Checks both exam.questionIds[] and exam.questions[].
    */
   function getUsedQuestionIds(baseName){
     const usedIds = new Set();
@@ -239,12 +184,99 @@ export default function MockGeneratorPage(){
           exam.questionIds.forEach((id)=> usedIds.add(id));
         }
         if(Array.isArray(exam.questions)){
-          exam.questions.forEach((q)=> usedIds.add(q.id));
+          exam.questions.forEach((q)=> usedIds.add(typeof q === "string" ? q : q.id));
         }
       }
     });
     return usedIds;
   }
+
+  /* =========================================
+     AVAILABLE (remaining unique) questions
+     for the current mock name series.
+     FIX 6: Distribution preview uses only
+     these remaining questions, not the full set.
+  ========================================= */
+  const { baseName: resolvedBase, nextNumber } = resolveBaseName(mockName.trim());
+
+  const usedIdsForSeries = useMemo(()=>{
+    if(!mockName.trim()) return new Set();
+    return getUsedQuestionIds(resolvedBase);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[mockName, exams]);
+
+  /** Questions not yet used in this series */
+  const availableQuestions = useMemo(()=>{
+    return filteredQuestions.filter((q)=> !usedIdsForSeries.has(q.id));
+  },[filteredQuestions, usedIdsForSeries]);
+
+  const availableCount = availableQuestions.length;
+
+  /* =========================================
+     Auto-default quantity = availableCount
+     when filter or series changes.
+     FIX 6: Default to remaining, not total.
+  ========================================= */
+  useEffect(()=>{
+    const val = availableCount > 0 ? availableCount : 0;
+    setQuantity(val);
+    setQuantityInput(String(val));
+    setQuantityError("");
+  },[availableCount]);
+
+  /* Derived stats — based on AVAILABLE questions */
+  const totalMocks        = quantity > 0 ? Math.floor(availableCount / quantity) : 0;
+  const remainder         = quantity > 0 ? availableCount % quantity : 0;
+  const calculatedMinutes = Math.ceil((quantity * secondsPerQuestion) / 60);
+  const recommendedStrategy = remainder > 0 ? "balanced" : "extra";
+
+  /* AUTO DURATION */
+  useEffect(()=>{
+    if(calculatedMinutes > 0){
+      setDuration(calculatedMinutes);
+    }
+  },[calculatedMinutes]);
+
+  /* =========================================
+     DISTRIBUTION PREVIEW
+     FIX 6: Uses availableCount (remaining),
+     not totalQuestions (all).
+  ========================================= */
+  useEffect(()=>{
+
+    if(!includeAllQuestions || availableCount <= 0 || quantity <= 0){
+      setDistributionPreview([]);
+      return;
+    }
+
+    if(distributionMode === "balanced"){
+      const totalCount = Math.ceil(availableCount / quantity);
+      const base  = Math.floor(availableCount / totalCount);
+      const extra = availableCount % totalCount;
+      const arr = [];
+      for(let i=0; i<totalCount; i++){
+        arr.push(base + (i < extra ? 1 : 0));
+      }
+      setDistributionPreview(arr);
+    }
+
+    if(distributionMode === "extra"){
+      const arr  = [];
+      const full = Math.floor(availableCount / quantity);
+      for(let i=0; i<full; i++) arr.push(quantity);
+      if(remainder > 0) arr.push(remainder);
+      setDistributionPreview(arr);
+    }
+
+    if(distributionMode === "manual"){
+      const arr = manualDistribution
+        .split(",")
+        .map((n)=> Number(n.trim()))
+        .filter(Boolean);
+      setDistributionPreview(arr);
+    }
+
+  },[includeAllQuestions, distributionMode, manualDistribution, availableCount, quantity, remainder]);
 
   /* quantity input handler */
   function handleQuantityChange(raw){
@@ -252,12 +284,54 @@ export default function MockGeneratorPage(){
     setQuantityError("");
     const value = Number(raw);
     if(!raw || isNaN(value) || value <= 0) return;
-    if(value > totalQuestions){
-      setQuantityError(`Max allowed: ${totalQuestions} questions`);
+    if(value > availableCount){
+      setQuantityError(`Max allowed: ${availableCount} remaining unique questions`);
       return;
     }
     setQuantity(value);
   }
+
+  /* =========================================
+     REACTIVE: warn when duplicate name or
+     no unique questions remain.
+     FIX 4: Show warning for duplicate name.
+  ========================================= */
+  useEffect(()=>{
+    setMockNameError("");
+    const trimmed = mockName.trim();
+    if(!trimmed) return;
+
+    // Exact name match — block generation
+    const exactMatch = exams.find(
+      (ex)=> ex.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if(exactMatch){
+      setMockNameError(
+        `A mock test named "${trimmed}" already exists. ` +
+        `Please use a different name or the series will auto-number it.`
+      );
+    }
+  },[mockName, exams]);
+
+  useEffect(()=>{
+    setUniqueWarning("");
+    const trimmed = mockName.trim();
+    if(!trimmed) return;
+    if(mockNameError) return;
+
+    if(usedIdsForSeries.size > 0 && availableCount === 0){
+      setUniqueWarning(
+        `All ${usedIdsForSeries.size} questions for "${resolvedBase}" series are already used. ` +
+        `No unique questions available — generation cannot proceed.`
+      );
+    } else if(usedIdsForSeries.size > 0){
+      setUniqueWarning(
+        `${usedIdsForSeries.size} questions already used in existing "${resolvedBase}" mocks. ` +
+        `${availableCount} unique questions remain available.`
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[mockName, exams, availableCount, usedIdsForSeries, resolvedBase, mockNameError]);
 
   /* =========================================
      GENERATE
@@ -276,12 +350,12 @@ export default function MockGeneratorPage(){
       alert("Select subject");
       return;
     }
-    if(totalQuestions === 0){
-      alert("No questions available for the selected filters");
+    if(availableCount === 0){
+      alert("No unique questions available for the selected filters and series");
       return;
     }
-    if(quantity <= 0 || quantity > totalQuestions){
-      alert(`Questions per mock must be between 1 and ${totalQuestions}`);
+    if(quantity <= 0 || quantity > availableCount){
+      alert(`Questions per mock must be between 1 and ${availableCount}`);
       return;
     }
     if(desiredMocksError){
@@ -289,16 +363,14 @@ export default function MockGeneratorPage(){
       return;
     }
 
+    /* FIX 5: Resolve base and starting number */
     const trimmedInput = mockName.trim();
     const { baseName, nextNumber: startNumber } = resolveBaseName(trimmedInput);
 
-    /* FIX 1: Check no unique questions remain for this series */
-    const usedIdsPre = getUsedQuestionIds(baseName);
-    const availableCount = filteredQuestions.filter((q)=> !usedIdsPre.has(q.id)).length;
-    if(usedIdsPre.size > 0 && availableCount === 0){
+    /* FIX 5: Guard — no unique questions left */
+    if(usedIdsForSeries.size > 0 && availableCount === 0){
       alert(
-        `A mock test with the same questions already exists.\n\n` +
-        `All ${usedIdsPre.size} questions for the "${baseName}" series are already used in existing mocks. ` +
+        `All questions for the "${baseName}" series are already used in existing mocks.\n` +
         `No unique questions available — generation cannot proceed.`
       );
       return;
@@ -320,11 +392,8 @@ export default function MockGeneratorPage(){
         ? distributionPreview
         : Array(desiredMocks).fill(quantity);
 
-      /* FIX 3: Exclude already-used questions from same series */
-      const usedIds = getUsedQuestionIds(baseName);
-      let availablePool = filteredQuestions
-        .filter((q)=> !usedIds.has(q.id))
-        .sort(()=> Math.random() - 0.5);
+      /* FIX 5: Pool = only remaining unique questions for this series */
+      let availablePool = [...availableQuestions].sort(()=> Math.random() - 0.5);
 
       let poolIndex = 0;
 
@@ -333,12 +402,12 @@ export default function MockGeneratorPage(){
         const currentNumber = startNumber + i;
         const currentName   = `${baseName} ${currentNumber}`;
 
-        /* FIX 1 & 3: Guard each generated name for exact duplicates */
+        /* FIX 3 & 5: Guard each generated name for exact duplicates */
         const nameConflict = exams.find(
           (e)=> e.name.trim().toLowerCase() === currentName.toLowerCase()
         );
         if(nameConflict){
-          alert(`"${currentName}" already exists. Stopping.`);
+          alert(`"${currentName}" already exists. Stopping generation.`);
           break;
         }
 
@@ -387,56 +456,6 @@ export default function MockGeneratorPage(){
 
   }
 
-  /* =========================================
-     REACTIVE: warn when no unique questions
-     remain for this series
-  ========================================= */
-  useEffect(()=>{
-    setUniqueWarning("");
-    const trimmed = mockName.trim();
-    if(!trimmed) return;
-    if(mockNameError) return;
-
-    const { baseName } = resolveBaseName(trimmed);
-    const usedIds      = getUsedQuestionIds(baseName);
-    const availableCount = filteredQuestions.filter((q)=> !usedIds.has(q.id)).length;
-
-    if(usedIds.size > 0 && availableCount === 0){
-      setUniqueWarning(
-        `A mock test with the same questions already exists. ` +
-        `All ${usedIds.size} questions for "${baseName}" series are used. ` +
-        `No unique questions available — generation cannot proceed.`
-      );
-    } else if(usedIds.size > 0){
-      setUniqueWarning(
-        `${usedIds.size} questions already used in existing "${baseName}" mocks. ` +
-        `${availableCount} unique questions remain.`
-      );
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[mockName, exams, filteredQuestions]);
-
-  /* Validate mock name on every keystroke */
-  useEffect(()=>{
-    setMockNameError("");
-    const trimmed = mockName.trim();
-    if(!trimmed) return;
-
-    // FIX 1 & 3: Exact name match check
-    const exactMatch = exams.find(
-      (ex)=> ex.name.trim().toLowerCase() === trimmed.toLowerCase()
-    );
-    if(exactMatch){
-      setMockNameError(
-        `A mock test named "${trimmed}" already exists. ` +
-        `Please use a different name.`
-      );
-    }
-  },[mockName, exams]);
-
-  /* FIX 2 & 5: Derive next number from resolved base */
-  const { baseName: resolvedBase, nextNumber } = resolveBaseName(mockName.trim());
-
   return(
 
     <AdminLayout>
@@ -465,8 +484,17 @@ export default function MockGeneratorPage(){
           <div className="mock-stat-card">
             <div className="mock-stat-icon green">📋</div>
             <div className="mock-stat-content">
-              <span>Maximum Mocks</span>
-              <h2>{totalMocks}</h2>
+              {/* FIX 6: Show remaining unique questions when series is active */}
+              <span>
+                {usedIdsForSeries.size > 0
+                  ? "Remaining Unique"
+                  : "Maximum Mocks"}
+              </span>
+              <h2>
+                {usedIdsForSeries.size > 0
+                  ? availableCount
+                  : totalMocks}
+              </h2>
             </div>
           </div>
 
@@ -492,18 +520,20 @@ export default function MockGeneratorPage(){
                   setUniqueWarning("");
                 }}
               />
-              {/* FIX 2 & 5: Show corrected next name using resolvedBase */}
+              {/* FIX 3: Show corrected next sequential name */}
               {mockName.trim() && !mockNameError && (
                 <p style={{ fontSize:"12px", color:"#94a3b8", marginTop:"4px" }}>
                   Next mock will be named:{" "}
                   <strong>{resolvedBase} {nextNumber}</strong>
                 </p>
               )}
+              {/* FIX 4: Show duplicate name warning */}
               {mockNameError && (
                 <p style={{ color:"#ef4444", fontSize:"12px", marginTop:"4px", fontWeight:"500" }}>
                   ⚠️ {mockNameError}
                 </p>
               )}
+              {/* FIX 4 & 6: Show unique question warning */}
               {uniqueWarning && !mockNameError && (
                 <p style={{
                   color: uniqueWarning.includes("cannot proceed") ? "#ef4444" : "#f59e0b",
@@ -580,14 +610,18 @@ export default function MockGeneratorPage(){
             <div className="form-group">
               <label>
                 Questions Per Mock
-                {totalQuestions > 0 && (
+                {availableCount > 0 && (
                   <span style={{
                     marginLeft:"8px",
                     fontSize:"12px",
-                    color:"var(--color-primary,#6366f1)",
+                    color: usedIdsForSeries.size > 0 ? "#f59e0b" : "var(--color-primary,#6366f1)",
                     fontWeight:"500"
                   }}>
-                    (Max: {totalQuestions})
+                    {/* FIX 6: Show remaining vs total when series has prior exams */}
+                    {usedIdsForSeries.size > 0
+                      ? `(${availableCount}/${totalQuestions} remaining)`
+                      : `(Max: ${availableCount})`
+                    }
                   </span>
                 )}
               </label>
@@ -597,8 +631,8 @@ export default function MockGeneratorPage(){
                   onChange={(e)=>{
                     if(e.target.value === "custom") return;
                     const value = Number(e.target.value);
-                    if(value > totalQuestions){
-                      setQuantityError(`Max allowed: ${totalQuestions} questions`);
+                    if(value > availableCount){
+                      setQuantityError(`Max allowed: ${availableCount} remaining unique questions`);
                       return;
                     }
                     setQuantityError("");
@@ -606,15 +640,15 @@ export default function MockGeneratorPage(){
                     setQuantityInput(String(value));
                   }}
                 >
-                  <option value={100} disabled={totalQuestions < 100}>100 Questions</option>
-                  <option value={50}  disabled={totalQuestions < 50}>50 Questions</option>
-                  <option value={25}  disabled={totalQuestions < 25}>25 Questions</option>
+                  <option value={100} disabled={availableCount < 100}>100 Questions</option>
+                  <option value={50}  disabled={availableCount < 50}>50 Questions</option>
+                  <option value={25}  disabled={availableCount < 25}>25 Questions</option>
                   <option value="custom">Custom</option>
                 </select>
                 <input
                   type="number"
                   min={1}
-                  max={totalQuestions}
+                  max={availableCount}
                   value={quantityInput}
                   onChange={(e)=> handleQuantityChange(e.target.value)}
                   style={{ borderColor: quantityError ? "#ef4444" : undefined }}
@@ -708,6 +742,24 @@ export default function MockGeneratorPage(){
 
           <div className="mock-section-title">🎯 Distribution & Strategy</div>
 
+          {/* FIX 6: Show remaining info banner when series has prior exams */}
+          {usedIdsForSeries.size > 0 && availableCount > 0 && (
+            <div style={{
+              background: "linear-gradient(90deg,rgba(245,158,11,0.12),rgba(251,191,36,0.06))",
+              border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: "14px",
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#fcd34d",
+              marginBottom: "14px"
+            }}>
+              ℹ️ Showing distribution for <strong>{availableCount}</strong> remaining unique questions
+              ({usedIdsForSeries.size} already used in existing "{resolvedBase}" mocks).
+              Previously used questions will not be repeated.
+            </div>
+          )}
+
           <div className="distribution-container">
 
             <label className="include-row">
@@ -716,7 +768,7 @@ export default function MockGeneratorPage(){
                 checked={includeAllQuestions}
                 onChange={(e)=> setIncludeAllQuestions(e.target.checked)}
               />
-              Include All Available Questions
+              Include All Available{usedIdsForSeries.size > 0 ? " Remaining" : ""} Questions
             </label>
 
             {includeAllQuestions && (
@@ -766,12 +818,13 @@ export default function MockGeneratorPage(){
                   />
                 )}
 
+                {/* FIX 6: Preview shows sequential names from nextNumber
+                    and only the remaining unique question counts */}
                 <div className="distribution-preview">
                   {distributionPreview.map((q,index)=>(
                     <div key={index} className="distribution-card">
                       <div className="distribution-icon">📄</div>
                       <div className="distribution-info">
-                        {/* FIX 2 & 5: Show the correct sequential name */}
                         <h4>{resolvedBase} {nextNumber + index}</h4>
                         <p>{q} Questions</p>
                       </div>

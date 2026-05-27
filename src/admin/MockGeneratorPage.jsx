@@ -216,56 +216,26 @@ String(topic)
 const filteredQuestions =
 useMemo(()=>{
 
-const selectedSubject =
-subjects.find(
-(s)=>String(s.id) === String(subjectId)
-);
-
-const selectedTopic =
-filteredTopics.find(
-(t)=>String(t.id) === String(topic)
-);
-
-const selectedSubTopic =
-filteredSubTopics.find(
-(st)=>String(st.id) === String(subTopic)
-);
-
 return questions.filter((q)=>{
 
 const subjectMatch =
 subjectId
 ?
-String(q.subject) ===
-String(
-selectedSubject?.name ||
-selectedSubject?.title ||
-""
-)
+q.subject === subjectId
 :
 true;
 
 const topicMatch =
 topic
 ?
-String(q.topic) ===
-String(
-selectedTopic?.name ||
-selectedTopic?.title ||
-""
-)
+q.topic === topic
 :
 true;
 
 const subTopicMatch =
 subTopic
 ?
-String(q.subTopic) ===
-String(
-selectedSubTopic?.name ||
-selectedSubTopic?.title ||
-""
-)
+q.subTopic === subTopic
 :
 true;
 
@@ -279,15 +249,12 @@ subTopicMatch
 
 },[
 questions,
-subjects,
-filteredTopics,
-filteredSubTopics,
 subjectId,
 topic,
 subTopic
 ]);
- 
 
+ 
 const totalQuestions =
 filteredQuestions.length;
 

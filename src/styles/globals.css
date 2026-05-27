@@ -5,7 +5,7 @@ box-sizing:border-box;
 }
 
 html{
-zoom:0.90;
+zoom:0.85;
 font-size:14px;
 scroll-behavior:smooth;
 }
@@ -3084,17 +3084,19 @@ rgba(0,0,0,0.35);
 }
 
 /*
-  FIX 4: Badge on ROW 1, title on ROW 2.
+  FIX 1: Badge on ROW 1 (right-aligned), title on ROW 2.
   Card is flex-column so they never overlap.
 */
 
-/* ROW 1 — badge sits on its own line */
+/* ROW 1 — badge sits on its own line, pushed to RIGHT */
 
 .exam-card-badge-row{
 
 display:flex;
 
 align-items:center;
+
+justify-content:flex-end;
 
 }
 

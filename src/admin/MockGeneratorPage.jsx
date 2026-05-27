@@ -189,17 +189,11 @@ loadQuestions();
 },[]);
 
 /* FILTER TOPICS */
-
 const filteredTopics =
 topics.filter(
 (t)=>
-
-t.subject === subjectId ||
-
-t.subjectName === subjectId ||
-
-t.name === subjectId
-
+String(t.subjectId) ===
+String(subjectId)
 );
 
 /* FILTER SUBTOPICS */
@@ -208,27 +202,35 @@ const filteredSubTopics =
 subTopics.filter(
 (st)=>
 
-(
-
-st.subject === subjectId ||
-
-st.subjectName === subjectId
-
-)
+String(st.subjectId) ===
+String(subjectId)
 
 &&
 
-(
-
-st.topic === topic ||
-
-st.topicName === topic
-
-)
+String(st.topicId) ===
+String(topic)
 
 );
 
 /* FILTER QUESTIONS */
+
+const selectedSubject =
+subjects.find(
+(s)=>
+String(s.id) === String(subjectId)
+);
+
+const selectedTopic =
+filteredTopics.find(
+(t)=>
+String(t.id) === String(topic)
+);
+
+const selectedSubTopic =
+filteredSubTopics.find(
+(st)=>
+String(st.id) === String(subTopic)
+);
 
 const filteredQuestions =
 useMemo(()=>{
@@ -238,21 +240,51 @@ return questions.filter((q)=>{
 const subjectMatch =
 subjectId
 ?
-q.subject === subjectId
+String(q.subject || "")
+.trim()
+.toLowerCase()
+
+===
+
+String(
+selectedSubject?.name || ""
+)
+.trim()
+.toLowerCase()
 :
 true;
 
 const topicMatch =
 topic
 ?
-q.topic === topic
+String(q.topic || "")
+.trim()
+.toLowerCase()
+
+===
+
+String(
+selectedTopic?.name || ""
+)
+.trim()
+.toLowerCase()
 :
 true;
 
 const subTopicMatch =
 subTopic
 ?
-q.subTopic === subTopic
+String(q.subTopic || "")
+.trim()
+.toLowerCase()
+
+===
+
+String(
+selectedSubTopic?.name || ""
+)
+.trim()
+.toLowerCase()
 :
 true;
 
@@ -268,7 +300,10 @@ subTopicMatch
 questions,
 subjectId,
 topic,
-subTopic
+subTopic,
+selectedSubject,
+selectedTopic,
+selectedSubTopic
 ]);
 
  
@@ -513,52 +548,13 @@ currentName,
 mockType,
 
 subject:
-
-filteredQuestions[0]?.subject ||
-
-subjects.find(
-(s)=>
-s.id === subjectId
-)?.name ||
-
-subjects.find(
-(s)=>
-s.id === subjectId
-)?.title ||
-
-"",
+selectedSubject?.name || "",
 
 topic:
-
-filteredQuestions[0]?.topic ||
-
-filteredTopics.find(
-(item)=>
-item.id === topic
-)?.name ||
-
-filteredTopics.find(
-(item)=>
-item.id === topic
-)?.title ||
-
-"",
+selectedTopic?.name || "",
 
 subTopic:
-
-filteredQuestions[0]?.subTopic ||
-
-filteredSubTopics.find(
-(item)=>
-item.id === subTopic
-)?.name ||
-
-filteredSubTopics.find(
-(item)=>
-item.id === subTopic
-)?.title ||
-
-"",
+selectedSubTopic?.name || "",
 
 subjectId,
 
@@ -777,7 +773,7 @@ Select Subject
 
 <option
 key={subject.id}
-value={subject.name}
+value={subject.id}
 >
 
 {subject.name}
@@ -817,7 +813,7 @@ All Topics
 
 <option
 key={t.id}
-value={t.name}
+value={t.id}
 >
 
 {t.name}
@@ -853,7 +849,7 @@ All Sub Topics
 
 <option
 key={st.id}
-value={st.name}
+value={st.id}
 >
 
 {st.name}

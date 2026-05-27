@@ -26,10 +26,13 @@ export default function Exams(){
   const [subjects,setSubjects] = useState([]);
 
   const [selectedMockType,setSelectedMockType] = useState("");
-  const [sortOrder, setSortOrder] = useState("default"); // "default" or "recent"
+  const [sortOrder, setSortOrder] = useState("default"); // "default", "descending", or "recent"
   const [selectedSubject,setSelectedSubject] = useState("");
   const [selectedTopic,setSelectedTopic] = useState("");
   const [selectedSubTopic,setSelectedSubTopic] = useState("");
+
+  // --- Bulk Selection State ---
+  const [selectedExamIds, setSelectedExamIds] = useState(new Set());
 
   // --- State for Editing ---
   const [editingExamId, setEditingExamId] = useState(null);
@@ -150,6 +153,9 @@ export default function Exams(){
 
     // 2. Sort implementation
     return filtered.sort((a, b) => {
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+
       if (sortOrder === "recent") {
         const timeA = a.createdAt?.seconds || a.createdAt || 0;
         const timeB = b.createdAt?.seconds || b.createdAt || 0;
@@ -158,22 +164,95 @@ export default function Exams(){
           return timeB - timeA; // Newest first
         }
         return String(b.id).localeCompare(String(a.id));
+      } else if (sortOrder === "descending") {
+        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
       } else {
-        const nameA = a.name || "";
-        const nameB = b.name || "";
         return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
       }
     });
   }, [exams, selectedMockType, selectedSubject, selectedTopic, selectedSubTopic, sortOrder]);
 
+  // Clear tracking sets if records adjust or items filter out
+  useEffect(() => {
+    setSelectedExamIds(new Set());
+  }, [selectedMockType, selectedSubject, selectedTopic, selectedSubTopic]);
+
   function getSubjectName(id){
     return subjects.find((s)=> s.id === id)?.name || "-";
+  }
+
+  /* =========================================
+    INDIVIDUAL & BULK SELECTION HANDLERS
+  ========================================= */
+  
+  function handleSelectExam(id) {
+    setSelectedExamIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  const isAllVisibleSelected = useMemo(() => {
+    if (filteredAndSortedExams.length === 0) return false;
+    return filteredAndSortedExams.every((exam) => selectedExamIds.has(exam.id));
+  }, [filteredAndSortedExams, selectedExamIds]);
+
+  function handleSelectAllToggle() {
+    if (isAllVisibleSelected) {
+      // Uncheck only visible filtered elements
+      setSelectedExamIds((prev) => {
+        const next = new Set(prev);
+        filteredAndSortedExams.forEach((exam) => next.delete(exam.id));
+        return next;
+      });
+    } else {
+      // Check all elements currently showing up under active filters
+      setSelectedExamIds((prev) => {
+        const next = new Set(prev);
+        filteredAndSortedExams.forEach((exam) => next.add(exam.id));
+        return next;
+      });
+    }
   }
 
   async function handleDelete(id){
     const confirmDelete = window.confirm("Delete this exam?");
     if(!confirmDelete) return;
     await deleteDoc(doc(db,"exams",id));
+    
+    // Clear item clean out path trace references safely
+    setSelectedExamIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const totalToDelete = selectedExamIds.size;
+    if (totalToDelete === 0) return;
+
+    const confirmDelete = window.confirm(`Are you sure you want to delete all ${totalToDelete} selected mock tests?`);
+    if (!confirmDelete) return;
+
+    try {
+      // Run batch execution maps sequentially over items targeted
+      const deletionPromises = Array.from(selectedExamIds).map((id) =>
+        deleteDoc(doc(db, "exams", id))
+      );
+      await Promise.all(deletionPromises);
+      
+      setSelectedExamIds(new Set());
+      alert("Successfully deleted selected exams.");
+    } catch (error) {
+      console.error("Error batch deleting exams: ", error);
+      alert("Something went wrong while running bulk action delete commands.");
+    }
   }
 
   // --- Edit Handler Functions ---
@@ -248,8 +327,22 @@ export default function Exams(){
           </div>
         </div>
 
-        <div className="filter-bar">
-          {/* 1. Mock Type */}
+        <div className="filter-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          
+          {/* Master Select All Filter Checkbox wrapper */}
+          {filteredAndSortedExams.length > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', marginRight: '8px' }}>
+              <input
+                type="checkbox"
+                checked={isAllVisibleSelected}
+                onChange={handleSelectAllToggle}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <strong>Select All Visible</strong>
+            </label>
+          )}
+
+          {/* Mock Type Dropdown */}
           <select
             value={selectedMockType}
             onChange={(e)=>{
@@ -262,16 +355,17 @@ export default function Exams(){
             <option value="sectional">Sectional Mock</option>
           </select>
 
-          {/* 2. Sorting Option Dropdown (Inserted Here) */}
+          {/* Sorting Option Dropdown */}
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
           >
             <option value="default">Sort: Default (Ascending)</option>
+            <option value="descending">Sort: Name (Descending)</option>
             <option value="recent">Sort: Recently Added</option>
           </select>
 
-          {/* 3. Subject */}
+          {/* Subject Dropdown */}
           <select
             value={selectedSubject}
             onChange={(e)=> setSelectedSubject(e.target.value)}
@@ -284,7 +378,7 @@ export default function Exams(){
             ))}
           </select>
 
-          {/* 4. Topic */}
+          {/* Topic Dropdown */}
           <select
             value={selectedTopic}
             onChange={(e)=> setSelectedTopic(e.target.value)}
@@ -297,7 +391,7 @@ export default function Exams(){
             ))}
           </select>
 
-          {/* 5. Sub Topic */}
+          {/* Sub Topic Dropdown */}
           {selectedMockType !== "full" && (
             <select
               value={selectedSubTopic}
@@ -313,9 +407,42 @@ export default function Exams(){
           )}
         </div>
 
+        {/* --- Bulk Actions Banner Container Panel --- */}
+        {selectedExamIds.size > 0 && (
+          <div className="bulk-actions-panel" style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'between',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{ color: '#e63946', fontWeight: '600' }}>
+              {selectedExamIds.size} mock test{selectedExamIds.size > 1 ? 's' : ''} selected
+            </span>
+            <button 
+              onClick={handleBulkDelete}
+              style={{
+                backgroundColor: '#dc3545',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Delete Selected Mocks
+            </button>
+          </div>
+        )}
+
         <div className="exam-grid">
           {filteredAndSortedExams.map((exam)=>(
-            <div key={exam.id} className="exam-card">
+            <div key={exam.id} className="exam-card" style={{ position: 'relative' }}>
 
               {editingExamId === exam.id ? (
                 // --- EDITING MODE FORM ---
@@ -409,7 +536,16 @@ export default function Exams(){
               ) : (
                 // --- VIEW MODE ---
                 <>
-                  <div className="exam-card-badge-row">
+                  <div className="exam-card-badge-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    
+                    {/* Individual Row Select Checkbox Input Control element */}
+                    <input
+                      type="checkbox"
+                      checked={selectedExamIds.has(exam.id)}
+                      onChange={() => handleSelectExam(exam.id)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', zIndex: 2 }}
+                    />
+
                     <div
                       className={`exam-badge ${
                         (exam.mockType || "sectional") === "full"

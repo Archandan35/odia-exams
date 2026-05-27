@@ -214,30 +214,33 @@ String(topic)
 /* FILTER QUESTIONS */
 
 const filteredQuestions =
-questions.filter((q)=>{
+useMemo(()=>{
 
 const selectedSubject =
 subjects.find(
-(s)=>s.id === subjectId
+(s)=>String(s.id) === String(subjectId)
 );
 
 const selectedTopic =
 filteredTopics.find(
-(t)=>t.id === topic
+(t)=>String(t.id) === String(topic)
 );
 
 const selectedSubTopic =
 filteredSubTopics.find(
-(st)=>st.id === subTopic
+(st)=>String(st.id) === String(subTopic)
 );
+
+return questions.filter((q)=>{
 
 const subjectMatch =
 subjectId
 ?
-q.subject ===
-(
+String(q.subject) ===
+String(
 selectedSubject?.name ||
-selectedSubject?.title
+selectedSubject?.title ||
+""
 )
 :
 true;
@@ -245,10 +248,11 @@ true;
 const topicMatch =
 topic
 ?
-q.topic ===
-(
+String(q.topic) ===
+String(
 selectedTopic?.name ||
-selectedTopic?.title
+selectedTopic?.title ||
+""
 )
 :
 true;
@@ -256,10 +260,11 @@ true;
 const subTopicMatch =
 subTopic
 ?
-q.subTopic ===
-(
+String(q.subTopic) ===
+String(
 selectedSubTopic?.name ||
-selectedSubTopic?.title
+selectedSubTopic?.title ||
+""
 )
 :
 true;
@@ -271,14 +276,17 @@ subTopicMatch
 );
 
 });
- 
 
 },[
 questions,
+subjects,
+filteredTopics,
+filteredSubTopics,
 subjectId,
 topic,
-subTopic,
+subTopic
 ]);
+ 
 
 const totalQuestions =
 filteredQuestions.length;

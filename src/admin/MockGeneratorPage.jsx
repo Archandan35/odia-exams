@@ -100,7 +100,9 @@ generatedMocks,
 setGeneratedMocks
 ] = useState([]);
 
-/* SUBJECTS */
+/* =========================================
+SUBJECTS
+========================================= */
 
 useEffect(()=>{
 
@@ -111,7 +113,9 @@ return ()=>unsubscribe();
 
 },[]);
 
-/* TOPICS */
+/* =========================================
+TOPICS
+========================================= */
 
 useEffect(()=>{
 
@@ -136,7 +140,9 @@ return ()=>unsub();
 
 },[]);
 
-/* SUBTOPICS */
+/* =========================================
+SUBTOPICS
+========================================= */
 
 useEffect(()=>{
 
@@ -161,7 +167,9 @@ return ()=>unsub();
 
 },[]);
 
-/* QUESTIONS */
+/* =========================================
+QUESTIONS
+========================================= */
 
 useEffect(()=>{
 
@@ -188,30 +196,36 @@ loadQuestions();
 
 },[]);
 
-/* FILTER TOPICS */
+/* =========================================
+FILTERED TOPICS
+========================================= */
 
 const filteredTopics =
 topics.filter(
-(t)=>
-String(t.subjectId) ===
+(item)=>
+String(item.subjectId) ===
 String(subjectId)
 );
 
-/* FILTER SUBTOPICS */
+/* =========================================
+FILTERED SUBTOPICS
+========================================= */
 
 const filteredSubTopics =
 subTopics.filter(
-(st)=>
+(item)=>
 
-String(st.subjectId) ===
+String(item.subjectId) ===
 String(subjectId) &&
 
-String(st.topicId) ===
+String(item.topicId) ===
 String(topic)
 
 );
 
-/* FILTER QUESTIONS */
+/* =========================================
+FILTER QUESTIONS
+========================================= */
 
 const filteredQuestions =
 useMemo(()=>{
@@ -257,6 +271,10 @@ topic,
 subTopic,
 ]);
 
+/* =========================================
+STATS
+========================================= */
+
 const totalQuestions =
 filteredQuestions.length;
 
@@ -281,7 +299,9 @@ remainder > 0
 :
 "extra";
 
-/* AUTO DURATION */
+/* =========================================
+AUTO DURATION
+========================================= */
 
 useEffect(()=>{
 
@@ -299,7 +319,9 @@ calculatedMinutes
 calculatedMinutes
 ]);
 
-/* DISTRIBUTION */
+/* =========================================
+DISTRIBUTION
+========================================= */
 
 useEffect(()=>{
 
@@ -413,7 +435,9 @@ quantity,
 remainder,
 ]);
 
-/* GENERATE */
+/* =========================================
+GENERATE
+========================================= */
 
 async function handleGenerate(){
 
@@ -490,50 +514,63 @@ i++
 const currentName =
 `${mockName} ${i + 1}`;
 
-const result = await generateMocks({
+console.log({
 
-  mockName,
+subject:
+subjects.find(
+(s)=>
+s.id === subjectId
+)?.name,
 
-  mockType:
-    mockType ===
-    "Full Mock"
-      ? "full"
-      : "sectional",
+topic:
+filteredTopics.find(
+(item)=>
+item.id === topic
+)?.name,
 
-  subjectId:
-    selectedSubject,
+subTopic:
+filteredSubTopics.find(
+(item)=>
+item.id === subTopic
+)?.name,
 
-  subjectName:
-    subjects.find(
-      (s) =>
-        s.id ===
-        selectedSubject
-    )?.name || "",
+distribution:[
+finalDistribution[i]
+],
 
-  topicId:
-    selectedTopic,
+});
 
-  topicName:
-    topics.find(
-      (t) =>
-        t.id ===
-        selectedTopic
-    )?.name || "",
+await generateMocks({
 
-  subTopicId:
-    selectedSubTopic,
+mockName:
+currentName,
 
-  subTopicName:
-    subTopics.find(
-      (s) =>
-        s.id ===
-        selectedSubTopic
-    )?.name || "",
+mockType,
 
-  duration:
-    customDuration,
+subject:
+subjects.find(
+(s)=>
+s.id === subjectId
+)?.name || "",
 
-  distribution,
+topic:
+filteredTopics.find(
+(item)=>
+item.id === topic
+)?.name || "",
+
+subTopic:
+filteredSubTopics.find(
+(item)=>
+item.id === subTopic
+)?.name || "",
+
+duration:
+Number(duration),
+
+distribution:[
+finalDistribution[i]
+],
 
 });
 
@@ -761,14 +798,14 @@ setSubTopic("");
 All Topics
 </option>
 
-{filteredTopics.map((t)=>(
+{filteredTopics.map((item)=>(
 
 <option
-key={t.id}
-value={t.id}
+key={item.id}
+value={item.id}
 >
 
-{t.name}
+{item.name}
 
 </option>
 
@@ -797,14 +834,14 @@ e.target.value
 All Sub Topics
 </option>
 
-{filteredSubTopics.map((st)=>(
+{filteredSubTopics.map((item)=>(
 
 <option
-key={st.id}
-value={st.id}
+key={item.id}
+value={item.id}
 >
 
-{st.name}
+{item.name}
 
 </option>
 

@@ -1,327 +1,1119 @@
 import {
-  useEffect,
-  useMemo,
-  useState,
+useEffect,
+useState,
 } from "react";
 
 import {
-  useNavigate,
+useParams,
+useNavigate,
 } from "react-router-dom";
 
 import {
-  collection,
-  onSnapshot,
+collection,
+getDocs,
+addDoc,
 } from "firebase/firestore";
 
-import { db } from "../firebase/config";
-
 import {
-  listenSubjects,
-} from "../services/subjectService";
+db,
+auth,
+} from "../firebase/config";
 
-export default function ExamPage() {
+export default function ExamPage(){
 
-  const navigate = useNavigate();
+const { examId } =
+useParams();
 
-  const [exams, setExams] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-
-  const [selectedMockType, setSelectedMockType] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [selectedSubTopic, setSelectedSubTopic] = useState("");
-
-  /* =========================================
-    LOAD EXAMS (real-time)
-  ========================================= */
-
-  useEffect(() => {
+const navigate =
+useNavigate();
 
-    const unsubscribe = onSnapshot(
-      collection(db, "exams"),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        setExams(data);
-      }
-    );
-
-    return () => unsubscribe();
-
-  }, []);
-
-  /* =========================================
-    LOAD SUBJECTS (real-time)
-  ========================================= */
-
-  useEffect(() => {
-
-    const unsubscribe = listenSubjects(setSubjects);
-
-    return () => unsubscribe();
-
-  }, []);
-
-  /* =========================================
-    DERIVED FILTER OPTIONS
-  ========================================= */
-
-  const filteredTopics = useMemo(() => {
-
-    return [
-      ...new Set(
-        exams
-          .filter((e) =>
-            selectedSubject
-              ? e.subjectId === selectedSubject
-              : true
-          )
-          .map((e) => e.topicName)
-          .filter(Boolean)
-      ),
-    ];
-
-  }, [exams, selectedSubject]);
-
-  const filteredSubTopics = useMemo(() => {
-
-    return [
-      ...new Set(
-        exams
-          .filter((e) =>
-            selectedTopic
-              ? e.topicName === selectedTopic
-              : true
-          )
-          .map((e) => e.subTopicName)
-          .filter(Boolean)
-      ),
-    ];
-
-  }, [exams, selectedTopic]);
-
-  /* =========================================
-    FILTERED EXAMS
-  ========================================= */
-
-  const filteredExams = exams.filter((exam) => {
-
-    const mockTypeMatch = selectedMockType
-      ? (exam.mockType || "sectional") === selectedMockType
-      : true;
-
-    const subjectMatch = selectedSubject
-      ? exam.subjectId === selectedSubject
-      : true;
-
-    const topicMatch = selectedTopic
-      ? exam.topicName === selectedTopic
-      : true;
-
-    const subTopicMatch =
-      selectedMockType === "full"
-        ? true
-        : selectedSubTopic
-          ? exam.subTopicName === selectedSubTopic
-          : true;
-
-    return (
-      mockTypeMatch &&
-      subjectMatch &&
-      topicMatch &&
-      subTopicMatch
-    );
-
-  });
-
-  /* =========================================
-    HELPERS
-  ========================================= */
-
-  function getSubjectName(id) {
-    return subjects.find((s) => s.id === id)?.name || "-";
-  }
-
-  function getQuestionCount(exam) {
-    return (
-      exam.totalQuestions ||
-      exam.questionCount ||
-      exam.questionIds?.length ||
-      exam.questions?.length ||
-      0
-    );
-  }
-
-  function isFullMock(exam) {
-    return (exam.mockType || "sectional") === "full";
-  }
-
-  function handleStartExam(examId) {
-    navigate(`/exam/${examId}`);
-  }
-
-  /* =========================================
-    UI
-  ========================================= */
-
-  return (
-
-    <div className="page">
-
-      {/* ── Header ── */}
-      <div className="page-header">
-        <div>
-          <h2>Exams</h2>
-          <p>Choose a mock to begin</p>
-        </div>
-      </div>
-
-      {/* ── Filter Bar ── */}
-      <div className="filter-bar">
-
-        {/* Mock Type */}
-        <select
-          value={selectedMockType}
-          onChange={(e) => {
-            setSelectedMockType(e.target.value);
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Mock Types</option>
-          <option value="full">Full Mock</option>
-          <option value="sectional">Sectional Mock</option>
-        </select>
-
-        {/* Subject */}
-        <select
-          value={selectedSubject}
-          onChange={(e) => {
-            setSelectedSubject(e.target.value);
-            setSelectedTopic("");
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Subjects</option>
-          {subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Topic */}
-        <select
-          value={selectedTopic}
-          onChange={(e) => {
-            setSelectedTopic(e.target.value);
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Topics</option>
-          {filteredTopics.map((topic) => (
-            <option key={topic} value={topic}>
-              {topic}
-            </option>
-          ))}
-        </select>
-
-        {/* Sub Topic — hidden when Full Mock is selected */}
-        {selectedMockType !== "full" && (
-          <select
-            value={selectedSubTopic}
-            onChange={(e) => setSelectedSubTopic(e.target.value)}
-          >
-            <option value="">All Sub Topics</option>
-            {filteredSubTopics.map((subTopic) => (
-              <option key={subTopic} value={subTopic}>
-                {subTopic}
-              </option>
-            ))}
-          </select>
-        )}
-
-      </div>
-
-      {/* ── Exam Cards ── */}
-      <div className="exam-grid">
-
-        {filteredExams.length === 0 && (
-          <p className="no-exams-msg">No exams found for the selected filters.</p>
-        )}
-
-        {filteredExams.map((exam) => (
-
-          <div key={exam.id} className="exam-card">
-
-            {/* Badge */}
-            <div className="exam-card-badge-row">
-              <div
-                className={`exam-badge ${
-                  isFullMock(exam) ? "full-badge" : "sectional-badge"
-                }`}
-              >
-                {isFullMock(exam) ? "FULL MOCK" : "SECTIONAL MOCK"}
-              </div>
-            </div>
-
-            {/* Exam Name */}
-            <h2 className="exam-card-title">
-              {exam.name}
-            </h2>
-
-            {/* Details */}
-            <div className="exam-details">
-
-              <p>
-                <strong>Subject:</strong>{" "}
-                {getSubjectName(exam.subjectId)}
-              </p>
-
-              <p>
-                <strong>Topic:</strong>{" "}
-                {exam.topicName || "-"}
-              </p>
-
-              {/* Sub Topic — hidden for Full Mock */}
-              {!isFullMock(exam) && (
-                <p>
-                  <strong>Sub Topic:</strong>{" "}
-                  {exam.subTopicName || "-"}
-                </p>
-              )}
-
-              <p>
-                <strong>Questions:</strong>{" "}
-                {getQuestionCount(exam)}
-              </p>
-
-              <p>
-                <strong>Duration:</strong>{" "}
-                {exam.duration || 0} mins
-              </p>
-
-            </div>
-
-            {/* Actions */}
-            <div className="exam-actions">
-              <button
-                className="start-btn"
-                onClick={() => handleStartExam(exam.id)}
-              >
-                Start Exam
-              </button>
-            </div>
-
-          </div>
-
-        ))}
-
-      </div>
-
-    </div>
-
-  );
+const STORAGE_KEY =
+`exam_${examId}`;
 
+const [questions,
+setQuestions] =
+useState([]);
+
+const [examData,
+setExamData] =
+useState(null);
+
+const [loading,
+setLoading] =
+useState(true);
+
+const [currentQuestion,
+setCurrentQuestion] =
+useState(0);
+
+const [answers,
+setAnswers] =
+useState({});
+
+const [visited,
+setVisited] =
+useState({});
+
+const [review,
+setReview] =
+useState({});
+
+const [bookmarks,
+setBookmarks] =
+useState({});
+
+const [timeLeft,
+setTimeLeft] =
+useState(1800);
+
+const [cheatCount,
+setCheatCount] =
+useState(0);
+
+/* =========================================
+FULLSCREEN
+========================================= */
+
+useEffect(()=>{
+
+const elem =
+document.documentElement;
+
+if(elem.requestFullscreen){
+
+elem.requestFullscreen();
+
+}
+
+},[]);
+
+/* =========================================
+CHEAT DETECTION
+========================================= */
+
+useEffect(()=>{
+
+function handleVisibility(){
+
+if(document.hidden){
+
+handleCheating(
+"Tab Switch Detected"
+);
+
+}
+
+}
+
+function handleFullscreen(){
+
+if(
+!document.fullscreenElement
+){
+
+handleCheating(
+"Fullscreen Exited"
+);
+
+}
+
+}
+
+document.addEventListener(
+"visibilitychange",
+handleVisibility
+);
+
+document.addEventListener(
+"fullscreenchange",
+handleFullscreen
+);
+
+return ()=>{
+
+document.removeEventListener(
+"visibilitychange",
+handleVisibility
+);
+
+document.removeEventListener(
+"fullscreenchange",
+handleFullscreen
+);
+
+};
+
+},[cheatCount]);
+
+function handleCheating(msg){
+
+const newCount =
+cheatCount + 1;
+
+setCheatCount(newCount);
+
+alert(
+`${msg}
+
+Warning:
+${newCount}/3`
+);
+
+if(newCount >= 3){
+
+submitExam(true);
+
+}
+
+}
+
+/* =========================================
+LOAD EXAM
+========================================= */
+
+useEffect(()=>{
+
+async function loadExam(){
+
+try{
+
+const saved =
+localStorage.getItem(
+STORAGE_KEY
+);
+
+if(saved){
+
+const parsed =
+JSON.parse(saved);
+
+setAnswers(
+parsed.answers || {}
+);
+
+setVisited(
+parsed.visited || {}
+);
+
+setReview(
+parsed.review || {}
+);
+
+setBookmarks(
+parsed.bookmarks || {}
+);
+
+setCurrentQuestion(
+parsed.currentQuestion || 0
+);
+
+setTimeLeft(
+parsed.timeLeft || 1800
+);
+
+}
+
+const examSnapshot =
+await getDocs(
+collection(db,"exams")
+);
+
+const exams =
+examSnapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
+
+const currentExam =
+exams.find(
+(e)=>e.id === examId
+);
+
+setExamData(currentExam);
+
+if(
+currentExam &&
+!saved
+){
+
+setTimeLeft(
+currentExam.duration * 60
+);
+
+}
+
+const questionSnapshot =
+await getDocs(
+collection(db,"questions")
+);
+
+let allQuestions =
+questionSnapshot.docs.map(
+(doc)=>({
+id:doc.id,
+...doc.data(),
+})
+);
+
+/* FILTERING */
+
+if(
+currentExam.examType ===
+"subject"
+){
+
+allQuestions =
+allQuestions.filter(
+(q)=>
+q.subjectId ===
+currentExam.subjectId
+);
+
+}
+
+else if(
+currentExam.examType ===
+"topic"
+){
+
+allQuestions =
+allQuestions.filter(
+(q)=>
+q.topicId ===
+currentExam.topicId
+);
+
+}
+
+else if(
+currentExam.examType ===
+"subtopic"
+){
+
+allQuestions =
+allQuestions.filter(
+(q)=>
+q.subTopicId ===
+currentExam.subTopicId
+);
+
+}
+
+else if(
+currentExam.examType ===
+"mixed"
+){
+
+allQuestions =
+allQuestions.sort(
+()=>Math.random()-0.5
+);
+
+}
+
+if(
+currentExam.shuffleQuestions
+){
+
+allQuestions =
+allQuestions.sort(
+()=>Math.random()-0.5
+);
+
+}
+
+allQuestions =
+allQuestions.slice(
+0,
+currentExam.questionCount
+);
+
+setQuestions(allQuestions);
+
+setLoading(false);
+
+}catch(error){
+
+console.error(error);
+
+setLoading(false);
+
+}
+
+}
+
+loadExam();
+
+},[examId]);
+
+/* =========================================
+AUTO SAVE
+========================================= */
+
+useEffect(()=>{
+
+localStorage.setItem(
+
+STORAGE_KEY,
+
+JSON.stringify({
+
+answers,
+visited,
+review,
+bookmarks,
+currentQuestion,
+timeLeft,
+
+})
+
+);
+
+},[
+
+answers,
+visited,
+review,
+bookmarks,
+currentQuestion,
+timeLeft,
+
+]);
+
+/* =========================================
+TIMER
+========================================= */
+
+useEffect(()=>{
+
+if(
+loading ||
+questions.length === 0
+)return;
+
+const timer =
+setInterval(()=>{
+
+setTimeLeft((prev)=>{
+
+if(prev <= 1){
+
+clearInterval(timer);
+
+submitExam(true);
+
+return 0;
+
+}
+
+return prev - 1;
+
+});
+
+},1000);
+
+return ()=>clearInterval(timer);
+
+},[
+loading,
+questions,
+]);
+
+/* =========================================
+FORMAT TIME
+========================================= */
+
+function formatTime(seconds){
+
+const hrs =
+Math.floor(seconds/3600);
+
+const mins =
+Math.floor(
+(seconds%3600)/60
+);
+
+const secs =
+seconds%60;
+
+return `
+${String(hrs)
+.padStart(2,"0")}h
+${String(mins)
+.padStart(2,"0")}m
+${String(secs)
+.padStart(2,"0")}s
+`;
+
+}
+
+/* =========================================
+ANSWER SELECT
+========================================= */
+
+function selectAnswer(
+qid,
+index
+){
+
+setAnswers((prev)=>({
+
+...prev,
+
+[qid]:index,
+
+}));
+
+setVisited((prev)=>({
+
+...prev,
+
+[qid]:true,
+
+}));
+
+}
+
+/* =========================================
+MARK REVIEW
+========================================= */
+
+function markReview(qid){
+
+setReview((prev)=>({
+
+...prev,
+
+[qid]:
+!prev[qid],
+
+}));
+
+}
+
+/* =========================================
+BOOKMARK
+========================================= */
+
+function toggleBookmark(qid){
+
+setBookmarks((prev)=>({
+
+...prev,
+
+[qid]:
+!prev[qid],
+
+}));
+
+}
+
+/* =========================================
+NAVIGATION
+========================================= */
+
+function nextQuestion(){
+
+if(
+currentQuestion <
+questions.length - 1
+){
+
+setCurrentQuestion(
+currentQuestion + 1
+);
+
+}
+
+}
+
+function prevQuestion(){
+
+if(currentQuestion > 0){
+
+setCurrentQuestion(
+currentQuestion - 1
+);
+
+}
+
+}
+
+/* =========================================
+SUBMIT EXAM
+========================================= */
+
+async function submitExam(
+autoSubmit=false
+){
+
+if(!autoSubmit){
+
+const confirmSubmit =
+window.confirm(
+"Submit Exam?"
+);
+
+if(!confirmSubmit)
+return;
+
+}
+
+let correct = 0;
+
+let wrong = 0;
+
+questions.forEach((q)=>{
+
+const ans =
+answers[q.id];
+
+if(
+ans === undefined
+) return;
+
+let correctIndex = 0;
+
+const answerMap = {
+
+A:0,
+B:1,
+C:2,
+D:3,
+
+};
+
+if(
+typeof q.correctAnswer ===
+"number"
+){
+
+correctIndex =
+q.correctAnswer;
+
+}
+else if(
+typeof q.correctAnswer ===
+"string"
+){
+
+correctIndex =
+answerMap[
+q.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+else{
+
+correctIndex =
+answerMap[q.answer] || 0;
+
+}
+
+if(
+correctIndex === ans
+){
+
+correct++;
+
+}else{
+
+wrong++;
+
+}
+
+});
+
+const negative =
+wrong *
+(
+examData
+?.negativeMarking || 0
+);
+
+const finalScore =
+correct - negative;
+
+const accuracy =
+questions.length > 0
+?
+(
+(
+correct /
+questions.length
+) * 100
+).toFixed(2)
+:
+0;
+const resultData = {
+
+userId:
+auth.currentUser?.uid,
+
+examId,
+
+examName:
+examData?.name,
+
+examType:
+examData?.examType,
+
+subject:
+questions?.[0]?.subjectId || "",
+
+topicId:
+questions?.[0]?.topicId || "",
+
+subTopicId:
+questions?.[0]?.subTopicId || "",
+
+totalQuestions:
+questions.length,
+
+correct,
+
+wrong,
+
+unanswered:
+questions.length -
+(
+correct + wrong
+),
+
+score:
+finalScore,
+
+accuracy,
+
+timeTaken:
+examData?.duration
+* 60
+- timeLeft,
+
+cheatCount,
+
+questions,
+
+answers,
+
+bookmarks,
+
+review,
+
+createdAt:
+Date.now(),
+
+};
+  
+await addDoc(
+collection(db,"results"),
+resultData
+);
+
+localStorage.removeItem(
+STORAGE_KEY
+);
+
+navigate(
+"/result",
+{
+state:resultData,
+}
+);
+
+}
+
+/* =========================================
+LOADING
+========================================= */
+
+if(loading){
+
+return(
+
+<div className="page">
+
+<h2>
+Loading Exam...
+</h2>
+
+</div>
+
+);
+
+}
+
+/* =========================================
+CURRENT QUESTION
+========================================= */
+
+const q =
+questions[currentQuestion];
+
+/* =========================================
+LEGEND COUNTS
+========================================= */
+
+const answeredCount =
+Object.keys(answers).filter(
+(key)=>
+answers[key] !== undefined &&
+answers[key] !== null
+).length;
+
+const markedCount =
+Object.keys(review).filter(
+(key)=>review[key]
+).length;
+
+const markedAnsweredCount =
+Object.keys(review).filter(
+(key)=>
+review[key] &&
+answers[key] !== undefined &&
+answers[key] !== null
+).length;
+
+const notAnsweredCount =
+Object.keys(visited).filter(
+(key)=>
+visited[key] &&
+(
+answers[key] === undefined ||
+answers[key] === null
+)
+).length;
+
+const notVisitedCount =
+questions.length -
+Object.keys(visited).length;
+
+/* =========================================
+UI
+========================================= */
+
+return(
+
+<div className="exam-layout">
+
+<div className="exam-main">
+
+<div className="topbar">
+
+<div>
+
+<h2>
+{examData?.name}
+</h2>
+
+<p>
+{examData?.examType}
+Exam
+</p>
+
+</div>
+
+<div>
+
+<h2>
+
+⏳
+
+{
+formatTime(
+timeLeft
+)
+}
+
+</h2>
+
+<p>
+Warnings:
+{" "}
+{cheatCount}/3
+</p>
+
+</div>
+
+</div>
+
+{
+q && (
+
+<div className="question-card">
+
+<h3>
+
+Question
+{" "}
+{
+currentQuestion + 1
+}
+
+</h3>
+
+<h2>
+{q.question}
+</h2>
+
+<div className="options-list">
+
+{
+q.options?.map(
+(
+option,
+index
+)=>(
+
+<label
+key={index}
+className={
+answers[q.id]
+=== index
+?
+"selected-option"
+:
+"option-card"
+}
+>
+
+<input
+type="radio"
+className="option-radio"
+checked={
+answers[q.id]
+=== index
+}
+onChange={()=>
+selectAnswer(
+q.id,
+index
+)
+}
+/>
+
+<div className="option-text">
+
+<span className="option-label">
+
+{
+String.fromCharCode(
+65 + index
+)
+}.
+
+</span>
+
+{option}
+
+</div>
+
+</label>
+
+))
+}
+
+</div>
+
+<div className="exam-buttons">
+
+<button
+onClick={
+prevQuestion
+}
+>
+Previous
+</button>
+
+<button
+onClick={()=>markReview(
+q.id
+)}
+>
+
+{
+review[q.id]
+?
+"Remove Review"
+:
+"Mark Review"
+}
+
+</button>
+
+<button
+onClick={()=>toggleBookmark(
+q.id
+)}
+>
+
+{
+bookmarks[q.id]
+?
+"Bookmarked"
+:
+"Bookmark"
+}
+
+</button>
+
+<button
+onClick={
+nextQuestion
+}
+>
+Save & Next
+</button>
+
+<button
+className="submit-btn"
+onClick={
+submitExam
+}
+>
+Submit
+</button>
+
+</div>
+
+</div>
+
+)
+}
+
+</div>
+
+<div className="navigator">
+
+<h3 className="palette-title">
+Questions
+</h3>
+
+<div className="exam-legend">
+
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-answered">
+{answeredCount}
+</div>
+<span>Answered</span>
+</div>
+
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-marked">
+{markedCount}
+</div>
+<span>Marked</span>
+</div>
+
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-markedanswered">
+{markedAnsweredCount}
+</div>
+<span>Marked & Answered</span>
+</div>
+
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-notanswered">
+{notAnsweredCount}
+</div>
+<span>Not Answered</span>
+</div>
+
+<div className="exam-legend-item">
+<div className="exam-legend-badge legend-notvisited">
+{notVisitedCount}
+</div>
+<span>Not Visited</span>
+</div>
+
+</div>
+
+<div className="palette-grid">
+
+{questions.map((question,index)=>{
+
+const answered =
+answers[question.id] !== undefined;
+
+const marked =
+review[question.id];
+
+const visitedQuestion =
+visited[question.id];
+
+let btnClass =
+"palette-btn";
+
+if(
+marked &&
+answered
+){
+
+btnClass +=
+" marked-answered";
+
+}
+else if(marked){
+
+btnClass +=
+" marked";
+
+}
+else if(answered){
+
+btnClass +=
+" answered";
+
+}
+else if(visitedQuestion){
+
+btnClass +=
+" not-answered";
+
+}
+else{
+
+btnClass +=
+" not-visited";
+
+}
+
+if(
+currentQuestion === index
+){
+
+btnClass +=
+" current";
+
+}
+
+return(
+
+<button
+key={question.id}
+className={btnClass}
+onClick={()=>
+setCurrentQuestion(index)
+}
+>
+
+{index + 1}
+
+</button>
+
+);
+
+})}
+
+</div>
+
+</div>
+
+</div>
+
+);
 }

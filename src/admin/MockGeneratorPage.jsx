@@ -188,6 +188,11 @@ id:doc.id,
 
 }));
 
+console.log(
+"ALL QUESTIONS:",
+data
+);
+
 setQuestions(data);
 
 }
@@ -230,7 +235,8 @@ FILTER QUESTIONS
 const filteredQuestions =
 useMemo(()=>{
 
-return questions.filter((q)=>{
+const filtered =
+questions.filter((q)=>{
 
 const subjectMatch =
 subjectId
@@ -263,6 +269,13 @@ subTopicMatch
 );
 
 });
+
+console.log(
+"FILTERED QUESTIONS:",
+filtered
+);
+
+return filtered;
 
 },[
 questions,
@@ -441,6 +454,10 @@ GENERATE
 
 async function handleGenerate(){
 
+console.log(
+"START GENERATE CLICKED"
+);
+
 if(!mockName){
 
 alert(
@@ -505,6 +522,11 @@ distributionPreview
 Array(desiredMocks)
 .fill(quantity);
 
+console.log(
+"FINAL DISTRIBUTION:",
+finalDistribution
+);
+
 for(
 let i=0;
 i<finalDistribution.length;
@@ -514,31 +536,41 @@ i++
 const currentName =
 `${mockName} ${i + 1}`;
 
-console.log({
+console.log(
+"FINAL DEBUG",
+{
+
+currentName,
+
+mockType,
 
 subject:
 subjects.find(
 (s)=>
 s.id === subjectId
-)?.name,
+)?.name || "",
 
 topic:
 filteredTopics.find(
 (item)=>
 item.id === topic
-)?.name,
+)?.name || "",
 
 subTopic:
 filteredSubTopics.find(
 (item)=>
 item.id === subTopic
-)?.name,
+)?.name || "",
+
+duration:
+Number(duration),
 
 distribution:[
 finalDistribution[i]
 ],
 
-});
+}
+);
 
 await generateMocks({
 
@@ -594,9 +626,13 @@ alert(
 
 }catch(error){
 
-console.error(error);
+console.error(
+"GENERATION ERROR:",
+error
+);
 
 alert(
+error.message ||
 "Failed to generate mocks"
 );
 
@@ -614,8 +650,6 @@ return(
 
 <div className="page mock-generator-page">
 
-{/* HEADER */}
-
 <div className="page-header">
 
 <div>
@@ -631,8 +665,6 @@ Generate intelligent mock tests automatically
 </div>
 
 </div>
-
-{/* TOP STATS */}
 
 <div className="mock-top-stats">
 
@@ -677,8 +709,6 @@ Maximum Mocks
 </div>
 
 </div>
-
-{/* CONFIGURATION */}
 
 <div className="mock-section">
 
@@ -775,511 +805,6 @@ value={subject.id}
 
 </div>
 
-<div className="form-group">
-
-<label>
-Topic
-</label>
-
-<select
-value={topic}
-onChange={(e)=>{
-
-setTopic(
-e.target.value
-);
-
-setSubTopic("");
-
-}}
->
-
-<option value="">
-All Topics
-</option>
-
-{filteredTopics.map((item)=>(
-
-<option
-key={item.id}
-value={item.id}
->
-
-{item.name}
-
-</option>
-
-))}
-
-</select>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Sub Topic
-</label>
-
-<select
-value={subTopic}
-onChange={(e)=>
-setSubTopic(
-e.target.value
-)
-}
->
-
-<option value="">
-All Sub Topics
-</option>
-
-{filteredSubTopics.map((item)=>(
-
-<option
-key={item.id}
-value={item.id}
->
-
-{item.name}
-
-</option>
-
-))}
-
-</select>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Questions Per Mock
-</label>
-
-<div className="custom-input-group">
-
-<select
-value={quantity}
-onChange={(e)=>{
-
-const value =
-Number(
-e.target.value
-);
-
-if(
-value > totalQuestions
-){
-
-alert(
-`Only ${totalQuestions} questions available`
-);
-
-return;
-
-}
-
-setQuantity(value);
-
-}}
->
-
-<option value={100}>
-100 Questions
-</option>
-
-<option value={50}>
-50 Questions
-</option>
-
-<option value={25}>
-25 Questions
-</option>
-
-{
-![100,50,25]
-.includes(quantity) && (
-
-<option value={quantity}>
-{quantity} Questions
-</option>
-
-)
-}
-
-</select>
-
-<input
-type="number"
-value={quantity}
-onChange={(e)=>{
-
-const value =
-Number(
-e.target.value
-);
-
-if(
-value > totalQuestions
-){
-
-alert(
-`Only ${totalQuestions} questions available`
-);
-
-return;
-
-}
-
-setQuantity(value);
-
-}}
-/>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Duration
-</label>
-
-<div className="custom-input-group">
-
-<select
-value={duration}
-onChange={(e)=>
-setDuration(
-Number(
-e.target.value
-)
-)
-}
->
-
-<option value={60}>
-60 mins
-</option>
-
-<option value={45}>
-45 mins
-</option>
-
-<option value={30}>
-30 mins
-</option>
-
-<option value={15}>
-15 mins
-</option>
-
-{
-![60,45,30,15]
-.includes(duration) && (
-
-<option value={duration}>
-{duration} mins
-</option>
-
-)
-}
-
-</select>
-
-<input
-type="number"
-value={duration}
-placeholder={`${calculatedMinutes} mins`}
-onChange={(e)=>
-setDuration(
-Number(
-e.target.value
-)
-)
-}
-/>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Seconds Per Question
-</label>
-
-<div className="custom-input-group">
-
-<input
-type="number"
-placeholder="30"
-value={secondsPerQuestion}
-onChange={(e)=>
-setSecondsPerQuestion(
-Number(
-e.target.value
-)
-)
-}
-/>
-
-<div
-className="auto-duration-box"
->
-
-Suggested:
-{" "}
-
-<strong>
-{calculatedMinutes}
- mins
-</strong>
-
-</div>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Desired Mock Quantity
-</label>
-
-<input
-type="number"
-value={desiredMocks}
-onChange={(e)=>{
-
-const value =
-Number(
-e.target.value
-);
-
-if(value > totalMocks){
-
-alert(
-`Maximum Mocks Possible: ${totalMocks}`
-);
-
-return;
-
-}
-
-setDesiredMocks(value);
-
-}}
-/>
-
-</div>
-
-</div>
-
-</div>
-
-{/* DISTRIBUTION */}
-
-<div className="mock-section">
-
-<div className="mock-section-title">
-🎯 Distribution & Strategy
-</div>
-
-<div className="distribution-container">
-
-<label className="include-row">
-
-<input
-type="checkbox"
-checked={includeAllQuestions}
-onChange={(e)=>
-setIncludeAllQuestions(
-e.target.checked
-)
-}
-/>
-
-Include All Available Questions
-
-</label>
-
-{includeAllQuestions && (
-
-<>
-
-<div className="recommended-box">
-
-⭐ Recommended:
-{" "}
-
-{
-recommendedStrategy ===
-"balanced"
-
-?
-
-"Balanced Distribution"
-
-:
-
-"Create Extra Mock"
-}
-
-</div>
-
-<div className="distribution-options">
-
-<div
-className={`distribution-option ${
-distributionMode ===
-"balanced"
-?
-"active"
-:
-""
-}`}
-onClick={()=>
-setDistributionMode(
-"balanced"
-)
-}
->
-
-<input
-type="radio"
-checked={
-distributionMode ===
-"balanced"
-}
-readOnly
-/>
-
-Balanced Distribution
-
-</div>
-
-<div
-className={`distribution-option ${
-distributionMode ===
-"extra"
-?
-"active"
-:
-""
-}`}
-onClick={()=>
-setDistributionMode(
-"extra"
-)
-}
->
-
-<input
-type="radio"
-checked={
-distributionMode ===
-"extra"
-}
-readOnly
-/>
-
-Create Extra Mock
-
-</div>
-
-<div
-className={`distribution-option ${
-distributionMode ===
-"manual"
-?
-"active"
-:
-""
-}`}
-onClick={()=>
-setDistributionMode(
-"manual"
-)
-}
->
-
-<input
-type="radio"
-checked={
-distributionMode ===
-"manual"
-}
-readOnly
-/>
-
-Manual Distribution
-
-</div>
-
-</div>
-
-{distributionMode ===
-"manual" && (
-
-<input
-type="text"
-placeholder="100,100,19"
-value={
-manualDistribution
-}
-onChange={(e)=>
-setManualDistribution(
-e.target.value
-)
-}
-/>
-
-)}
-
-<div className="distribution-preview">
-
-{distributionPreview.map(
-(q,index)=>(
-
-<div
-key={index}
-className="distribution-card"
->
-
-<div className="distribution-icon">
-📄
-</div>
-
-<div className="distribution-info">
-
-<h4>
-Mock {index + 1}
-</h4>
-
-<p>
-{q} Questions
-</p>
-
-</div>
-
-</div>
-
-)
-)}
-
-</div>
-
-</>
-
-)}
-
-</div>
-
 </div>
 
 <button
@@ -1295,61 +820,6 @@ disabled={loading}
 "🚀 Generate Mocks"}
 
 </button>
-
-{generatedMocks.length > 0 && (
-
-<div className="mock-section">
-
-<div className="mock-section-title">
-✅ Generated Successfully
-</div>
-
-<div className="distribution-preview">
-
-{generatedMocks.map((m)=>(
-
-<div
-key={m}
-className="distribution-card"
->
-
-<div className="distribution-icon">
-✅
-</div>
-
-<div className="distribution-info">
-
-<h4>
-{m}
-</h4>
-
-<p>
-Generated Successfully
-</p>
-
-</div>
-
-</div>
-
-))}
-
-</div>
-
-<button
-className="generate-btn"
-onClick={()=>
-window.location.href =
-"/admin/exams"
-}
->
-
-View Mock Tests
-
-</button>
-
-</div>
-
-)}
 
 </div>
 

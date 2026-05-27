@@ -32,55 +32,97 @@ export default function MockGeneratorPage() {
      STATES
   ========================================= */
 
-  const [subjects, setSubjects] = useState([]);
-  const [topics, setTopics] = useState([]);
-  const [subTopics, setSubTopics] = useState([]);
-  const [questions, setQuestions] = useState([]);
+  const [subjects, setSubjects] =
+    useState([]);
 
-  const [mockName, setMockName] = useState("");
-  const [mockType, setMockType] = useState("sectional");
+  const [topics, setTopics] =
+    useState([]);
 
-  const [subjectId, setSubjectId] = useState("");
-  const [topic, setTopic] = useState("");
-  const [subTopic, setSubTopic] = useState("");
+  const [subTopics, setSubTopics] =
+    useState([]);
 
-  const [quantity, setQuantity] = useState(25);
-  const [duration, setDuration] = useState(60);
+  const [questions, setQuestions] =
+    useState([]);
 
-  const [secondsPerQuestion, setSecondsPerQuestion] = useState(30);
-
-  const [desiredMocks, setDesiredMocks] = useState(1);
-
-  const [includeAllQuestions, setIncludeAllQuestions] =
-    useState(true);
-
-  const [distributionMode, setDistributionMode] =
-    useState("balanced");
-
-  const [manualDistribution, setManualDistribution] =
+  const [mockName, setMockName] =
     useState("");
 
-  const [distributionPreview, setDistributionPreview] =
-    useState([]);
+  const [mockType, setMockType] =
+    useState("sectional");
 
-  const [loading, setLoading] = useState(false);
+  const [subjectId, setSubjectId] =
+    useState("");
 
-  const [progress, setProgress] = useState(0);
+  const [topic, setTopic] =
+    useState("");
 
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    type: "success",
-  });
+  const [subTopic, setSubTopic] =
+    useState("");
 
-  const [generatedMocks, setGeneratedMocks] =
-    useState([]);
+  const [quantity, setQuantity] =
+    useState(100);
+
+  const [duration, setDuration] =
+    useState(60);
+
+  const [
+    secondsPerQuestion,
+    setSecondsPerQuestion,
+  ] = useState(30);
+
+  const [
+    desiredMocks,
+    setDesiredMocks,
+  ] = useState(1);
+
+  const [
+    includeAllQuestions,
+    setIncludeAllQuestions,
+  ] = useState(true);
+
+  const [
+    distributionMode,
+    setDistributionMode,
+  ] = useState("balanced");
+
+  const [
+    manualDistribution,
+    setManualDistribution,
+  ] = useState("");
+
+  const [
+    distributionPreview,
+    setDistributionPreview,
+  ] = useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [
+    generationProgress,
+    setGenerationProgress,
+  ] = useState(0);
+
+  const [
+    generatedMocks,
+    setGeneratedMocks,
+  ] = useState([]);
+
+  const [toast, setToast] =
+    useState({
+      show: false,
+      message: "",
+      type: "success",
+    });
 
   /* =========================================
      TOAST
   ========================================= */
 
-  function showToast(message, type = "success") {
+  function showToast(
+    message,
+    type = "success"
+  ) {
 
     setToast({
       show: true,
@@ -101,82 +143,106 @@ export default function MockGeneratorPage() {
   }
 
   /* =========================================
-     LOAD SUBJECTS
+     SUBJECTS
   ========================================= */
 
   useEffect(() => {
 
     const unsubscribe =
-      listenSubjects(setSubjects);
+      listenSubjects(
+        setSubjects
+      );
 
-    return () => unsubscribe();
+    return () =>
+      unsubscribe();
 
   }, []);
 
   /* =========================================
-     LOAD TOPICS
+     TOPICS
   ========================================= */
 
   useEffect(() => {
 
-    const unsub = onSnapshot(
-      collection(db, "topics"),
-      (snapshot) => {
+    const unsub =
+      onSnapshot(
+        collection(
+          db,
+          "topics"
+        ),
+        (snapshot) => {
 
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
 
-        setTopics(data);
+          setTopics(data);
 
-      }
-    );
+        }
+      );
 
     return () => unsub();
 
   }, []);
 
   /* =========================================
-     LOAD SUBTOPICS
+     SUBTOPICS
   ========================================= */
 
   useEffect(() => {
 
-    const unsub = onSnapshot(
-      collection(db, "subtopics"),
-      (snapshot) => {
+    const unsub =
+      onSnapshot(
+        collection(
+          db,
+          "subtopics"
+        ),
+        (snapshot) => {
 
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+          const data =
+            snapshot.docs.map(
+              (doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })
+            );
 
-        setSubTopics(data);
+          setSubTopics(data);
 
-      }
-    );
+        }
+      );
 
     return () => unsub();
 
   }, []);
 
   /* =========================================
-     LOAD QUESTIONS
+     QUESTIONS
   ========================================= */
 
   useEffect(() => {
 
     async function loadQuestions() {
 
-      const snapshot = await getDocs(
-        collection(db, "questions")
-      );
+      const snapshot =
+        await getDocs(
+          collection(
+            db,
+            "questions"
+          )
+        );
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const data =
+        snapshot.docs.map(
+          (doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
 
       setQuestions(data);
 
@@ -187,82 +253,111 @@ export default function MockGeneratorPage() {
   }, []);
 
   /* =========================================
-     FILTERED TOPICS
+     FILTER TOPICS
   ========================================= */
 
-  const filteredTopics = topics.filter(
-    (item) =>
-      String(item.subjectId) ===
-      String(subjectId)
-  );
+  const filteredTopics =
+    topics.filter(
+      (item) =>
+        String(
+          item.subjectId
+        ) ===
+        String(subjectId)
+    );
 
   /* =========================================
-     FILTERED SUBTOPICS
+     FILTER SUBTOPICS
   ========================================= */
 
-  const filteredSubTopics = subTopics.filter(
-    (item) =>
-      String(item.subjectId) ===
-        String(subjectId) &&
-      String(item.topicId) ===
-        String(topic)
-  );
+  const filteredSubTopics =
+    subTopics.filter(
+      (item) =>
+
+        String(
+          item.subjectId
+        ) ===
+          String(
+            subjectId
+          ) &&
+
+        String(
+          item.topicId
+        ) ===
+          String(topic)
+    );
 
   /* =========================================
-     FILTERED QUESTIONS
+     FILTER QUESTIONS
   ========================================= */
 
-  const filteredQuestions = useMemo(() => {
+  const filteredQuestions =
+    useMemo(() => {
 
-    return questions.filter((q) => {
+      return questions.filter(
+        (q) => {
 
-      const subjectMatch =
-        subjectId
-          ? String(q.subjectId) ===
-            String(subjectId)
-          : true;
+          const subjectMatch =
+            subjectId
+              ? String(
+                  q.subjectId
+                ) ===
+                String(
+                  subjectId
+                )
+              : true;
 
-      const topicMatch =
-        topic
-          ? String(q.topicId) ===
-            String(topic)
-          : true;
+          const topicMatch =
+            topic
+              ? String(
+                  q.topicId
+                ) ===
+                String(topic)
+              : true;
 
-      const subTopicMatch =
-        subTopic
-          ? String(q.subTopicId) ===
-            String(subTopic)
-          : true;
+          const subTopicMatch =
+            subTopic
+              ? String(
+                  q.subTopicId
+                ) ===
+                String(
+                  subTopic
+                )
+              : true;
 
-      return (
-        subjectMatch &&
-        topicMatch &&
-        subTopicMatch
+          return (
+            subjectMatch &&
+            topicMatch &&
+            subTopicMatch
+          );
+
+        }
       );
 
-    });
-
-  }, [
-    questions,
-    subjectId,
-    topic,
-    subTopic,
-  ]);
+    }, [
+      questions,
+      subjectId,
+      topic,
+      subTopic,
+    ]);
 
   /* =========================================
-     TOTALS
+     STATS
   ========================================= */
 
   const totalQuestions =
     filteredQuestions.length;
 
   const maximumMocks =
-    Math.floor(totalQuestions / quantity);
+    Math.floor(
+      totalQuestions /
+      quantity
+    );
 
   const remainder =
-    totalQuestions % quantity;
+    totalQuestions %
+    quantity;
 
-  const suggestedMinutes =
+  const calculatedMinutes =
     Math.ceil(
       (
         totalQuestions *
@@ -270,19 +365,28 @@ export default function MockGeneratorPage() {
       ) / 60
     );
 
+  const recommendedStrategy =
+    remainder > 0
+      ? "balanced"
+      : "extra";
+
   /* =========================================
      AUTO DURATION
   ========================================= */
 
   useEffect(() => {
 
-    if (suggestedMinutes > 0) {
+    if (
+      calculatedMinutes > 0
+    ) {
 
-      setDuration(suggestedMinutes);
+      setDuration(
+        calculatedMinutes
+      );
 
     }
 
-  }, [suggestedMinutes]);
+  }, [calculatedMinutes]);
 
   /* =========================================
      DISTRIBUTION
@@ -290,28 +394,52 @@ export default function MockGeneratorPage() {
 
   useEffect(() => {
 
-    if (!includeAllQuestions) {
+    if (
+      !includeAllQuestions
+    ) {
 
-      setDistributionPreview([]);
+      setDistributionPreview(
+        []
+      );
 
       return;
 
     }
 
-    if (distributionMode === "balanced") {
+    if (
+      totalQuestions <= 0
+    ) {
+
+      setDistributionPreview(
+        []
+      );
+
+      return;
+
+    }
+
+    /* BALANCED */
+
+    if (
+      distributionMode ===
+      "balanced"
+    ) {
 
       const totalCount =
         Math.ceil(
-          totalQuestions / quantity
+          totalQuestions /
+          quantity
         );
 
       const base =
         Math.floor(
-          totalQuestions / totalCount
+          totalQuestions /
+          totalCount
         );
 
       const extra =
-        totalQuestions % totalCount;
+        totalQuestions %
+        totalCount;
 
       const arr = [];
 
@@ -322,22 +450,33 @@ export default function MockGeneratorPage() {
       ) {
 
         arr.push(
-          base + (i < extra ? 1 : 0)
+          base +
+            (i < extra
+              ? 1
+              : 0)
         );
 
       }
 
-      setDistributionPreview(arr);
+      setDistributionPreview(
+        arr
+      );
 
     }
 
-    if (distributionMode === "extra") {
+    /* EXTRA */
+
+    if (
+      distributionMode ===
+      "extra"
+    ) {
 
       const arr = [];
 
       const full =
         Math.floor(
-          totalQuestions / quantity
+          totalQuestions /
+          quantity
         );
 
       for (
@@ -346,31 +485,48 @@ export default function MockGeneratorPage() {
         i++
       ) {
 
-        arr.push(quantity);
+        arr.push(
+          quantity
+        );
 
       }
 
-      if (remainder > 0) {
+      if (
+        remainder > 0
+      ) {
 
-        arr.push(remainder);
+        arr.push(
+          remainder
+        );
 
       }
 
-      setDistributionPreview(arr);
+      setDistributionPreview(
+        arr
+      );
 
     }
 
-    if (distributionMode === "manual") {
+    /* MANUAL */
+
+    if (
+      distributionMode ===
+      "manual"
+    ) {
 
       const arr =
         manualDistribution
           .split(",")
           .map((n) =>
-            Number(n.trim())
+            Number(
+              n.trim()
+            )
           )
           .filter(Boolean);
 
-      setDistributionPreview(arr);
+      setDistributionPreview(
+        arr
+      );
 
     }
 
@@ -378,8 +534,8 @@ export default function MockGeneratorPage() {
     includeAllQuestions,
     distributionMode,
     manualDistribution,
-    quantity,
     totalQuestions,
+    quantity,
     remainder,
   ]);
 
@@ -413,7 +569,10 @@ export default function MockGeneratorPage() {
 
       }
 
-      if (quantity > totalQuestions) {
+      if (
+        quantity >
+        totalQuestions
+      ) {
 
         showToast(
           `Only ${totalQuestions} questions available`,
@@ -426,49 +585,51 @@ export default function MockGeneratorPage() {
 
       setLoading(true);
 
-      setProgress(0);
+      setGenerationProgress(
+        0
+      );
+
+      const generated = [];
 
       const finalDistribution =
-        includeAllQuestions
-          ? distributionPreview
-          : Array(desiredMocks)
-              .fill(quantity);
 
-      const createdMocks = [];
+        includeAllQuestions
+
+          ? distributionPreview
+
+          : Array(
+              desiredMocks
+            ).fill(quantity);
 
       for (
         let i = 0;
-        i < finalDistribution.length;
+        i <
+        finalDistribution.length;
         i++
       ) {
-
-        setProgress(
-          Math.floor(
-            ((i + 1) /
-              finalDistribution.length) *
-              100
-          )
-        );
 
         const currentName =
           `${mockName} ${i + 1}`;
 
-        const response =
+        const result =
           await generateMocks({
 
-            mockName: currentName,
+            mockName:
+              currentName,
 
             mockType,
 
             subject:
               subjects.find(
                 (s) =>
-                  s.id === subjectId
+                  s.id ===
+                  subjectId
               )?.name ||
 
               subjects.find(
                 (s) =>
-                  s.id === subjectId
+                  s.id ===
+                  subjectId
               )?.title ||
 
               "",
@@ -476,12 +637,14 @@ export default function MockGeneratorPage() {
             topic:
               filteredTopics.find(
                 (item) =>
-                  item.id === topic
+                  item.id ===
+                  topic
               )?.name ||
 
               filteredTopics.find(
                 (item) =>
-                  item.id === topic
+                  item.id ===
+                  topic
               )?.title ||
 
               "",
@@ -489,21 +652,27 @@ export default function MockGeneratorPage() {
             subTopic:
               filteredSubTopics.find(
                 (item) =>
-                  item.id === subTopic
+                  item.id ===
+                  subTopic
               )?.name ||
 
               filteredSubTopics.find(
                 (item) =>
-                  item.id === subTopic
+                  item.id ===
+                  subTopic
               )?.title ||
 
               "",
 
             duration:
-              Number(duration),
+              Number(
+                duration
+              ),
 
             distribution: [
-              finalDistribution[i],
+              finalDistribution[
+                i
+              ],
             ],
 
             questions:
@@ -511,18 +680,31 @@ export default function MockGeneratorPage() {
 
           });
 
-        createdMocks.push(
-          ...response.generatedMocks
+        generated.push(
+          ...result.generatedMocks
+        );
+
+        setGenerationProgress(
+
+          Math.floor(
+
+            (
+              (i + 1) /
+              finalDistribution.length
+            ) * 100
+
+          )
+
         );
 
       }
 
       setGeneratedMocks(
-        createdMocks
+        generated
       );
 
       showToast(
-        `${createdMocks.length} mocks generated successfully`
+        `${generated.length} mocks generated successfully`
       );
 
     } catch (error) {
@@ -581,7 +763,7 @@ export default function MockGeneratorPage() {
 
         </div>
 
-        {/* STATS */}
+        {/* TOP STATS */}
 
         <div className="mock-top-stats">
 
@@ -591,7 +773,7 @@ export default function MockGeneratorPage() {
               📄
             </div>
 
-            <div>
+            <div className="mock-stat-content">
 
               <span>
                 Total Questions
@@ -611,7 +793,7 @@ export default function MockGeneratorPage() {
               📋
             </div>
 
-            <div>
+            <div className="mock-stat-content">
 
               <span>
                 Maximum Mocks
@@ -627,7 +809,7 @@ export default function MockGeneratorPage() {
 
         </div>
 
-        {/* CONFIG */}
+        {/* CONFIGURATION */}
 
         <div className="mock-section">
 
@@ -636,6 +818,8 @@ export default function MockGeneratorPage() {
           </div>
 
           <div className="mock-generator-grid">
+
+            {/* MOCK NAME */}
 
             <div className="form-group">
 
@@ -647,7 +831,7 @@ export default function MockGeneratorPage() {
                 type="text"
                 placeholder="Enter Mock Name"
                 value={mockName}
-                onChange={(e) =>
+                onChange={(e)=>
                   setMockName(
                     e.target.value
                   )
@@ -655,6 +839,8 @@ export default function MockGeneratorPage() {
               />
 
             </div>
+
+            {/* MOCK TYPE */}
 
             <div className="form-group">
 
@@ -664,7 +850,7 @@ export default function MockGeneratorPage() {
 
               <select
                 value={mockType}
-                onChange={(e) =>
+                onChange={(e)=>
                   setMockType(
                     e.target.value
                   )
@@ -683,6 +869,8 @@ export default function MockGeneratorPage() {
 
             </div>
 
+            {/* SUBJECT */}
+
             <div className="form-group">
 
               <label>
@@ -691,7 +879,7 @@ export default function MockGeneratorPage() {
 
               <select
                 value={subjectId}
-                onChange={(e) => {
+                onChange={(e)=>{
 
                   setSubjectId(
                     e.target.value
@@ -707,21 +895,336 @@ export default function MockGeneratorPage() {
                   Select Subject
                 </option>
 
-                {subjects.map((item) => (
+                {subjects.map(
+                  (item)=>(
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
 
-                  <option
-                    key={item.id}
-                    value={item.id}
-                  >
+                      {item.name ||
+                        item.title}
 
-                    {item.name ||
-                      item.title}
-
-                  </option>
-
-                ))}
+                    </option>
+                  )
+                )}
 
               </select>
+
+            </div>
+
+            {/* TOPIC */}
+
+            <div className="form-group">
+
+              <label>
+                Topic
+              </label>
+
+              <select
+                value={topic}
+                onChange={(e)=>{
+
+                  setTopic(
+                    e.target.value
+                  );
+
+                  setSubTopic("");
+
+                }}
+              >
+
+                <option value="">
+                  All Topics
+                </option>
+
+                {filteredTopics.map(
+                  (item)=>(
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
+
+                      {item.name ||
+                        item.title}
+
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            {/* SUBTOPIC */}
+
+            <div className="form-group">
+
+              <label>
+                Sub Topic
+              </label>
+
+              <select
+                value={subTopic}
+                onChange={(e)=>
+                  setSubTopic(
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  All Sub Topics
+                </option>
+
+                {filteredSubTopics.map(
+                  (item)=>(
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
+
+                      {item.name ||
+                        item.title}
+
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            {/* QUESTIONS */}
+
+            <div className="form-group">
+
+              <label>
+                Questions Per Mock
+              </label>
+
+              <div className="custom-input-group">
+
+                <select
+                  value={quantity}
+                  onChange={(e)=>{
+
+                    const value =
+                      Number(
+                        e.target.value
+                      );
+
+                    if(
+                      value >
+                      totalQuestions
+                    ){
+
+                      showToast(
+                        `Only ${totalQuestions} questions available`,
+                        "error"
+                      );
+
+                      return;
+
+                    }
+
+                    setQuantity(
+                      value
+                    );
+
+                  }}
+                >
+
+                  <option value={100}>
+                    100 Questions
+                  </option>
+
+                  <option value={50}>
+                    50 Questions
+                  </option>
+
+                  <option value={25}>
+                    25 Questions
+                  </option>
+
+                </select>
+
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e)=>{
+
+                    const value =
+                      Number(
+                        e.target.value
+                      );
+
+                    if(
+                      value >
+                      totalQuestions
+                    ){
+
+                      showToast(
+                        `Only ${totalQuestions} questions available`,
+                        "error"
+                      );
+
+                      return;
+
+                    }
+
+                    setQuantity(
+                      value
+                    );
+
+                  }}
+                />
+
+              </div>
+
+            </div>
+
+            {/* DURATION */}
+
+            <div className="form-group">
+
+              <label>
+                Duration
+              </label>
+
+              <div className="custom-input-group">
+
+                <select
+                  value={duration}
+                  onChange={(e)=>
+                    setDuration(
+                      Number(
+                        e.target.value
+                      )
+                    )
+                  }
+                >
+
+                  <option value={60}>
+                    60 mins
+                  </option>
+
+                  <option value={45}>
+                    45 mins
+                  </option>
+
+                  <option value={30}>
+                    30 mins
+                  </option>
+
+                  <option value={15}>
+                    15 mins
+                  </option>
+
+                </select>
+
+                <input
+                  type="number"
+                  value={duration}
+                  onChange={(e)=>
+                    setDuration(
+                      Number(
+                        e.target.value
+                      )
+                    )
+                  }
+                />
+
+              </div>
+
+            </div>
+
+            {/* SECONDS */}
+
+            <div className="form-group">
+
+              <label>
+                Seconds Per Question
+              </label>
+
+              <div className="custom-input-group">
+
+                <input
+                  type="number"
+                  placeholder="30"
+                  value={
+                    secondsPerQuestion
+                  }
+                  onChange={(e)=>
+                    setSecondsPerQuestion(
+                      Number(
+                        e.target.value
+                      )
+                    )
+                  }
+                />
+
+                <div className="auto-duration-box">
+
+                  Suggested:
+
+                  <strong>
+                    {" "}
+                    {
+                      calculatedMinutes
+                    }{" "}
+                    mins
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* MOCK QUANTITY */}
+
+            <div className="form-group">
+
+              <label>
+                Desired Mock Quantity
+              </label>
+
+              <input
+                type="number"
+                value={
+                  desiredMocks
+                }
+                max={
+                  maximumMocks
+                }
+                onChange={(e)=>{
+
+                  const value =
+                    Number(
+                      e.target.value
+                    );
+
+                  if(
+                    value >
+                    maximumMocks
+                  ){
+
+                    showToast(
+                      `Maximum ${maximumMocks} mocks possible`,
+                      "error"
+                    );
+
+                    return;
+
+                  }
+
+                  setDesiredMocks(
+                    value
+                  );
+
+                }}
+              />
 
             </div>
 
@@ -744,7 +1247,7 @@ export default function MockGeneratorPage() {
               checked={
                 includeAllQuestions
               }
-              onChange={(e) =>
+              onChange={(e)=>
                 setIncludeAllQuestions(
                   e.target.checked
                 )
@@ -755,16 +1258,44 @@ export default function MockGeneratorPage() {
 
           </label>
 
+          <div className="recommend-box">
+
+            ⭐ Recommended:
+
+            {
+              recommendedStrategy ===
+              "balanced"
+
+                ?
+
+                " Balanced Distribution"
+
+                :
+
+                " Create Extra Mock"
+
+            }
+
+          </div>
+
+          {/* OPTIONS */}
+
           <div className="distribution-options">
 
             <button
               className={
                 distributionMode ===
                 "balanced"
-                  ? "distribution-btn active"
-                  : "distribution-btn"
+
+                  ?
+
+                  "distribution-btn active"
+
+                  :
+
+                  "distribution-btn"
               }
-              onClick={() =>
+              onClick={()=>
                 setDistributionMode(
                   "balanced"
                 )
@@ -779,10 +1310,16 @@ export default function MockGeneratorPage() {
               className={
                 distributionMode ===
                 "extra"
-                  ? "distribution-btn active"
-                  : "distribution-btn"
+
+                  ?
+
+                  "distribution-btn active"
+
+                  :
+
+                  "distribution-btn"
               }
-              onClick={() =>
+              onClick={()=>
                 setDistributionMode(
                   "extra"
                 )
@@ -797,10 +1334,16 @@ export default function MockGeneratorPage() {
               className={
                 distributionMode ===
                 "manual"
-                  ? "distribution-btn active"
-                  : "distribution-btn"
+
+                  ?
+
+                  "distribution-btn active"
+
+                  :
+
+                  "distribution-btn"
               }
-              onClick={() =>
+              onClick={()=>
                 setDistributionMode(
                   "manual"
                 )
@@ -813,63 +1356,135 @@ export default function MockGeneratorPage() {
 
           </div>
 
+          {/* MANUAL */}
+
+          {
+            distributionMode ===
+            "manual" && (
+
+              <input
+                type="text"
+                placeholder="100,100,19"
+                value={
+                  manualDistribution
+                }
+                onChange={(e)=>
+                  setManualDistribution(
+                    e.target.value
+                  )
+                }
+              />
+
+            )
+          }
+
+          {/* PREVIEW */}
+
+          <div className="distribution-preview">
+
+            {
+              distributionPreview.map(
+                (
+                  item,
+                  index
+                )=>(
+                  <div
+                    className="distribution-card"
+                    key={index}
+                  >
+
+                    <h4>
+                      Mock {index + 1}
+                    </h4>
+
+                    <p>
+                      {item} Questions
+                    </p>
+
+                  </div>
+                )
+              )
+            }
+
+          </div>
+
         </div>
 
         {/* PROGRESS */}
 
-        {loading && (
+        {
+          loading && (
 
-          <div className="progress-wrapper">
+            <div className="progress-wrapper">
 
-            <div className="progress-bar">
+              <div className="progress-bar">
 
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${progress}%`,
-                }}
-              />
+                <div
+                  className="progress-fill"
+                  style={{
+                    width:
+                      `${generationProgress}%`,
+                  }}
+                />
+
+              </div>
+
+              <p>
+                {
+                  generationProgress
+                }% Completed
+              </p>
 
             </div>
 
-            <p>
-              {progress}% Completed
-            </p>
+          )
+        }
 
-          </div>
-
-        )}
-
-        {/* BUTTON */}
+        {/* GENERATE BUTTON */}
 
         <button
           className="generate-btn"
+          onClick={
+            handleGenerate
+          }
           disabled={loading}
-          onClick={handleGenerate}
         >
 
-          {loading
-            ? "Generating..."
-            : "🚀 Generate Mocks"}
+          {
+            loading
+
+              ?
+
+              "Generating..."
+
+              :
+
+              "🚀 Generate Mocks"
+
+          }
 
         </button>
 
-        {/* VIEW BUTTON */}
+        {/* VIEW MOCK */}
 
-        {generatedMocks.length > 0 && (
+        {
+          generatedMocks.length > 0 && (
 
-          <button
-            className="view-mock-btn"
-            onClick={() =>
-              navigate("/admin/exams")
-            }
-          >
+            <button
+              className="view-mock-btn"
+              onClick={()=>
+                navigate(
+                  "/admin/exams"
+                )
+              }
+            >
 
-            View Generated Mocks
+              View Generated Mocks
 
-          </button>
+            </button>
 
-        )}
+          )
+        }
 
       </div>
 

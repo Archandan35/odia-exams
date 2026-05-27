@@ -413,9 +413,11 @@ margin-top:25px;
 .exam-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
+  gap: 24px;
   padding: 18px;
-  min-height: 100vh;
+  margin-top: 20px;
+  align-items: start;
+  width: 100%;
   background: #020617;
   align-items: start;
 }
@@ -425,7 +427,7 @@ margin-top:25px;
 .exam-main{
 display:flex;
 flex-direction:column;
-gap:18px;
+gap:20px;
 overflow:hidden;
 min-width:0;
 }
@@ -461,16 +463,19 @@ display:flex;
 flex-direction:column;
 background:#0f172a;
 border:1px solid #1e293b;
-border-radius:24px;
-padding:30px;
+border-radius: 16px;
+padding: 24px;
 overflow:visible;
 min-width:0;
 }
 
 .question-card h2{
-font-size:34px;
-font-weight:700;
-margin-bottom:24px;
+font-size: 20px;
+font-weight:600;
+line-height: 1.6;
+color: #f8fafc;
+margin-top: 12px;
+margin-bottom: 24px;
 }
 
 .question-card p{

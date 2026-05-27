@@ -8,7 +8,7 @@ import {
   collection,
   onSnapshot,
   deleteDoc,
-  updateDoc, // Imported updateDoc
+  updateDoc,
   doc,
 } from "firebase/firestore";
 
@@ -72,45 +72,53 @@ export default function Exams(){
 
   },[]);
 
+  // Global Filter Topics
   const filteredTopics = useMemo(()=>{
-
     return [
       ...new Set(
         exams
-          .filter((e)=>
-            selectedSubject
-              ? e.subjectId === selectedSubject
-              : true
-          )
+          .filter((e)=> selectedSubject ? e.subjectId === selectedSubject : true)
           .map((e)=> e.topicName)
           .filter(Boolean)
       )
     ];
+  },[exams, selectedSubject]);
 
-  },[
-    exams,
-    selectedSubject,
-  ]);
-
+  // Global Filter Sub Topics
   const filteredSubTopics = useMemo(()=>{
-
     return [
       ...new Set(
         exams
-          .filter((e)=>
-            selectedTopic
-              ? e.topicName === selectedTopic
-              : true
-          )
+          .filter((e)=> selectedTopic ? e.topicName === selectedTopic : true)
           .map((e)=> e.subTopicName)
           .filter(Boolean)
       )
     ];
+  },[exams, selectedTopic]);
 
-  },[
-    exams,
-    selectedTopic,
-  ]);
+  // --- Dynamic Dropdown Options for the EDIT Form ---
+  const editFormTopics = useMemo(() => {
+    return [
+      ...new Set(
+        exams
+          .filter((e) => editFormData.subjectId ? e.subjectId === editFormData.subjectId : true)
+          .map((e) => e.topicName)
+          .filter(Boolean)
+      )
+    ];
+  }, [exams, editFormData.subjectId]);
+
+  const editFormSubTopics = useMemo(() => {
+    return [
+      ...new Set(
+        exams
+          .filter((e) => editFormData.topicName ? e.topicName === editFormData.topicName : true)
+          .map((e) => e.subTopicName)
+          .filter(Boolean)
+      )
+    ];
+  }, [exams, editFormData.topicName]);
+
 
   const filteredExams = exams.filter((exam)=>{
 
@@ -149,15 +157,9 @@ export default function Exams(){
   }
 
   async function handleDelete(id){
-
-    const confirmDelete = window.confirm(
-      "Delete this exam?"
-    );
-
+    const confirmDelete = window.confirm("Delete this exam?");
     if(!confirmDelete) return;
-
     await deleteDoc(doc(db,"exams",id));
-
   }
 
   // --- Edit Handler Functions ---
@@ -176,10 +178,27 @@ export default function Exams(){
 
   function handleEditFormChange(e) {
     const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: name === "duration" || name === "totalQuestions" ? Number(value) : value,
-    }));
+    
+    setEditFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: name === "duration" || name === "totalQuestions" ? Number(value) : value,
+      };
+
+      // Reset nested values on parent dropdown change
+      if (name === "mockType" && value === "full") {
+        updated.subTopicName = "";
+      }
+      if (name === "subjectId") {
+        updated.topicName = "";
+        updated.subTopicName = "";
+      }
+      if (name === "topicName") {
+        updated.subTopicName = "";
+      }
+
+      return updated;
+    });
   }
 
   async function handleUpdate(e, id) {
@@ -187,7 +206,6 @@ export default function Exams(){
     try {
       const examRef = doc(db, "exams", id);
       
-      // Constructing clean payload to update all core properties
       const updatedFields = {
         name: editFormData.name,
         mockType: editFormData.mockType,
@@ -199,7 +217,7 @@ export default function Exams(){
       };
 
       await updateDoc(examRef, updatedFields);
-      setEditingExamId(null); // Close the editing form view
+      setEditingExamId(null); 
     } catch (error) {
       console.error("Error updating exam: ", error);
       alert("Failed to update exam field properties.");
@@ -207,11 +225,8 @@ export default function Exams(){
   }
 
   return(
-
     <AdminLayout>
-
       <div className="page">
-
         <div className="page-header">
           <div>
             <h2>Exams</h2>
@@ -220,7 +235,6 @@ export default function Exams(){
         </div>
 
         <div className="filter-bar">
-
           <select
             value={selectedMockType}
             onChange={(e)=>{
@@ -238,13 +252,11 @@ export default function Exams(){
             onChange={(e)=> setSelectedSubject(e.target.value)}
           >
             <option value="">All Subjects</option>
-
             {subjects.map((subject)=>(
               <option key={subject.id} value={subject.id}>
                 {subject.name}
               </option>
             ))}
-
           </select>
 
           <select
@@ -252,39 +264,30 @@ export default function Exams(){
             onChange={(e)=> setSelectedTopic(e.target.value)}
           >
             <option value="">All Topics</option>
-
             {filteredTopics.map((topic)=>(
               <option key={topic} value={topic}>
                 {topic}
               </option>
             ))}
-
           </select>
 
           {selectedMockType !== "full" && (
-
             <select
               value={selectedSubTopic}
               onChange={(e)=> setSelectedSubTopic(e.target.value)}
             >
               <option value="">All Sub Topics</option>
-
               {filteredSubTopics.map((subTopic)=>(
                 <option key={subTopic} value={subTopic}>
                   {subTopic}
                 </option>
               ))}
-
             </select>
-
           )}
-
         </div>
 
         <div className="exam-grid">
-
           {filteredExams.map((exam)=>(
-
             <div key={exam.id} className="exam-card">
 
               {editingExamId === exam.id ? (
@@ -323,23 +326,33 @@ export default function Exams(){
                     ))}
                   </select>
 
+                  {/* TOPIC DROPDOWN */}
                   <label>Topic Name:</label>
-                  <input
-                    type="text"
+                  <select
                     name="topicName"
                     value={editFormData.topicName}
                     onChange={handleEditFormChange}
-                  />
+                  >
+                    <option value="">Select Topic</option>
+                    {editFormTopics.map((topic) => (
+                      <option key={topic} value={topic}>{topic}</option>
+                    ))}
+                  </select>
 
+                  {/* SUB TOPIC DROPDOWN (Hidden dynamically if Full Mock) */}
                   {editFormData.mockType !== "full" && (
                     <>
                       <label>Sub Topic Name:</label>
-                      <input
-                        type="text"
+                      <select
                         name="subTopicName"
                         value={editFormData.subTopicName}
                         onChange={handleEditFormChange}
-                      />
+                      >
+                        <option value="">Select Sub Topic</option>
+                        {editFormSubTopics.map((subTopic) => (
+                          <option key={subTopic} value={subTopic}>{subTopic}</option>
+                        ))}
+                      </select>
                     </>
                   )}
 
@@ -440,14 +453,9 @@ export default function Exams(){
               )}
 
             </div>
-
           ))}
-
         </div>
-
       </div>
-
     </AdminLayout>
-
   );
 }

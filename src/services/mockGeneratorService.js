@@ -13,25 +13,25 @@ SHUFFLE ARRAY
 
 function shuffleArray(array){
 
-const arr = [...array];
+  const arr = [...array];
 
-for(
-let i = arr.length - 1;
-i > 0;
-i--
-){
+  for(
+    let i = arr.length - 1;
+    i > 0;
+    i--
+  ){
 
-const j =
-Math.floor(
-Math.random() * (i + 1)
-);
+    const j =
+      Math.floor(
+        Math.random() * (i + 1)
+      );
 
-[arr[i],arr[j]] =
-[arr[j],arr[i]];
+    [arr[i],arr[j]] =
+    [arr[j],arr[i]];
 
-}
+  }
 
-return arr;
+  return arr;
 
 }
 
@@ -41,133 +41,135 @@ GENERATE MOCKS
 
 export async function generateMocks({
 
-mockName,
-mockType,
+  mockName,
+  mockType,
 
-subject,
-topic,
-subTopic,
+  subject,
+  topic,
+  subTopic,
 
-duration,
+  subjectId,   // ✅ ADDED
+  topicId,     // ✅ ADDED
+  subTopicId,  // ✅ ADDED
 
-distribution,
+  duration,
 
-questions,
+  distribution,
+
+  questions,
 
 }){
 
-try{
+  try{
 
-if(
-!questions ||
-questions.length === 0
-){
+    if(
+      !questions ||
+      questions.length === 0
+    ){
 
-throw new Error(
-"No questions found"
-);
+      throw new Error(
+        "No questions found"
+      );
 
-}
+    }
 
-const shuffledQuestions =
-shuffleArray(questions);
+    const shuffledQuestions =
+      shuffleArray(questions);
 
-let currentIndex = 0;
+    let currentIndex = 0;
 
-const generatedMocks = [];
+    const generatedMocks = [];
 
-for(
-let i=0;
-i<distribution.length;
-i++
-){
+    for(
+      let i=0;
+      i<distribution.length;
+      i++
+    ){
 
-const questionCount =
-distribution[i];
+      const questionCount =
+        distribution[i];
 
-const selectedQuestions =
-shuffledQuestions.slice(
+      const selectedQuestions =
+        shuffledQuestions.slice(
+          currentIndex,
+          currentIndex + questionCount
+        );
 
-currentIndex,
+      currentIndex += questionCount;
 
-currentIndex +
-questionCount
+      const examData = {
 
-);
+        name:
+          `${mockName} ${i + 1}`,
 
-currentIndex +=
-questionCount;
+        mockType,
 
-const examData = {
+        subject:
+          subject || "",
 
-name:
-`${mockName} ${i + 1}`,
+        subjectId:         // ✅ FIXED (was missing)
+          subjectId || "",
 
-mockType,
+        topicName:         // ✅ FIXED (was "topic")
+          topic || "",
 
-subject:
-subject || "",
+        topicId:           // ✅ FIXED (was missing)
+          topicId || "",
 
-topic:
-topic || "",
+        subTopicName:      // ✅ FIXED (was "subTopic")
+          subTopic || "",
 
-subTopic:
-subTopic || "",
+        subTopicId:        // ✅ FIXED (was missing)
+          subTopicId || "",
 
-duration,
+        duration,
 
-quantity:
-questionCount,
+        quantity:
+          questionCount,
 
-totalQuestions:
-questionCount,
+        totalQuestions:
+          questionCount,
 
-questionIds:
-selectedQuestions.map(
-(q)=>q.id
-),
+        questionIds:
+          selectedQuestions.map(
+            (q)=>q.id
+          ),
 
-questions:
-selectedQuestions,
+        questions:
+          selectedQuestions,
 
-createdAt:
-serverTimestamp(),
+        createdAt:
+          serverTimestamp(),
 
-};
+      };
 
-const docRef =
-await addDoc(
-collection(db,"exams"),
-examData
-);
+      const docRef =
+        await addDoc(
+          collection(db,"exams"),
+          examData
+        );
 
-generatedMocks.push({
+      generatedMocks.push({
+        id:docRef.id,
+        ...examData,
+      });
 
-id:docRef.id,
+    }
 
-...examData,
+    return {
+      success:true,
+      generatedMocks,
+    };
 
-});
+  }catch(error){
 
-}
+    console.error(
+      "MOCK GENERATION ERROR:",
+      error
+    );
 
-return {
+    throw error;
 
-success:true,
-
-generatedMocks,
-
-};
-
-}catch(error){
-
-console.error(
-"MOCK GENERATION ERROR:",
-error
-);
-
-throw error;
-
-}
+  }
 
 }

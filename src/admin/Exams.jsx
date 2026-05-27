@@ -8,6 +8,7 @@ import {
   collection,
   onSnapshot,
   deleteDoc,
+  updateDoc, // Imported updateDoc
   doc,
 } from "firebase/firestore";
 
@@ -28,6 +29,18 @@ export default function Exams(){
   const [selectedSubject,setSelectedSubject] = useState("");
   const [selectedTopic,setSelectedTopic] = useState("");
   const [selectedSubTopic,setSelectedSubTopic] = useState("");
+
+  // --- State for Editing ---
+  const [editingExamId, setEditingExamId] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    mockType: "sectional",
+    subjectId: "",
+    topicName: "",
+    subTopicName: "",
+    duration: 0,
+    totalQuestions: 0
+  });
 
   useEffect(()=>{
 
@@ -147,6 +160,52 @@ export default function Exams(){
 
   }
 
+  // --- Edit Handler Functions ---
+  function handleStartEdit(exam) {
+    setEditingExamId(exam.id);
+    setEditFormData({
+      name: exam.name || "",
+      mockType: exam.mockType || "sectional",
+      subjectId: exam.subjectId || "",
+      topicName: exam.topicName || "",
+      subTopicName: exam.subTopicName || "",
+      duration: exam.duration || 0,
+      totalQuestions: exam.totalQuestions || exam.questionCount || exam.questionIds?.length || exam.questions?.length || 0
+    });
+  }
+
+  function handleEditFormChange(e) {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: name === "duration" || name === "totalQuestions" ? Number(value) : value,
+    }));
+  }
+
+  async function handleUpdate(e, id) {
+    e.preventDefault();
+    try {
+      const examRef = doc(db, "exams", id);
+      
+      // Constructing clean payload to update all core properties
+      const updatedFields = {
+        name: editFormData.name,
+        mockType: editFormData.mockType,
+        subjectId: editFormData.subjectId,
+        topicName: editFormData.topicName,
+        subTopicName: editFormData.mockType === "full" ? "" : editFormData.subTopicName,
+        duration: editFormData.duration,
+        totalQuestions: editFormData.totalQuestions
+      };
+
+      await updateDoc(examRef, updatedFields);
+      setEditingExamId(null); // Close the editing form view
+    } catch (error) {
+      console.error("Error updating exam: ", error);
+      alert("Failed to update exam field properties.");
+    }
+  }
+
   return(
 
     <AdminLayout>
@@ -228,77 +287,157 @@ export default function Exams(){
 
             <div key={exam.id} className="exam-card">
 
-              <div className="exam-card-badge-row">
+              {editingExamId === exam.id ? (
+                // --- EDITING MODE FORM ---
+                <form onSubmit={(e) => handleUpdate(e, exam.id)} className="edit-exam-form">
+                  <h3>Edit Exam</h3>
+                  
+                  <label>Exam Name:</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleEditFormChange}
+                    required
+                  />
 
-                <div
-                  className={`exam-badge ${
-                    (exam.mockType || "sectional") === "full"
-                      ? "full-badge"
-                      : "sectional-badge"
-                  }`}
-                >
+                  <label>Mock Type:</label>
+                  <select
+                    name="mockType"
+                    value={editFormData.mockType}
+                    onChange={handleEditFormChange}
+                  >
+                    <option value="sectional">Sectional Mock</option>
+                    <option value="full">Full Mock</option>
+                  </select>
 
-                  {(exam.mockType || "sectional") === "full"
-                    ? "FULL MOCK"
-                    : "SECTIONAL MOCK"}
+                  <label>Subject:</label>
+                  <select
+                    name="subjectId"
+                    value={editFormData.subjectId}
+                    onChange={handleEditFormChange}
+                  >
+                    <option value="">Select Subject</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
 
-                </div>
+                  <label>Topic Name:</label>
+                  <input
+                    type="text"
+                    name="topicName"
+                    value={editFormData.topicName}
+                    onChange={handleEditFormChange}
+                  />
 
-              </div>
+                  {editFormData.mockType !== "full" && (
+                    <>
+                      <label>Sub Topic Name:</label>
+                      <input
+                        type="text"
+                        name="subTopicName"
+                        value={editFormData.subTopicName}
+                        onChange={handleEditFormChange}
+                      />
+                    </>
+                  )}
 
-              <h2 className="exam-card-title">
-                {exam.name}
-              </h2>
+                  <label>Questions Count:</label>
+                  <input
+                    type="number"
+                    name="totalQuestions"
+                    value={editFormData.totalQuestions}
+                    onChange={handleEditFormChange}
+                  />
 
-              <div className="exam-details">
+                  <label>Duration (mins):</label>
+                  <input
+                    type="number"
+                    name="duration"
+                    value={editFormData.duration}
+                    onChange={handleEditFormChange}
+                  />
 
-                <p>
-                  <strong>Subject:</strong>{" "}
-                  {getSubjectName(exam.subjectId)}
-                </p>
+                  <div className="exam-actions" style={{ marginTop: '15px' }}>
+                    <button type="submit" className="save-btn">Save</button>
+                    <button type="button" className="cancel-btn" onClick={() => setEditingExamId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                // --- VIEW MODE ---
+                <>
+                  <div className="exam-card-badge-row">
+                    <div
+                      className={`exam-badge ${
+                        (exam.mockType || "sectional") === "full"
+                          ? "full-badge"
+                          : "sectional-badge"
+                      }`}
+                    >
+                      {(exam.mockType || "sectional") === "full"
+                        ? "FULL MOCK"
+                        : "SECTIONAL MOCK"}
+                    </div>
+                  </div>
 
-                <p>
-                  <strong>Topic:</strong>{" "}
-                  {exam.topicName || "-"}
-                </p>
+                  <h2 className="exam-card-title">
+                    {exam.name}
+                  </h2>
 
-                {(exam.mockType || "sectional") === "sectional" && (
+                  <div className="exam-details">
+                    <p>
+                      <strong>Subject:</strong>{" "}
+                      {getSubjectName(exam.subjectId)}
+                    </p>
 
-                  <p>
-                    <strong>Sub Topic:</strong>{" "}
-                    {exam.subTopicName || "-"}
-                  </p>
+                    <p>
+                      <strong>Topic:</strong>{" "}
+                      {exam.topicName || "-"}
+                    </p>
 
-                )}
+                    {(exam.mockType || "sectional") === "sectional" && (
+                      <p>
+                        <strong>Sub Topic:</strong>{" "}
+                        {exam.subTopicName || "-"}
+                      </p>
+                    )}
 
-                <p>
-                  <strong>Questions:</strong>{" "}
-                  {
-                    exam.totalQuestions ||
-                    exam.questionCount ||
-                    exam.questionIds?.length ||
-                    exam.questions?.length ||
-                    0
-                  }
-                </p>
+                    <p>
+                      <strong>Questions:</strong>{" "}
+                      {
+                        exam.totalQuestions ||
+                        exam.questionCount ||
+                        exam.questionIds?.length ||
+                        exam.questions?.length ||
+                        0
+                      }
+                    </p>
 
-                <p>
-                  <strong>Duration:</strong>{" "}
-                  {exam.duration || 0} mins
-                </p>
+                    <p>
+                      <strong>Duration:</strong>{" "}
+                      {exam.duration || 0} mins
+                    </p>
+                  </div>
 
-              </div>
-
-              <div className="exam-actions">
-
-                <button
-                  className="delete-btn"
-                  onClick={()=> handleDelete(exam.id)}
-                >
-                  Delete
-                </button>
-
-              </div>
+                  <div className="exam-actions">
+                    <button
+                      className="edit-btn"
+                      onClick={() => handleStartEdit(exam)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="delete-btn"
+                      onClick={()=> handleDelete(exam.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
 
             </div>
 

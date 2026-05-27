@@ -8,7 +8,7 @@ import { db }
 from "../firebase/config";
 
 /* =========================================
-SHUFFLE
+SHUFFLE ARRAY
 ========================================= */
 
 function shuffleArray(array){
@@ -74,6 +74,8 @@ shuffleArray(questions);
 
 let currentIndex = 0;
 
+const generatedMocks = [];
+
 for(
 let i=0;
 i<distribution.length;
@@ -96,9 +98,7 @@ questionCount
 currentIndex +=
 questionCount;
 
-await addDoc(
-collection(db,"exams"),
-{
+const examData = {
 
 name:
 `${mockName} ${i + 1}`,
@@ -116,6 +116,9 @@ subTopic || "",
 
 duration,
 
+quantity:
+questionCount,
+
 totalQuestions:
 questionCount,
 
@@ -130,14 +133,29 @@ selectedQuestions,
 createdAt:
 serverTimestamp(),
 
-}
+};
+
+const docRef =
+await addDoc(
+collection(db,"exams"),
+examData
 );
+
+generatedMocks.push({
+
+id:docRef.id,
+
+...examData,
+
+});
 
 }
 
 return {
 
 success:true,
+
+generatedMocks,
 
 };
 

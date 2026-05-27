@@ -50,18 +50,15 @@ export default function ExamPage() {
 
     if (elem.requestFullscreen) {
 
-      elem
-        .requestFullscreen()
-        .catch((err) =>
-          console.log("Fullscreen error:", err)
-        );
+      elem.requestFullscreen()
+        .catch(() => {});
 
     }
 
   }, []);
 
   /* =========================================
-     CHEAT DETECTION
+     CHEATING DETECTION
   ========================================= */
 
   useEffect(() => {
@@ -70,26 +67,38 @@ export default function ExamPage() {
 
       if (document.hidden) {
 
-        handleCheating("Tab Switch Detected");
+        setCheatCount(prev => {
+
+          const next = prev + 1;
+
+          if (next >= 3) {
+
+            alert(
+              "Exam auto-submitted due to cheating."
+            );
+
+            submitExam(true);
+
+          }
+          else {
+
+            alert(
+              `Warning ${next}/3 : Tab switching detected`
+            );
+
+          }
+
+          return next;
+
+        });
 
       }
-
-    }
-
-    function handleBlur() {
-
-      handleCheating("Window Focus Lost");
 
     }
 
     document.addEventListener(
       "visibilitychange",
       handleVisibility
-    );
-
-    window.addEventListener(
-      "blur",
-      handleBlur
     );
 
     return () => {
@@ -99,40 +108,9 @@ export default function ExamPage() {
         handleVisibility
       );
 
-      window.removeEventListener(
-        "blur",
-        handleBlur
-      );
-
     };
 
-  }, [cheatCount]);
-
-  function handleCheating(reason) {
-
-    setCheatCount((prev) => {
-
-      const next = prev + 1;
-
-      alert(
-        `Warning ${next}/3: ${reason}`
-      );
-
-      if (next >= 3) {
-
-        alert(
-          "Exam auto-submitted due to cheating."
-        );
-
-        submitExam(true);
-
-      }
-
-      return next;
-
-    });
-
-  }
+  }, []);
 
   /* =========================================
      LOAD EXAM
@@ -169,17 +147,6 @@ export default function ExamPage() {
           exam.questions ||
           [];
 
-        if (
-          !Array.isArray(questionIds) ||
-          questionIds.length === 0
-        ) {
-
-          setQuestions([]);
-
-          return;
-
-        }
-
         const qSnap = await getDocs(
           collection(db, "questions")
         );
@@ -207,29 +174,11 @@ export default function ExamPage() {
           const parsed =
             JSON.parse(saved);
 
-          setAnswers(
-            parsed.answers || {}
-          );
-
-          setReview(
-            parsed.review || {}
-          );
-
-          setVisited(
-            parsed.visited || {}
-          );
-
-          setBookmarks(
-            parsed.bookmarks || {}
-          );
-
-          setTimeLeft(
-            parsed.timeLeft ?? 1800
-          );
-
-          setCheatCount(
-            parsed.cheatCount || 0
-          );
+          setAnswers(parsed.answers || {});
+          setReview(parsed.review || {});
+          setVisited(parsed.visited || {});
+          setBookmarks(parsed.bookmarks || {});
+          setTimeLeft(parsed.timeLeft ?? 1800);
 
         }
 
@@ -239,17 +188,18 @@ export default function ExamPage() {
         ) {
 
           setVisited({
-            [filteredQuestions[0].id]:
-              true,
+            [filteredQuestions[0].id]: true,
           });
 
         }
 
-      } catch (err) {
+      }
+      catch (err) {
 
-        console.error(err);
+        console.log(err);
 
-      } finally {
+      }
+      finally {
 
         setLoading(false);
 
@@ -280,7 +230,6 @@ export default function ExamPage() {
         visited,
         bookmarks,
         timeLeft,
-        cheatCount,
       })
     );
 
@@ -290,7 +239,6 @@ export default function ExamPage() {
     visited,
     bookmarks,
     timeLeft,
-    cheatCount,
     loading,
     questions,
   ]);
@@ -305,7 +253,7 @@ export default function ExamPage() {
 
     const timer = setInterval(() => {
 
-      setTimeLeft((prev) => {
+      setTimeLeft(prev => {
 
         if (prev <= 1) {
 
@@ -333,27 +281,19 @@ export default function ExamPage() {
 
     const s = sec % 60;
 
-    return `${String(m).padStart(
-      2,
-      "0"
-    )}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 
   }
 
-  /* =========================================
-     NAVIGATION
-  ========================================= */
+  function selectOption(index) {
 
-  function markVisited(idx) {
+    const qId =
+      questions[currentQuestion].id;
 
-    if (questions[idx]) {
-
-      setVisited((prev) => ({
-        ...prev,
-        [questions[idx].id]: true,
-      }));
-
-    }
+    setAnswers(prev => ({
+      ...prev,
+      [qId]: index,
+    }));
 
   }
 
@@ -369,7 +309,10 @@ export default function ExamPage() {
 
       setCurrentQuestion(next);
 
-      markVisited(next);
+      setVisited(prev => ({
+        ...prev,
+        [questions[next].id]: true,
+      }));
 
     }
 
@@ -384,21 +327,7 @@ export default function ExamPage() {
 
       setCurrentQuestion(prev);
 
-      markVisited(prev);
-
     }
-
-  }
-
-  function selectOption(index) {
-
-    const qId =
-      questions[currentQuestion].id;
-
-    setAnswers((prev) => ({
-      ...prev,
-      [qId]: index,
-    }));
 
   }
 
@@ -407,7 +336,7 @@ export default function ExamPage() {
     const qId =
       questions[currentQuestion].id;
 
-    setAnswers((prev) => {
+    setAnswers(prev => {
 
       const updated = { ...prev };
 
@@ -419,12 +348,12 @@ export default function ExamPage() {
 
   }
 
-  function toggleMarkForReview() {
+  function toggleReview() {
 
     const qId =
       questions[currentQuestion].id;
 
-    setReview((prev) => ({
+    setReview(prev => ({
       ...prev,
       [qId]: !prev[qId],
     }));
@@ -436,7 +365,7 @@ export default function ExamPage() {
     const qId =
       questions[currentQuestion].id;
 
-    setBookmarks((prev) => ({
+    setBookmarks(prev => ({
       ...prev,
       [qId]: !prev[qId],
     }));
@@ -453,18 +382,18 @@ export default function ExamPage() {
 
     if (!isAuto) {
 
-      const confirmSub =
+      const confirmSubmit =
         window.confirm(
-          "Submit Exam?"
+          "Are you sure you want to submit the exam?"
         );
 
-      if (!confirmSub) return;
+      if (!confirmSubmit) return;
 
     }
 
     let score = 0;
 
-    questions.forEach((q) => {
+    questions.forEach(q => {
 
       const userAns =
         answers[q.id];
@@ -486,12 +415,11 @@ export default function ExamPage() {
         correctIndex =
           q.correctAnswer;
 
-      } else {
+      }
+      else {
 
         correctIndex =
-          map[
-            q.correctAnswer
-          ] ?? 0;
+          map[q.correctAnswer] ?? 0;
 
       }
 
@@ -505,7 +433,7 @@ export default function ExamPage() {
 
     });
 
-    const finalResult = {
+    const resultData = {
       examId,
       score,
       totalMarks:
@@ -521,7 +449,7 @@ export default function ExamPage() {
       await addDoc(
         collection(db, "results"),
         {
-          ...finalResult,
+          ...resultData,
           userId:
             auth.currentUser?.uid ||
             "anonymous",
@@ -532,33 +460,35 @@ export default function ExamPage() {
         STORAGE_KEY
       );
 
+      if (document.fullscreenElement) {
+
+        await document.exitFullscreen()
+          .catch(() => {});
+
+      }
+
       navigate("/result", {
-        state: finalResult,
+        state: resultData,
       });
 
-    } catch (err) {
+    }
+    catch (err) {
 
-      console.error(err);
-
-      navigate("/result", {
-        state: finalResult,
-      });
+      console.log(err);
 
     }
 
   }
 
   /* =========================================
-     LOADING
+     UI
   ========================================= */
 
   if (loading) {
 
     return (
       <div className="page">
-        <h2>
-          Loading Exam...
-        </h2>
+        <h2>Loading Exam...</h2>
       </div>
     );
 
@@ -568,9 +498,7 @@ export default function ExamPage() {
 
     return (
       <div className="page">
-        <h2>
-          No Questions Found in Exam!
-        </h2>
+        <h2>No Questions Found!</h2>
       </div>
     );
 
@@ -595,22 +523,16 @@ export default function ExamPage() {
           <div>
 
             <h2>
-              {examData?.name ||
-                "Exam"}
+              {examData?.name}
             </h2>
 
             <p>
-              {examData?.mockType ||
-                "Full Exam"}
+              {examData?.mockType || "Full"}
             </p>
 
           </div>
 
-          <div
-            style={{
-              textAlign: "right",
-            }}
-          >
+          <div style={{ textAlign:"right" }}>
 
             <h2>
               ⏳ {formatTime(timeLeft)}
@@ -629,20 +551,17 @@ export default function ExamPage() {
         <div className="question-card">
 
           <h2>
-            Question
-            {" "}
-            {currentQuestion + 1}
+            Question {currentQuestion + 1}
           </h2>
 
           <p
             style={{
-              marginTop: "18px",
-              fontSize: "18px",
-              lineHeight: "1.8",
+              marginTop:"18px",
+              lineHeight:"1.8",
+              fontSize:"18px",
             }}
           >
-            {currentQ.question ||
-              currentQ.text}
+            {currentQ.question || currentQ.text}
           </p>
 
           <div className="options-list">
@@ -654,8 +573,8 @@ export default function ExamPage() {
                   key={idx}
                   className={
                     selectedOpt === idx
-                      ? "selected-option"
-                      : "option-card"
+                    ? "selected-option"
+                    : "option-card"
                   }
                 >
 
@@ -673,10 +592,7 @@ export default function ExamPage() {
                   <div className="option-text">
 
                     <span className="option-label">
-                      {String.fromCharCode(
-                        65 + idx
-                      )}
-                      .
+                      {String.fromCharCode(65 + idx)}.
                     </span>
 
                     {option}
@@ -692,42 +608,23 @@ export default function ExamPage() {
 
           <div className="exam-buttons">
 
-            <button
-              onClick={handlePrev}
-              disabled={
-                currentQuestion === 0
-              }
-            >
+            <button onClick={handlePrev}>
               Previous
             </button>
 
-            <button
-              onClick={
-                toggleMarkForReview
-              }
-            >
-              {review[currentQ.id]
-                ? "Unmark Review"
-                : "Mark Review"}
+            <button onClick={toggleReview}>
+              Mark Review
             </button>
 
-            <button
-              onClick={toggleBookmark}
-            >
-              {bookmarks[currentQ.id]
-                ? "Bookmarked"
-                : "Bookmark"}
+            <button onClick={toggleBookmark}>
+              Bookmark
             </button>
 
-            <button
-              onClick={clearResponse}
-            >
+            <button onClick={clearResponse}>
               Clear Response
             </button>
 
-            <button
-              onClick={handleNext}
-            >
+            <button onClick={handleNext}>
               Save & Next
             </button>
 
@@ -758,10 +655,7 @@ export default function ExamPage() {
 
           <div className="exam-legend-item">
             <div className="exam-legend-badge legend-answered">
-              {
-                Object.keys(answers)
-                  .length
-              }
+              {Object.keys(answers).length}
             </div>
             <span>Answered</span>
           </div>
@@ -769,8 +663,8 @@ export default function ExamPage() {
           <div className="exam-legend-item">
             <div className="exam-legend-badge legend-marked">
               {
-                Object.values(review)
-                  .filter(Boolean)
+                Object.keys(review)
+                  .filter(id => review[id])
                   .length
               }
             </div>
@@ -781,120 +675,106 @@ export default function ExamPage() {
             <div className="exam-legend-badge legend-notanswered">
               {
                 questions.filter(
-                  (q) =>
+                  q =>
                     visited[q.id] &&
-                    answers[q.id] ===
-                      undefined
+                    answers[q.id] === undefined
                 ).length
               }
             </div>
-            <span>
-              Not Answered
-            </span>
+            <span>Not Answered</span>
           </div>
 
           <div className="exam-legend-item">
             <div className="exam-legend-badge legend-notvisited">
               {
                 questions.filter(
-                  (q) =>
-                    !visited[q.id]
+                  q => !visited[q.id]
                 ).length
               }
             </div>
-            <span>
-              Not Visited
-            </span>
+            <span>Not Visited</span>
           </div>
 
         </div>
 
         <div className="palette-grid">
 
-          {questions.map(
-            (q, index) => {
+          {questions.map((q, index) => {
 
-              let btnClass =
-                "palette-btn";
+            let btnClass =
+              "palette-btn";
 
-              const answered =
-                answers[q.id] !==
-                undefined;
+            const answered =
+              answers[q.id] !== undefined;
 
-              const marked =
-                review[q.id];
+            const marked =
+              review[q.id];
 
-              const isVisited =
-                visited[q.id];
+            const isVisited =
+              visited[q.id];
 
-              if (
-                marked &&
-                answered
-              ) {
+            if (marked && answered) {
 
-                btnClass +=
-                  " marked-answered";
-
-              } else if (
-                marked
-              ) {
-
-                btnClass +=
-                  " marked";
-
-              } else if (
-                answered
-              ) {
-
-                btnClass +=
-                  " answered";
-
-              } else if (
-                isVisited
-              ) {
-
-                btnClass +=
-                  " not-answered";
-
-              } else {
-
-                btnClass +=
-                  " not-visited";
-
-              }
-
-              if (
-                currentQuestion ===
-                index
-              ) {
-
-                btnClass +=
-                  " current";
-
-              }
-
-              return (
-
-                <button
-                  key={q.id}
-                  className={btnClass}
-                  onClick={() => {
-
-                    setCurrentQuestion(
-                      index
-                    );
-
-                    markVisited(index);
-
-                  }}
-                >
-                  {index + 1}
-                </button>
-
-              );
+              btnClass +=
+                " marked-answered";
 
             }
-          )}
+            else if (marked) {
+
+              btnClass +=
+                " marked";
+
+            }
+            else if (answered) {
+
+              btnClass +=
+                " answered";
+
+            }
+            else if (isVisited) {
+
+              btnClass +=
+                " not-answered";
+
+            }
+            else {
+
+              btnClass +=
+                " not-visited";
+
+            }
+
+            if (
+              currentQuestion === index
+            ) {
+
+              btnClass +=
+                " current";
+
+            }
+
+            return (
+
+              <button
+                key={q.id}
+                className={btnClass}
+                onClick={() => {
+
+                  setCurrentQuestion(index);
+
+                  setVisited(prev => ({
+                    ...prev,
+                    [q.id]: true,
+                  }));
+
+                }}
+              >
+                {index + 1}
+              </button>
+
+            );
+
+          })}
 
         </div>
 

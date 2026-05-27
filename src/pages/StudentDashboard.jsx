@@ -30,7 +30,7 @@ export default function StudentDashboard() {
 
   // Filters & Sorting
   const [selectedMockType,  setSelectedMockType]  = useState("");
-  const [sortOrder,         setSortOrder]         = useState("default"); // "default" or "recent"
+  const [sortOrder,         setSortOrder]         = useState("default"); // "default", "descending", or "recent"
   const [selectedSubject,   setSelectedSubject]   = useState("");
   const [selectedTopic,     setSelectedTopic]     = useState("");
   const [selectedSubTopic,  setSelectedSubTopic]  = useState("");
@@ -206,20 +206,22 @@ export default function StudentDashboard() {
 
     // 2. Sort implementation
     return filtered.sort((a, b) => {
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+
       if (sortOrder === "recent") {
-        // Fallback checks for Firebase timestamps or numeric timestamps
         const timeA = a.createdAt?.seconds || a.createdAt || 0;
         const timeB = b.createdAt?.seconds || b.createdAt || 0;
         
         if (timeB !== timeA) {
-          return timeB - timeA; // Descending order (newest first)
+          return timeB - timeA; // Descending (newest first)
         }
-        // tie-breaker if creation times are missing/identical
         return String(b.id).localeCompare(String(a.id));
+      } else if (sortOrder === "descending") {
+        // Alphanumeric descending sort: 10, 9, 8... 1
+        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
       } else {
         // Default alphanumeric ascending sort: 1, 2, 3... 10
-        const nameA = a.name || "";
-        const nameB = b.name || "";
         return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
       }
     });
@@ -275,6 +277,7 @@ export default function StudentDashboard() {
           className="filter-select"
         >
           <option value="default">Sort: Default (Ascending)</option>
+          <option value="descending">Sort: Name (Descending)</option>
           <option value="recent">Sort: Recently Added</option>
         </select>
 

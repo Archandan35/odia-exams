@@ -542,9 +542,9 @@ export default function ExamPage() {
 
          <div className="question-header-row">
 
-  <div className="question-number-box">
-    Q.{currentQuestion + 1}
-  </div>
+ <div className="question-number-box">
+Q.{currentQuestion + 1}
+</div>
 
   <div className="question-text-main">
     {currentQ.question || currentQ.text}

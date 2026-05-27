@@ -26,6 +26,7 @@ export default function Exams(){
   const [subjects,setSubjects] = useState([]);
 
   const [selectedMockType,setSelectedMockType] = useState("");
+  const [sortOrder, setSortOrder] = useState("default"); // "default" or "recent"
   const [selectedSubject,setSelectedSubject] = useState("");
   const [selectedTopic,setSelectedTopic] = useState("");
   const [selectedSubTopic,setSelectedSubTopic] = useState("");
@@ -120,37 +121,50 @@ export default function Exams(){
   }, [exams, editFormData.topicName]);
 
 
-  const filteredExams = exams.filter((exam)=>{
+  const filteredAndSortedExams = useMemo(() => {
+    // 1. Filter implementation
+    const filtered = exams.filter((exam) => {
+      const mockTypeMatch = selectedMockType
+        ? (exam.mockType || "sectional") === selectedMockType
+        : true;
 
-    const mockTypeMatch = selectedMockType
-      ? (exam.mockType || "sectional") === selectedMockType
-      : true;
+      const subjectMatch = selectedSubject
+        ? exam.subjectId === selectedSubject
+        : true;
 
-    const subjectMatch = selectedSubject
-      ? exam.subjectId === selectedSubject
-      : true;
+      const topicMatch = selectedTopic
+        ? exam.topicName === selectedTopic
+        : true;
 
-    const topicMatch = selectedTopic
-      ? exam.topicName === selectedTopic
-      : true;
+      const subTopicMatch =
+        selectedMockType === "full"
+          ? true
+          : (
+              selectedSubTopic
+                ? exam.subTopicName === selectedSubTopic
+                : true
+            );
 
-    const subTopicMatch =
-      selectedMockType === "full"
-        ? true
-        : (
-            selectedSubTopic
-              ? exam.subTopicName === selectedSubTopic
-              : true
-          );
+      return mockTypeMatch && subjectMatch && topicMatch && subTopicMatch;
+    });
 
-    return (
-      mockTypeMatch &&
-      subjectMatch &&
-      topicMatch &&
-      subTopicMatch
-    );
+    // 2. Sort implementation
+    return filtered.sort((a, b) => {
+      if (sortOrder === "recent") {
+        const timeA = a.createdAt?.seconds || a.createdAt || 0;
+        const timeB = b.createdAt?.seconds || b.createdAt || 0;
 
-  });
+        if (timeB !== timeA) {
+          return timeB - timeA; // Newest first
+        }
+        return String(b.id).localeCompare(String(a.id));
+      } else {
+        const nameA = a.name || "";
+        const nameB = b.name || "";
+        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+    });
+  }, [exams, selectedMockType, selectedSubject, selectedTopic, selectedSubTopic, sortOrder]);
 
   function getSubjectName(id){
     return subjects.find((s)=> s.id === id)?.name || "-";
@@ -235,6 +249,7 @@ export default function Exams(){
         </div>
 
         <div className="filter-bar">
+          {/* 1. Mock Type */}
           <select
             value={selectedMockType}
             onChange={(e)=>{
@@ -247,6 +262,16 @@ export default function Exams(){
             <option value="sectional">Sectional Mock</option>
           </select>
 
+          {/* 2. Sorting Option Dropdown (Inserted Here) */}
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+          >
+            <option value="default">Sort: Default (Ascending)</option>
+            <option value="recent">Sort: Recently Added</option>
+          </select>
+
+          {/* 3. Subject */}
           <select
             value={selectedSubject}
             onChange={(e)=> setSelectedSubject(e.target.value)}
@@ -259,6 +284,7 @@ export default function Exams(){
             ))}
           </select>
 
+          {/* 4. Topic */}
           <select
             value={selectedTopic}
             onChange={(e)=> setSelectedTopic(e.target.value)}
@@ -271,6 +297,7 @@ export default function Exams(){
             ))}
           </select>
 
+          {/* 5. Sub Topic */}
           {selectedMockType !== "full" && (
             <select
               value={selectedSubTopic}
@@ -287,7 +314,7 @@ export default function Exams(){
         </div>
 
         <div className="exam-grid">
-          {filteredExams.map((exam)=>(
+          {filteredAndSortedExams.map((exam)=>(
             <div key={exam.id} className="exam-card">
 
               {editingExamId === exam.id ? (

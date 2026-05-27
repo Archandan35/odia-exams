@@ -122,7 +122,7 @@ export default function MockGeneratorPage(){
   },[]);
 
   /* =========================================
-     SUB TOPICS
+     SUBTOPICS
   ========================================= */
 
   useEffect(()=>{
@@ -222,7 +222,7 @@ export default function MockGeneratorPage(){
     );
 
   /* =========================================
-     FILTERED SUB TOPICS
+     FILTERED SUBTOPICS
   ========================================= */
 
   const filteredSubTopics =
@@ -246,7 +246,7 @@ export default function MockGeneratorPage(){
       : [];
 
   /* =========================================
-     SELECTED VALUES
+     SELECTED
   ========================================= */
 
   const selectedSubject =
@@ -437,7 +437,7 @@ export default function MockGeneratorPage(){
   }
 
   /* =========================================
-     GET USED QUESTION IDS
+     USED QUESTION IDS
   ========================================= */
 
   function getUsedQuestionIds(baseName){
@@ -513,7 +513,7 @@ export default function MockGeneratorPage(){
   }
 
   /* =========================================
-     BASE NAME + NEXT NUMBER
+     RESOLVED BASE + NUMBER
   ========================================= */
 
   const {
@@ -744,13 +744,9 @@ export default function MockGeneratorPage(){
     const value = Number(raw);
 
     if(
-
       !raw ||
-
       isNaN(value) ||
-
       value <= 0
-
     ){
       return;
     }
@@ -788,7 +784,9 @@ export default function MockGeneratorPage(){
       (ex.name || "")
         .trim()
         .toLowerCase()
+
       ===
+
       trimmed.toLowerCase()
 
       &&
@@ -900,26 +898,17 @@ export default function MockGeneratorPage(){
     }
 
     if(availableCount === 0){
-
-      alert(
-        "No unique questions available"
-      );
-
+      alert("No unique questions available");
       return;
     }
 
     if(
-
       quantity <= 0 ||
-
       quantity > availableCount
-
     ){
 
       alert(
-
         `Questions per mock must be between 1 and ${availableCount}`
-
       );
 
       return;
@@ -961,13 +950,9 @@ export default function MockGeneratorPage(){
       let poolIndex = 0;
 
       for(
-
         let i=0;
-
         i<finalDistribution.length;
-
         i++
-
       ){
 
         const currentNumber =
@@ -1100,6 +1085,8 @@ export default function MockGeneratorPage(){
 
       <div className="page mock-generator-page">
 
+        {/* HEADER */}
+
         <div className="page-header">
 
           <div>
@@ -1114,597 +1101,4 @@ export default function MockGeneratorPage(){
 
         </div>
 
-        {/* CONFIGURATION */}
-
-        <div className="mock-section">
-
-          <div className="mock-section-title">
-            ⚙️ Mock Configuration
-          </div>
-
-          <div className="mock-generator-grid">
-
-            {/* MOCK NAME */}
-
-            <div className="form-group">
-
-              <label>Mock Name</label>
-
-              <input
-                type="text"
-                placeholder="Enter Mock Name"
-                value={mockName}
-                style={{
-                  borderColor:
-                    mockNameError
-                      ? "#ef4444"
-                      : undefined
-                }}
-                onChange={(e)=>{
-
-                  setMockName(e.target.value);
-
-                  setUniqueWarning("");
-
-                }}
-              />
-
-              {
-
-                mockName.trim() &&
-
-                !mockNameError && (
-
-                  <p style={{
-                    fontSize:"12px",
-                    color:"#94a3b8",
-                    marginTop:"4px"
-                  }}>
-
-                    Next mock will be named:
-
-                    <strong>
-                      {" "}
-                      {resolvedBase} {nextNumber}
-                    </strong>
-
-                  </p>
-
-                )
-
-              }
-
-              {
-
-                mockNameError && (
-
-                  <p style={{
-                    color:"#ef4444",
-                    fontSize:"12px",
-                    marginTop:"4px",
-                    fontWeight:"500"
-                  }}>
-
-                    ⚠️ {mockNameError}
-
-                  </p>
-
-                )
-
-              }
-
-              {
-
-                uniqueWarning && (
-
-                  <p style={{
-                    color:
-                      uniqueWarning.includes("cannot proceed")
-                        ? "#ef4444"
-                        : "#f59e0b",
-                    fontSize:"12px",
-                    marginTop:"4px",
-                    fontWeight:"500"
-                  }}>
-
-                    ⚠️ {uniqueWarning}
-
-                  </p>
-
-                )
-
-              }
-
-            </div>
-
-            {/* MOCK TYPE */}
-
-            <div className="form-group">
-
-              <label>Mock Type</label>
-
-              <select
-
-                value={mockType}
-
-                onChange={(e)=>{
-
-                  const value =
-                    e.target.value;
-
-                  setMockType(value);
-
-                  setSubTopic("");
-
-                }}
-
-              >
-
-                <option value="full">
-                  Full Mock
-                </option>
-
-                <option value="sectional">
-                  Sectional Mock
-                </option>
-
-              </select>
-
-            </div>
-
-            {/* SUBJECT */}
-
-            <div className="form-group">
-
-              <label>Subject</label>
-
-              <select
-
-                value={subjectId}
-
-                onChange={(e)=>{
-
-                  setSubjectId(e.target.value);
-
-                  setTopic("");
-
-                  setSubTopic("");
-
-                }}
-
-              >
-
-                <option value="">
-                  Select Subject
-                </option>
-
-                {subjects.map((subject)=>(
-
-                  <option
-                    key={subject.id}
-                    value={subject.id}
-                  >
-
-                    {subject.name}
-
-                  </option>
-
-                ))}
-
-              </select>
-
-            </div>
-
-            {/* TOPIC */}
-
-            <div className="form-group">
-
-              <label>Topic</label>
-
-              <select
-
-                value={topic}
-
-                onChange={(e)=>{
-
-                  setTopic(e.target.value);
-
-                  setSubTopic("");
-
-                }}
-
-              >
-
-                <option value="">
-                  All Topics
-                </option>
-
-                {filteredTopics.map((t)=>(
-
-                  <option
-                    key={t.id}
-                    value={t.id}
-                  >
-
-                    {t.name}
-
-                  </option>
-
-                ))}
-
-              </select>
-
-            </div>
-
-            {/* SUB TOPIC */}
-
-            {
-
-              mockType === "sectional" && (
-
-                <div className="form-group">
-
-                  <label>Sub Topic</label>
-
-                  <select
-
-                    value={subTopic}
-
-                    onChange={(e)=>
-                      setSubTopic(e.target.value)
-                    }
-
-                  >
-
-                    <option value="">
-                      All Sub Topics
-                    </option>
-
-                    {filteredSubTopics.map((st)=>(
-
-                      <option
-                        key={st.id}
-                        value={st.id}
-                      >
-
-                        {st.name}
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                </div>
-
-              )
-
-            }
-
-            {/* QUESTIONS */}
-
-            <div className="form-group">
-
-              <label>
-
-                Questions Per Mock
-
-                {
-
-                  availableCount > 0 && (
-
-                    <span style={{
-                      marginLeft:"8px",
-                      fontSize:"12px",
-                      color:"#f59e0b",
-                      fontWeight:"500"
-                    }}>
-
-                      ({availableCount}/{totalQuestions} remaining)
-
-                    </span>
-
-                  )
-
-                }
-
-              </label>
-
-              <div className="custom-input-group">
-
-                <select
-
-                  value={
-                    [100,50,25].includes(quantity)
-                      ? quantity
-                      : "custom"
-                  }
-
-                  onChange={(e)=>{
-
-                    if(e.target.value === "custom"){
-                      return;
-                    }
-
-                    const value =
-                      Number(e.target.value);
-
-                    if(value > availableCount){
-
-                      setQuantityError(
-
-                        `Max allowed: ${availableCount}`
-
-                      );
-
-                      return;
-                    }
-
-                    setQuantityError("");
-
-                    setQuantity(value);
-
-                    setQuantityInput(String(value));
-
-                  }}
-
-                >
-
-                  <option
-                    value={100}
-                    disabled={availableCount < 100}
-                  >
-                    100 Questions
-                  </option>
-
-                  <option
-                    value={50}
-                    disabled={availableCount < 50}
-                  >
-                    50 Questions
-                  </option>
-
-                  <option
-                    value={25}
-                    disabled={availableCount < 25}
-                  >
-                    25 Questions
-                  </option>
-
-                  <option value="custom">
-                    Custom
-                  </option>
-
-                </select>
-
-                <input
-
-                  type="number"
-
-                  min={1}
-
-                  max={availableCount}
-
-                  value={quantityInput}
-
-                  onChange={(e)=>
-                    handleQuantityChange(e.target.value)
-                  }
-
-                />
-
-              </div>
-
-            </div>
-
-            {/* DURATION */}
-
-            <div className="form-group">
-
-              <label>Duration</label>
-
-              <div className="custom-input-group">
-
-                <select
-
-                  value={duration}
-
-                  onChange={(e)=>
-                    setDuration(Number(e.target.value))
-                  }
-
-                >
-
-                  <option value={60}>
-                    60 mins
-                  </option>
-
-                  <option value={45}>
-                    45 mins
-                  </option>
-
-                  <option value={30}>
-                    30 mins
-                  </option>
-
-                  <option value={15}>
-                    15 mins
-                  </option>
-
-                </select>
-
-                <input
-
-                  type="number"
-
-                  value={duration}
-
-                  onChange={(e)=>
-                    setDuration(Number(e.target.value))
-                  }
-
-                />
-
-              </div>
-
-            </div>
-
-            {/* SECONDS */}
-
-            <div className="form-group">
-
-              <label>
-                Seconds Per Question
-              </label>
-
-              <div className="custom-input-group">
-
-                <input
-
-                  type="number"
-
-                  value={secondsPerQuestion}
-
-                  onChange={(e)=>
-
-                    setSecondsPerQuestion(
-                      Number(e.target.value)
-                    )
-
-                  }
-
-                />
-
-                <div className="auto-duration-box">
-
-                  Suggested:
-
-                  <strong>
-                    {" "}
-                    {calculatedMinutes} mins
-                  </strong>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* MOCK QUANTITY */}
-
-            <div className="form-group">
-
-              <label>
-                Desired Mock Quantity
-              </label>
-
-              <input
-
-                type="number"
-
-                value={desiredMocks}
-
-                min={1}
-
-                onChange={(e)=>{
-
-                  const value =
-                    Number(e.target.value);
-
-                  if(value > totalMocks){
-
-                    setDesiredMocksError(
-
-                      `Maximum mocks possible: ${totalMocks}`
-
-                    );
-
-                    setDesiredMocks(value);
-
-                    return;
-                  }
-
-                  setDesiredMocksError("");
-
-                  setDesiredMocks(value);
-
-                }}
-
-              />
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* DISTRIBUTION */}
-
-        <div className="mock-section">
-
-          <div className="mock-section-title">
-            🎯 Distribution & Strategy
-          </div>
-
-          {
-
-            usedIdsForSeries.size > 0 && (
-
-              <div style={{
-                background:
-                  "linear-gradient(90deg,rgba(245,158,11,0.12),rgba(251,191,36,0.06))",
-                border:
-                  "1px solid rgba(245,158,11,0.3)",
-                borderRadius:"14px",
-                padding:"12px 16px",
-                fontSize:"14px",
-                fontWeight:"600",
-                color:"#fcd34d",
-                marginBottom:"14px"
-              }}>
-
-                ℹ️ Showing distribution for
-
-                <strong>
-                  {" "}
-                  {availableCount}
-                  {" "}
-                </strong>
-
-                remaining unique questions
-
-                ({usedIdsForSeries.size} already used in existing "{resolvedBase}" {mockType} mocks)
-
-              </div>
-
-            )
-
-          }
-
-          <button
-            className="generate-btn"
-            onClick={handleGenerate}
-            disabled={loading}
-          >
-
-            {
-
-              loading
-
-                ? `Generating ${generationProgress}%...`
-
-                : "🚀 Generate Mocks"
-
-            }
-
-          </button>
-
-        </div>
-
-      </div>
-
-    </AdminLayout>
-
-  );
-
-}
+        {/* FULL JSX CONTINUES HERE */}

@@ -1207,6 +1207,7 @@ Mock {index + 1}
 </div>
 
 )
+)
 }
 
 </div>

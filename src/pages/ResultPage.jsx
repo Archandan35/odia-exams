@@ -61,6 +61,66 @@ ${String(seconds).padStart(2,"0")}s
 
 const questions =
 result.questions || [];
+const totalQuestions =
+questions.length;
+
+const marksPerQuestion = 1;
+
+const negativeMark = 0.25;
+
+let correctCount = 0;
+
+let wrongCount = 0;
+
+questions.forEach((q)=>{
+
+const userAns =
+result.answers?.[q.id];
+
+if(userAns === undefined){
+return;
+}
+
+let cIndex = 0;
+
+if(typeof q.correctAnswer === "number"){
+
+cIndex = q.correctAnswer;
+
+}
+else if(typeof q.correctAnswer === "string"){
+
+cIndex =
+map[
+q.correctAnswer
+?.trim()
+?.toUpperCase()
+] ?? 0;
+
+}
+
+if(userAns === cIndex){
+
+correctCount++;
+
+}
+else{
+
+wrongCount++;
+
+}
+
+});
+
+const obtainedMarks =
+(
+correctCount * marksPerQuestion
+-
+wrongCount * negativeMark
+).toFixed(2);
+
+const totalMarks =
+totalQuestions * marksPerQuestion;
 
 const current =
 questions[currentQuestion];
@@ -279,7 +339,7 @@ Marks
 </span>
 
 <h3>
-{result.score || 0}/{result.totalMarks || (questions.length * 2)}
+{obtainedMarks} / {totalMarks}
 </h3>
 
 </div>

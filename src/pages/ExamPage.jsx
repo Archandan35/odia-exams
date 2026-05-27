@@ -115,13 +115,13 @@ export default function ExamPage() {
       const next = prev + 1;
 
       alert(
-        `Warning ${next}/3: ${reason}. Switching tabs or exiting fullscreen is monitored!`
+        `Warning ${next}/3: ${reason}`
       );
 
       if (next >= 3) {
 
         alert(
-          "Exam auto-submitted due to multiple cheating infractions."
+          "Exam auto-submitted due to cheating."
         );
 
         submitExam(true);
@@ -135,7 +135,7 @@ export default function ExamPage() {
   }
 
   /* =========================================
-     FETCH EXAM & QUESTIONS
+     LOAD EXAM
   ========================================= */
 
   useEffect(() => {
@@ -143,12 +143,6 @@ export default function ExamPage() {
     async function loadExam() {
 
       try {
-
-        console.log("Exam ID:", examId);
-
-        /* =========================
-           FETCH EXAM DOCUMENT
-        ========================= */
 
         const examRef = doc(
           db,
@@ -160,10 +154,6 @@ export default function ExamPage() {
 
         if (!examSnap.exists()) {
 
-          console.error(
-            "Exam document not found"
-          );
-
           setQuestions([]);
 
           return;
@@ -172,42 +162,23 @@ export default function ExamPage() {
 
         const exam = examSnap.data();
 
-        console.log("Exam Data:", exam);
-
         setExamData(exam);
-
-        /* =========================
-           GET QUESTION IDS
-        ========================= */
 
         const questionIds =
           exam.questionIds ||
           exam.questions ||
           [];
 
-        console.log(
-          "Question IDs:",
-          questionIds
-        );
-
         if (
           !Array.isArray(questionIds) ||
           questionIds.length === 0
         ) {
-
-          console.error(
-            "No question IDs found"
-          );
 
           setQuestions([]);
 
           return;
 
         }
-
-        /* =========================
-           FETCH QUESTIONS
-        ========================= */
 
         const qSnap = await getDocs(
           collection(db, "questions")
@@ -219,30 +190,12 @@ export default function ExamPage() {
             ...d.data(),
           }));
 
-        console.log(
-          "All Questions:",
-          allQuestions.length
-        );
-
-        /* =========================
-           FILTER MATCHING QUESTIONS
-        ========================= */
-
         const filteredQuestions =
           allQuestions.filter((q) =>
             questionIds.includes(q.id)
           );
 
-        console.log(
-          "Filtered Questions:",
-          filteredQuestions.length
-        );
-
         setQuestions(filteredQuestions);
-
-        /* =========================
-           RESTORE LOCAL STORAGE
-        ========================= */
 
         const saved =
           localStorage.getItem(
@@ -280,10 +233,6 @@ export default function ExamPage() {
 
         }
 
-        /* =========================
-           FIRST QUESTION VISITED
-        ========================= */
-
         if (
           filteredQuestions.length > 0 &&
           !saved
@@ -298,10 +247,7 @@ export default function ExamPage() {
 
       } catch (err) {
 
-        console.error(
-          "LOAD EXAM ERROR:",
-          err
-        );
+        console.error(err);
 
       } finally {
 
@@ -326,18 +272,16 @@ export default function ExamPage() {
       questions.length === 0
     ) return;
 
-    const stateObj = {
-      answers,
-      review,
-      visited,
-      bookmarks,
-      timeLeft,
-      cheatCount,
-    };
-
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(stateObj)
+      JSON.stringify({
+        answers,
+        review,
+        visited,
+        bookmarks,
+        timeLeft,
+        cheatCount,
+      })
     );
 
   }, [
@@ -420,12 +364,12 @@ export default function ExamPage() {
       questions.length - 1
     ) {
 
-      const nextIdx =
+      const next =
         currentQuestion + 1;
 
-      setCurrentQuestion(nextIdx);
+      setCurrentQuestion(next);
 
-      markVisited(nextIdx);
+      markVisited(next);
 
     }
 
@@ -435,25 +379,25 @@ export default function ExamPage() {
 
     if (currentQuestion > 0) {
 
-      const prevIdx =
+      const prev =
         currentQuestion - 1;
 
-      setCurrentQuestion(prevIdx);
+      setCurrentQuestion(prev);
 
-      markVisited(prevIdx);
+      markVisited(prev);
 
     }
 
   }
 
-  function selectOption(optIndex) {
+  function selectOption(index) {
 
     const qId =
       questions[currentQuestion].id;
 
     setAnswers((prev) => ({
       ...prev,
-      [qId]: optIndex,
+      [qId]: index,
     }));
 
   }
@@ -500,7 +444,7 @@ export default function ExamPage() {
   }
 
   /* =========================================
-     SUBMIT EXAM
+     SUBMIT
   ========================================= */
 
   async function submitExam(
@@ -511,7 +455,7 @@ export default function ExamPage() {
 
       const confirmSub =
         window.confirm(
-          "Are you sure you want to submit the exam?"
+          "Submit Exam?"
         );
 
       if (!confirmSub) return;
@@ -522,79 +466,50 @@ export default function ExamPage() {
 
     questions.forEach((q) => {
 
-      const uAns = answers[q.id];
+      const userAns =
+        answers[q.id];
 
-      if (uAns !== undefined) {
+      const map = {
+        A: 0,
+        B: 1,
+        C: 2,
+        D: 3,
+      };
 
-        const map = {
-          A: 0,
-          B: 1,
-          C: 2,
-          D: 3,
-        };
+      let correctIndex = 0;
 
-        let cIndex = 0;
+      if (
+        typeof q.correctAnswer ===
+        "number"
+      ) {
 
-        if (
-          typeof q.correctAnswer ===
-          "number"
-        ) {
+        correctIndex =
+          q.correctAnswer;
 
-          cIndex = q.correctAnswer;
+      } else {
 
-        } else if (
-          typeof q.correctAnswer ===
-          "string"
-        ) {
+        correctIndex =
+          map[
+            q.correctAnswer
+          ] ?? 0;
 
-          cIndex =
-            map[
-              q.correctAnswer
-                .trim()
-                .toUpperCase()
-            ] ?? 0;
+      }
 
-        } else {
+      if (
+        userAns === correctIndex
+      ) {
 
-          cIndex =
-            map[q.answer] || 0;
-
-        }
-
-        if (uAns === cIndex) {
-
-          score += 4;
-
-        }
+        score += 4;
 
       }
 
     });
 
-    const totalMarksMax =
-      questions.length * 4;
-
-    const answeredCount =
-      Object.keys(answers).length;
-
-    const accuracy =
-      answeredCount > 0
-        ? Math.round(
-            (score /
-              (answeredCount * 4)) *
-              100
-          )
-        : 0;
-
-    const timeTakenSec =
-      1800 - timeLeft;
-
     const finalResult = {
       examId,
       score,
-      totalMarks: totalMarksMax,
-      timeTaken: timeTakenSec,
-      accuracy,
+      totalMarks:
+        questions.length * 4,
       answers,
       questions,
       submittedAt:
@@ -603,16 +518,13 @@ export default function ExamPage() {
 
     try {
 
-      const user =
-        auth.currentUser;
-
       await addDoc(
         collection(db, "results"),
         {
           ...finalResult,
-          userId: user
-            ? user.uid
-            : "anonymous",
+          userId:
+            auth.currentUser?.uid ||
+            "anonymous",
         }
       );
 
@@ -620,32 +532,13 @@ export default function ExamPage() {
         STORAGE_KEY
       );
 
-      if (
-        document.fullscreenElement
-      ) {
-
-        document
-          .exitFullscreen()
-          .catch((err) =>
-            console.log(err)
-          );
-
-      }
-
       navigate("/result", {
         state: finalResult,
       });
 
     } catch (err) {
 
-      console.error(
-        "Submission Error:",
-        err
-      );
-
-      alert(
-        "Submission failed. Backup loaded."
-      );
+      console.error(err);
 
       navigate("/result", {
         state: finalResult,
@@ -656,7 +549,7 @@ export default function ExamPage() {
   }
 
   /* =========================================
-     UI STATES
+     LOADING
   ========================================= */
 
   if (loading) {
@@ -664,7 +557,7 @@ export default function ExamPage() {
     return (
       <div className="page">
         <h2>
-          Loading Exam Questions...
+          Loading Exam...
         </h2>
       </div>
     );
@@ -678,10 +571,6 @@ export default function ExamPage() {
         <h2>
           No Questions Found in Exam!
         </h2>
-
-        <p>
-          Exam ID: {examId}
-        </p>
       </div>
     );
 
@@ -694,60 +583,85 @@ export default function ExamPage() {
     answers[currentQ.id];
 
   return (
-    <div className="exam-layout-grid">
 
-      <div className="exam-workspace-pane">
+    <div className="exam-layout">
 
-        <div className="workspace-header">
+      {/* LEFT */}
 
-          <div className="section-label-chip">
-            {examData?.name ||
-              "Exam"}
+      <div className="exam-main">
+
+        <div className="topbar">
+
+          <div>
+
+            <h2>
+              {examData?.name ||
+                "Exam"}
+            </h2>
+
+            <p>
+              {examData?.mockType ||
+                "Full Exam"}
+            </p>
+
           </div>
 
-          <button
-            className={`bookmark-toggle-btn ${
-              bookmarks[currentQ.id]
-                ? "active"
-                : ""
-            }`}
-            onClick={toggleBookmark}
+          <div
+            style={{
+              textAlign: "right",
+            }}
           >
-            {bookmarks[currentQ.id]
-              ? "⭐ Bookmarked"
-              : "☆ Bookmark"}
-          </button>
+
+            <h2>
+              ⏳ {formatTime(timeLeft)}
+            </h2>
+
+            <p>
+              Warnings:
+              {" "}
+              {cheatCount}/3
+            </p>
+
+          </div>
 
         </div>
 
-        <div className="question-body-card">
+        <div className="question-card">
 
-          <h3 className="question-number-heading">
-            Question{" "}
+          <h2>
+            Question
+            {" "}
             {currentQuestion + 1}
-          </h3>
+          </h2>
 
-          <p className="question-text-paragraph">
-            {currentQ.text ||
-              currentQ.question}
+          <p
+            style={{
+              marginTop: "18px",
+              fontSize: "18px",
+              lineHeight: "1.8",
+            }}
+          >
+            {currentQ.question ||
+              currentQ.text}
           </p>
 
-          <div className="options-vertical-stack">
+          <div className="options-list">
 
             {(currentQ.options || []).map(
               (option, idx) => (
 
                 <label
                   key={idx}
-                  className={`option-row-card ${
+                  className={
                     selectedOpt === idx
-                      ? "selected"
-                      : ""
-                  }`}
+                      ? "selected-option"
+                      : "option-card"
+                  }
                 >
 
                   <input
                     type="radio"
+                    className="option-radio"
                     checked={
                       selectedOpt === idx
                     }
@@ -756,15 +670,18 @@ export default function ExamPage() {
                     }
                   />
 
-                  <span className="option-prefix-icon">
-                    {String.fromCharCode(
-                      65 + idx
-                    )}
-                  </span>
+                  <div className="option-text">
 
-                  <span className="option-text-label">
+                    <span className="option-label">
+                      {String.fromCharCode(
+                        65 + idx
+                      )}
+                      .
+                    </span>
+
                     {option}
-                  </span>
+
+                  </div>
 
                 </label>
 
@@ -773,36 +690,9 @@ export default function ExamPage() {
 
           </div>
 
-        </div>
-
-        <div className="workspace-action-footer">
-
-          <div className="footer-left-actions">
+          <div className="exam-buttons">
 
             <button
-              className="action-btn secondary"
-              onClick={
-                toggleMarkForReview
-              }
-            >
-              {review[currentQ.id]
-                ? "Unmark Review"
-                : "Mark for Review"}
-            </button>
-
-            <button
-              className="action-btn danger"
-              onClick={clearResponse}
-            >
-              Clear Response
-            </button>
-
-          </div>
-
-          <div className="footer-right-actions">
-
-            <button
-              className="action-btn primary"
               onClick={handlePrev}
               disabled={
                 currentQuestion === 0
@@ -812,23 +702,42 @@ export default function ExamPage() {
             </button>
 
             <button
-              className="action-btn primary"
-              onClick={handleNext}
-              disabled={
-                currentQuestion ===
-                questions.length - 1
+              onClick={
+                toggleMarkForReview
               }
+            >
+              {review[currentQ.id]
+                ? "Unmark Review"
+                : "Mark Review"}
+            </button>
+
+            <button
+              onClick={toggleBookmark}
+            >
+              {bookmarks[currentQ.id]
+                ? "Bookmarked"
+                : "Bookmark"}
+            </button>
+
+            <button
+              onClick={clearResponse}
+            >
+              Clear Response
+            </button>
+
+            <button
+              onClick={handleNext}
             >
               Save & Next
             </button>
 
             <button
-              className="action-btn success submit"
+              className="submit-btn"
               onClick={() =>
                 submitExam(false)
               }
             >
-              Submit Exam
+              Submit
             </button>
 
           </div>
@@ -837,44 +746,154 @@ export default function ExamPage() {
 
       </div>
 
-      <div className="exam-sidebar-pane">
+      {/* RIGHT */}
 
-        <div className="timer-countdown-card">
+      <div className="navigator">
 
-          <span className="timer-label">
-            Time Remaining
-          </span>
+        <h2 className="palette-title">
+          Questions
+        </h2>
 
-          <span className="timer-clock">
-            {formatTime(timeLeft)}
-          </span>
+        <div className="exam-legend">
+
+          <div className="exam-legend-item">
+            <div className="exam-legend-badge legend-answered">
+              {
+                Object.keys(answers)
+                  .length
+              }
+            </div>
+            <span>Answered</span>
+          </div>
+
+          <div className="exam-legend-item">
+            <div className="exam-legend-badge legend-marked">
+              {
+                Object.values(review)
+                  .filter(Boolean)
+                  .length
+              }
+            </div>
+            <span>Marked</span>
+          </div>
+
+          <div className="exam-legend-item">
+            <div className="exam-legend-badge legend-notanswered">
+              {
+                questions.filter(
+                  (q) =>
+                    visited[q.id] &&
+                    answers[q.id] ===
+                      undefined
+                ).length
+              }
+            </div>
+            <span>
+              Not Answered
+            </span>
+          </div>
+
+          <div className="exam-legend-item">
+            <div className="exam-legend-badge legend-notvisited">
+              {
+                questions.filter(
+                  (q) =>
+                    !visited[q.id]
+                ).length
+              }
+            </div>
+            <span>
+              Not Visited
+            </span>
+          </div>
 
         </div>
 
         <div className="palette-grid">
 
           {questions.map(
-            (question, index) => (
+            (q, index) => {
 
-              <button
-                key={question.id}
-                className={`palette-btn ${
-                  currentQuestion ===
-                  index
-                    ? "current"
-                    : ""
-                }`}
-                onClick={() => {
-                  setCurrentQuestion(
-                    index
-                  );
-                  markVisited(index);
-                }}
-              >
-                {index + 1}
-              </button>
+              let btnClass =
+                "palette-btn";
 
-            )
+              const answered =
+                answers[q.id] !==
+                undefined;
+
+              const marked =
+                review[q.id];
+
+              const isVisited =
+                visited[q.id];
+
+              if (
+                marked &&
+                answered
+              ) {
+
+                btnClass +=
+                  " marked-answered";
+
+              } else if (
+                marked
+              ) {
+
+                btnClass +=
+                  " marked";
+
+              } else if (
+                answered
+              ) {
+
+                btnClass +=
+                  " answered";
+
+              } else if (
+                isVisited
+              ) {
+
+                btnClass +=
+                  " not-answered";
+
+              } else {
+
+                btnClass +=
+                  " not-visited";
+
+              }
+
+              if (
+                currentQuestion ===
+                index
+              ) {
+
+                btnClass +=
+                  " current";
+
+              }
+
+              return (
+
+                <button
+                  key={q.id}
+                  className={btnClass}
+                  onClick={() => {
+
+                    setCurrentQuestion(
+                      index
+                    );
+
+                    markVisited(index);
+
+                  }}
+                >
+                  {index + 1}
+                </button>
+
+              );
+
+            }
           )}
 
         </div>
@@ -882,6 +901,7 @@ export default function ExamPage() {
       </div>
 
     </div>
+
   );
 
 }

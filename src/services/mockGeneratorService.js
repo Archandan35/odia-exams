@@ -1,14 +1,14 @@
 import {
-addDoc,
-collection,
-serverTimestamp,
+  addDoc,
+  collection,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db }
 from "../firebase/config";
 
 /* =========================================
-SHUFFLE ARRAY
+   SHUFFLE ARRAY
 ========================================= */
 
 function shuffleArray(array){
@@ -36,7 +36,7 @@ function shuffleArray(array){
 }
 
 /* =========================================
-GENERATE MOCKS
+   GENERATE SINGLE MOCK
 ========================================= */
 
 export async function generateMocks({
@@ -48,19 +48,19 @@ export async function generateMocks({
   topic,
   subTopic,
 
-  subjectId,   // ✅ ADDED
-  topicId,     // ✅ ADDED
-  subTopicId,  // ✅ ADDED
+  subjectId,
+  topicId,
+  subTopicId,
 
   duration,
-
-  distribution,
 
   questions,
 
 }){
 
   try{
+
+    /* VALIDATION */
 
     if(
       !questions ||
@@ -73,92 +73,109 @@ export async function generateMocks({
 
     }
 
+    /* SHUFFLE QUESTIONS */
+
     const shuffledQuestions =
       shuffleArray(questions);
 
-    let currentIndex = 0;
+    /* EXAM DATA */
 
-    const generatedMocks = [];
+    const examData = {
 
-    for(
-      let i=0;
-      i<distribution.length;
-      i++
-    ){
+      /* =====================================
+         IMPORTANT FIX:
+         DO NOT APPEND:
+         ${mockName} ${i + 1}
 
-      const questionCount =
-        distribution[i];
+         Frontend already generates:
+         ବେଣୁଧର ରାଉତ 1
+         ବେଣୁଧର ରାଉତ 2
+         etc.
 
-      const selectedQuestions =
-        shuffledQuestions.slice(
-          currentIndex,
-          currentIndex + questionCount
-        );
+         So save EXACT name only.
+      ===================================== */
 
-      currentIndex += questionCount;
+      name:
+        mockName,
 
-      const examData = {
+      mockType:
 
-        name:
-          `${mockName} ${i + 1}`,
+        mockType || "sectional",
 
-        mockType,
+      subject:
 
-        subject:
-          subject || "",
+        subject || "",
 
-        subjectId:         // ✅ FIXED (was missing)
-          subjectId || "",
+      subjectId:
 
-        topicName:         // ✅ FIXED (was "topic")
-          topic || "",
+        subjectId || "",
 
-        topicId:           // ✅ FIXED (was missing)
-          topicId || "",
+      topicName:
 
-        subTopicName:      // ✅ FIXED (was "subTopic")
-          subTopic || "",
+        topic || "",
 
-        subTopicId:        // ✅ FIXED (was missing)
-          subTopicId || "",
+      topicId:
 
-        duration,
+        topicId || "",
 
-        quantity:
-          questionCount,
+      subTopicName:
 
-        totalQuestions:
-          questionCount,
+        subTopic || "",
 
-        questionIds:
-          selectedQuestions.map(
-            (q)=>q.id
-          ),
+      subTopicId:
 
-        questions:
-          selectedQuestions,
+        subTopicId || "",
 
-        createdAt:
-          serverTimestamp(),
+      duration:
 
-      };
+        Number(duration) || 0,
 
-      const docRef =
-        await addDoc(
-          collection(db,"exams"),
-          examData
-        );
+      quantity:
 
-      generatedMocks.push({
-        id:docRef.id,
-        ...examData,
-      });
+        shuffledQuestions.length,
 
-    }
+      totalQuestions:
+
+        shuffledQuestions.length,
+
+      questionIds:
+
+        shuffledQuestions.map(
+          (q)=> q.id
+        ),
+
+      questions:
+
+        shuffledQuestions,
+
+      createdAt:
+
+        serverTimestamp(),
+
+    };
+
+    /* SAVE TO FIRESTORE */
+
+    const docRef =
+
+      await addDoc(
+        collection(db,"exams"),
+        examData
+      );
+
+    /* RETURN RESULT */
 
     return {
+
       success:true,
-      generatedMocks,
+
+      generatedMocks:[
+        {
+          id:docRef.id,
+          ...examData,
+        }
+      ],
+
     };
 
   }catch(error){

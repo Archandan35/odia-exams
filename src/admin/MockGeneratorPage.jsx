@@ -214,31 +214,53 @@ String(topic)
 /* FILTER QUESTIONS */
 
 const filteredQuestions =
-useMemo(()=>{
+questions.filter((q)=>{
 
-return questions.filter((q)=>{
+const selectedSubject =
+subjects.find(
+(s)=>s.id === subjectId
+);
+
+const selectedTopic =
+filteredTopics.find(
+(t)=>t.id === topic
+);
+
+const selectedSubTopic =
+filteredSubTopics.find(
+(st)=>st.id === subTopic
+);
 
 const subjectMatch =
 subjectId
 ?
-String(q.subjectId) ===
-String(subjectId)
+q.subject ===
+(
+selectedSubject?.name ||
+selectedSubject?.title
+)
 :
 true;
 
 const topicMatch =
 topic
 ?
-String(q.topicId) ===
-String(topic)
+q.topic ===
+(
+selectedTopic?.name ||
+selectedTopic?.title
+)
 :
 true;
 
 const subTopicMatch =
 subTopic
 ?
-String(q.subTopicId) ===
-String(subTopic)
+q.subTopic ===
+(
+selectedSubTopic?.name ||
+selectedSubTopic?.title
+)
 :
 true;
 
@@ -249,6 +271,7 @@ subTopicMatch
 );
 
 });
+ 
 
 },[
 questions,

@@ -188,11 +188,6 @@ id:doc.id,
 
 }));
 
-console.log(
-"ALL QUESTIONS:",
-data
-);
-
 setQuestions(data);
 
 }
@@ -202,7 +197,7 @@ loadQuestions();
 },[]);
 
 /* =========================================
-FILTERED TOPICS
+FILTER TOPICS
 ========================================= */
 
 const filteredTopics =
@@ -213,7 +208,7 @@ String(subjectId)
 );
 
 /* =========================================
-FILTERED SUBTOPICS
+FILTER SUBTOPICS
 ========================================= */
 
 const filteredSubTopics =
@@ -235,8 +230,7 @@ FILTER QUESTIONS
 const filteredQuestions =
 useMemo(()=>{
 
-const filtered =
-questions.filter((q)=>{
+return questions.filter((q)=>{
 
 const subjectMatch =
 subjectId
@@ -269,13 +263,6 @@ subTopicMatch
 );
 
 });
-
-console.log(
-"FILTERED QUESTIONS:",
-filtered
-);
-
-return filtered;
 
 },[
 questions,
@@ -454,10 +441,6 @@ GENERATE
 
 async function handleGenerate(){
 
-console.log(
-"START GENERATE CLICKED"
-);
-
 if(!mockName){
 
 alert(
@@ -488,19 +471,6 @@ return;
 
 }
 
-if(
-desiredMocks > totalMocks &&
-!includeAllQuestions
-){
-
-alert(
-`Maximum mocks possible is ${totalMocks}`
-);
-
-return;
-
-}
-
 try{
 
 setLoading(true);
@@ -522,11 +492,6 @@ distributionPreview
 Array(desiredMocks)
 .fill(quantity);
 
-console.log(
-"FINAL DISTRIBUTION:",
-finalDistribution
-);
-
 for(
 let i=0;
 i<finalDistribution.length;
@@ -535,42 +500,6 @@ i++
 
 const currentName =
 `${mockName} ${i + 1}`;
-
-console.log(
-"FINAL DEBUG",
-{
-
-currentName,
-
-mockType,
-
-subject:
-subjects.find(
-(s)=>
-s.id === subjectId
-)?.name || "",
-
-topic:
-filteredTopics.find(
-(item)=>
-item.id === topic
-)?.name || "",
-
-subTopic:
-filteredSubTopics.find(
-(item)=>
-item.id === subTopic
-)?.name || "",
-
-duration:
-Number(duration),
-
-distribution:[
-finalDistribution[i]
-],
-
-}
-);
 
 await generateMocks({
 
@@ -603,6 +532,9 @@ Number(duration),
 distribution:[
 finalDistribution[i]
 ],
+
+questions:
+filteredQuestions,
 
 });
 
@@ -802,6 +734,287 @@ value={subject.id}
 ))}
 
 </select>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Topic
+</label>
+
+<select
+value={topic}
+onChange={(e)=>{
+
+setTopic(
+e.target.value
+);
+
+setSubTopic("");
+
+}}
+>
+
+<option value="">
+All Topics
+</option>
+
+{filteredTopics.map((item)=>(
+
+<option
+key={item.id}
+value={item.id}
+>
+
+{item.name}
+
+</option>
+
+))}
+
+</select>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Sub Topic
+</label>
+
+<select
+value={subTopic}
+onChange={(e)=>
+setSubTopic(
+e.target.value
+)
+}
+>
+
+<option value="">
+All Sub Topics
+</option>
+
+{filteredSubTopics.map((item)=>(
+
+<option
+key={item.id}
+value={item.id}
+>
+
+{item.name}
+
+</option>
+
+))}
+
+</select>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Questions Per Mock
+</label>
+
+<div className="custom-input-group">
+
+<select
+value={quantity}
+onChange={(e)=>{
+
+const value =
+Number(
+e.target.value
+);
+
+if(
+value > totalQuestions
+){
+
+alert(
+`Only ${totalQuestions} questions available`
+);
+
+return;
+
+}
+
+setQuantity(value);
+
+}}
+>
+
+<option value={100}>
+100 Questions
+</option>
+
+<option value={50}>
+50 Questions
+</option>
+
+<option value={25}>
+25 Questions
+</option>
+
+{
+![100,50,25]
+.includes(quantity) && (
+
+<option value={quantity}>
+{quantity} Questions
+</option>
+
+)
+}
+
+</select>
+
+<input
+type="number"
+value={quantity}
+onChange={(e)=>{
+
+const value =
+Number(
+e.target.value
+);
+
+if(
+value > totalQuestions
+){
+
+alert(
+`Only ${totalQuestions} questions available`
+);
+
+return;
+
+}
+
+setQuantity(value);
+
+}}
+/>
+
+</div>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Duration
+</label>
+
+<div className="custom-input-group">
+
+<select
+value={duration}
+onChange={(e)=>
+setDuration(
+Number(
+e.target.value
+)
+)
+}
+>
+
+<option value={60}>
+60 mins
+</option>
+
+<option value={45}>
+45 mins
+</option>
+
+<option value={30}>
+30 mins
+</option>
+
+<option value={15}>
+15 mins
+</option>
+
+</select>
+
+<input
+type="number"
+value={duration}
+placeholder={`${calculatedMinutes} mins`}
+onChange={(e)=>
+setDuration(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+</div>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Seconds Per Question
+</label>
+
+<div className="custom-input-group">
+
+<input
+type="number"
+placeholder="30"
+value={secondsPerQuestion}
+onChange={(e)=>
+setSecondsPerQuestion(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+<div
+className="auto-duration-box"
+>
+
+Suggested:
+{" "}
+
+<strong>
+{calculatedMinutes}
+ mins
+</strong>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Desired Mock Quantity
+</label>
+
+<input
+type="number"
+value={desiredMocks}
+onChange={(e)=>
+setDesiredMocks(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+</div>
 
 </div>
 

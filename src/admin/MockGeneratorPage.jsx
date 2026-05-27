@@ -760,7 +760,7 @@ Select Subject
 
 <option
 key={subject.id}
-value={subject.id}
+value={subject.name}
 >
 
 {subject.name}
@@ -800,7 +800,7 @@ All Topics
 
 <option
 key={t.id}
-value={t.id}
+value={t.name}
 >
 
 {t.name}
@@ -836,7 +836,7 @@ All Sub Topics
 
 <option
 key={st.id}
-value={st.id}
+value={st.name}
 >
 
 {st.name}

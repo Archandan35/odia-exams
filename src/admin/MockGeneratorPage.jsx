@@ -58,6 +58,11 @@ const [duration,setDuration] =
 useState(60);
 
 const [
+secondsPerQuestion,
+setSecondsPerQuestion
+] = useState(30);
+
+const [
 desiredMocks,
 setDesiredMocks
 ] = useState(1);
@@ -263,12 +268,36 @@ totalQuestions / quantity
 const remainder =
 totalQuestions % quantity;
 
+const calculatedMinutes =
+Math.ceil(
+(totalQuestions *
+secondsPerQuestion) / 60
+);
+
 const recommendedStrategy =
 remainder > 0
 ?
 "balanced"
 :
 "extra";
+
+/* AUTO DURATION */
+
+useEffect(()=>{
+
+if(
+calculatedMinutes > 0
+){
+
+setDuration(
+calculatedMinutes
+);
+
+}
+
+},[
+calculatedMinutes
+]);
 
 /* DISTRIBUTION */
 
@@ -902,6 +931,7 @@ e.target.value
 <input
 type="number"
 value={duration}
+placeholder={`${calculatedMinutes} mins`}
 onChange={(e)=>
 setDuration(
 Number(
@@ -910,6 +940,45 @@ e.target.value
 )
 }
 />
+
+</div>
+
+</div>
+
+<div className="form-group">
+
+<label>
+Seconds Per Question
+</label>
+
+<div className="custom-input-group">
+
+<input
+type="number"
+placeholder="30"
+value={secondsPerQuestion}
+onChange={(e)=>
+setSecondsPerQuestion(
+Number(
+e.target.value
+)
+)
+}
+/>
+
+<div
+className="auto-duration-box"
+>
+
+Suggested:
+{" "}
+
+<strong>
+{calculatedMinutes}
+ mins
+</strong>
+
+</div>
 
 </div>
 

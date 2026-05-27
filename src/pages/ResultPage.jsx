@@ -462,6 +462,8 @@ Top {100 - performance}%
 
 <div className="review-question-card">
 
+<div className="review-question-header">
+
 <div
 className="
 review-question-badge
@@ -591,6 +593,8 @@ current.explanation
 
 )
 }
+
+  </div>
 
 <div className="review-navigation">
 

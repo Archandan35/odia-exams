@@ -416,9 +416,9 @@ grid-template-columns:
 minmax(0,1fr) 320px;
 gap:18px;
 padding:18px;
-height:100vh;
+min-height:100vh;
 background:#020617;
-overflow:hidden;
+align-items:start;
 }
 
 /* LEFT */
@@ -458,15 +458,14 @@ color:#cbd5e1;
 /* QUESTION */
 
 .question-card{
-flex:1;
 display:flex;
 flex-direction:column;
 background:#0f172a;
 border:1px solid #1e293b;
 border-radius:24px;
 padding:30px;
-overflow:hidden;
-min-height:0;
+overflow:visible;
+min-width:0;
 }
 
 .question-card h2{
@@ -481,7 +480,6 @@ line-height:1.9;
 }
 
 /* OPTIONS */
-
 .options-list{
 
 display:flex;
@@ -492,11 +490,9 @@ gap:18px;
 
 margin-top:30px;
 
-overflow-y:auto;
+overflow:visible;
 
-overflow-x:hidden;
-
-padding-right:4px;
+width:100%;
 
 }
 
@@ -2180,7 +2176,7 @@ padding:16px;
 display:grid;
 
 grid-template-columns:
-repeat(auto-fit,minmax(140px,1fr));
+repeat(auto-fit,minmax(120px,1fr));
 
 gap:14px;
 

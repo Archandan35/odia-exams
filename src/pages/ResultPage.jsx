@@ -461,7 +461,6 @@ Top {100 - performance}%
 <div className="review-main">
 
 <div className="review-question-card">
-<div className="review-scroll-content">
 
 <div
 className="

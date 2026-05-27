@@ -130,7 +130,7 @@ export default function StudentDashboard() {
     return topics.find((t) => t.id === id)?.name || "-";
   }
 
-  ffunction getSubTopicName(id) {
+  function getSubTopicName(id) {
     if (!id) return "-";
     // This safely checks against both 'subTopics' collection data items
     const found = subTopics.find((s) => s.id === id);

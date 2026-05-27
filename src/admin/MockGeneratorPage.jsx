@@ -1,1243 +1,880 @@
 import {
-useEffect,
-useMemo,
-useState,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
+
+import { useNavigate } from "react-router-dom";
+
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
+
+import { db } from "../firebase/config";
 
 import AdminLayout from "./AdminLayout";
 
 import {
-collection,
-getDocs,
-onSnapshot,
-} from "firebase/firestore";
-
-import { db }
-from "../firebase/config";
-
-import {
-listenSubjects,
+  listenSubjects,
 } from "../services/subjectService";
 
 import {
-generateMocks,
+  generateMocks,
 } from "../services/mockGeneratorService";
 
-export default function MockGeneratorPage(){
+export default function MockGeneratorPage() {
 
-/* =========================================
-STATE
-========================================= */
+  const navigate = useNavigate();
 
-const [subjects,setSubjects] =
-useState([]);
+  /* =========================================
+     STATES
+  ========================================= */
 
-const [topics,setTopics] =
-useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [subTopics, setSubTopics] = useState([]);
+  const [questions, setQuestions] = useState([]);
 
-const [subTopics,setSubTopics] =
-useState([]);
+  const [mockName, setMockName] = useState("");
+  const [mockType, setMockType] = useState("sectional");
 
-const [questions,setQuestions] =
-useState([]);
+  const [subjectId, setSubjectId] = useState("");
+  const [topic, setTopic] = useState("");
+  const [subTopic, setSubTopic] = useState("");
 
-const [mockName,setMockName] =
-useState("");
+  const [quantity, setQuantity] = useState(25);
+  const [duration, setDuration] = useState(60);
 
-const [mockType,setMockType] =
-useState("sectional");
+  const [secondsPerQuestion, setSecondsPerQuestion] = useState(30);
 
-const [subjectId,setSubjectId] =
-useState("");
+  const [desiredMocks, setDesiredMocks] = useState(1);
 
-const [topic,setTopic] =
-useState("");
+  const [includeAllQuestions, setIncludeAllQuestions] =
+    useState(true);
 
-const [subTopic,setSubTopic] =
-useState("");
+  const [distributionMode, setDistributionMode] =
+    useState("balanced");
 
-const [quantity,setQuantity] =
-useState(100);
+  const [manualDistribution, setManualDistribution] =
+    useState("");
 
-const [duration,setDuration] =
-useState(60);
+  const [distributionPreview, setDistributionPreview] =
+    useState([]);
 
-const [
-secondsPerQuestion,
-setSecondsPerQuestion
-] = useState(30);
+  const [loading, setLoading] = useState(false);
 
-const [
-desiredMocks,
-setDesiredMocks
-] = useState(1);
+  const [progress, setProgress] = useState(0);
 
-const [
-includeAllQuestions,
-setIncludeAllQuestions
-] = useState(true);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
-const [
-distributionMode,
-setDistributionMode
-] = useState("balanced");
+  const [generatedMocks, setGeneratedMocks] =
+    useState([]);
 
-const [
-manualDistribution,
-setManualDistribution
-] = useState("");
+  /* =========================================
+     TOAST
+  ========================================= */
 
-const [
-distributionPreview,
-setDistributionPreview
-] = useState([]);
+  function showToast(message, type = "success") {
 
-const [loading,setLoading] =
-useState(false);
+    setToast({
+      show: true,
+      message,
+      type,
+    });
 
-const [
-generationProgress,
-setGenerationProgress
-] = useState(0);
+    setTimeout(() => {
 
-const [
-generatedMocks,
-setGeneratedMocks
-] = useState([]);
+      setToast({
+        show: false,
+        message: "",
+        type: "success",
+      });
 
-/* =========================================
-SUBJECTS
-========================================= */
+    }, 3000);
 
-useEffect(()=>{
+  }
 
-const unsubscribe =
-listenSubjects(setSubjects);
+  /* =========================================
+     LOAD SUBJECTS
+  ========================================= */
 
-return ()=>unsubscribe();
+  useEffect(() => {
 
-},[]);
+    const unsubscribe =
+      listenSubjects(setSubjects);
 
-/* =========================================
-TOPICS
-========================================= */
+    return () => unsubscribe();
 
-useEffect(()=>{
+  }, []);
 
-const unsub = onSnapshot(
-collection(db,"topics"),
-(snapshot)=>{
+  /* =========================================
+     LOAD TOPICS
+  ========================================= */
 
-const data =
-snapshot.docs.map((doc)=>({
+  useEffect(() => {
 
-id:doc.id,
-...doc.data(),
+    const unsub = onSnapshot(
+      collection(db, "topics"),
+      (snapshot) => {
 
-}));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-setTopics(data);
+        setTopics(data);
 
-}
-);
+      }
+    );
 
-return ()=>unsub();
+    return () => unsub();
 
-},[]);
+  }, []);
 
-/* =========================================
-SUBTOPICS
-========================================= */
+  /* =========================================
+     LOAD SUBTOPICS
+  ========================================= */
 
-useEffect(()=>{
+  useEffect(() => {
 
-const unsub = onSnapshot(
-collection(db,"subtopics"),
-(snapshot)=>{
+    const unsub = onSnapshot(
+      collection(db, "subtopics"),
+      (snapshot) => {
 
-const data =
-snapshot.docs.map((doc)=>({
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-id:doc.id,
-...doc.data(),
+        setSubTopics(data);
 
-}));
+      }
+    );
 
-setSubTopics(data);
+    return () => unsub();
 
-}
-);
+  }, []);
 
-return ()=>unsub();
+  /* =========================================
+     LOAD QUESTIONS
+  ========================================= */
 
-},[]);
+  useEffect(() => {
 
-/* =========================================
-QUESTIONS
-========================================= */
+    async function loadQuestions() {
 
-useEffect(()=>{
+      const snapshot = await getDocs(
+        collection(db, "questions")
+      );
 
-async function loadQuestions(){
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-const snapshot =
-await getDocs(
-collection(db,"questions")
-);
+      setQuestions(data);
 
-const data =
-snapshot.docs.map((doc)=>({
+    }
 
-id:doc.id,
-...doc.data(),
+    loadQuestions();
 
-}));
+  }, []);
 
-setQuestions(data);
+  /* =========================================
+     FILTERED TOPICS
+  ========================================= */
 
-}
+  const filteredTopics = topics.filter(
+    (item) =>
+      String(item.subjectId) ===
+      String(subjectId)
+  );
 
-loadQuestions();
+  /* =========================================
+     FILTERED SUBTOPICS
+  ========================================= */
 
-},[]);
+  const filteredSubTopics = subTopics.filter(
+    (item) =>
+      String(item.subjectId) ===
+        String(subjectId) &&
+      String(item.topicId) ===
+        String(topic)
+  );
 
-/* =========================================
-FILTERED TOPICS
-========================================= */
+  /* =========================================
+     FILTERED QUESTIONS
+  ========================================= */
 
-const filteredTopics =
-topics.filter(
-(item)=>
-String(item.subjectId) ===
-String(subjectId)
-);
+  const filteredQuestions = useMemo(() => {
 
-/* =========================================
-FILTERED SUBTOPICS
-========================================= */
+    return questions.filter((q) => {
 
-const filteredSubTopics =
-subTopics.filter(
-(item)=>
+      const subjectMatch =
+        subjectId
+          ? String(q.subjectId) ===
+            String(subjectId)
+          : true;
 
-String(item.subjectId) ===
-String(subjectId) &&
+      const topicMatch =
+        topic
+          ? String(q.topicId) ===
+            String(topic)
+          : true;
 
-String(item.topicId) ===
-String(topic)
+      const subTopicMatch =
+        subTopic
+          ? String(q.subTopicId) ===
+            String(subTopic)
+          : true;
 
-);
+      return (
+        subjectMatch &&
+        topicMatch &&
+        subTopicMatch
+      );
 
-/* =========================================
-FILTERED QUESTIONS
-========================================= */
+    });
 
-const filteredQuestions =
-useMemo(()=>{
+  }, [
+    questions,
+    subjectId,
+    topic,
+    subTopic,
+  ]);
 
-return questions.filter((q)=>{
+  /* =========================================
+     TOTALS
+  ========================================= */
 
-const subjectMatch =
-subjectId
-?
-String(q.subjectId) ===
-String(subjectId)
-:
-true;
+  const totalQuestions =
+    filteredQuestions.length;
 
-const topicMatch =
-topic
-?
-String(q.topicId) ===
-String(topic)
-:
-true;
+  const maximumMocks =
+    Math.floor(totalQuestions / quantity);
 
-const subTopicMatch =
-subTopic
-?
-String(q.subTopicId) ===
-String(subTopic)
-:
-true;
+  const remainder =
+    totalQuestions % quantity;
 
-return (
-subjectMatch &&
-topicMatch &&
-subTopicMatch
-);
+  const suggestedMinutes =
+    Math.ceil(
+      (
+        totalQuestions *
+        secondsPerQuestion
+      ) / 60
+    );
 
-});
+  /* =========================================
+     AUTO DURATION
+  ========================================= */
 
-},[
-questions,
-subjectId,
-topic,
-subTopic,
-]);
+  useEffect(() => {
 
-/* =========================================
-STATS
-========================================= */
+    if (suggestedMinutes > 0) {
 
-const totalQuestions =
-filteredQuestions.length;
+      setDuration(suggestedMinutes);
 
-const totalMocks =
-Math.floor(
-totalQuestions / quantity
-);
+    }
 
-const remainder =
-totalQuestions % quantity;
+  }, [suggestedMinutes]);
 
-const calculatedMinutes =
-Math.ceil(
-(totalQuestions *
-secondsPerQuestion) / 60
-);
+  /* =========================================
+     DISTRIBUTION
+  ========================================= */
 
-const recommendedStrategy =
-remainder > 0
-?
-"balanced"
-:
-"extra";
+  useEffect(() => {
 
-/* =========================================
-AUTO DURATION
-========================================= */
+    if (!includeAllQuestions) {
 
-useEffect(()=>{
+      setDistributionPreview([]);
 
-if(
-calculatedMinutes > 0
-){
+      return;
 
-setDuration(
-calculatedMinutes
-);
+    }
 
-}
+    if (distributionMode === "balanced") {
 
-},[
-calculatedMinutes
-]);
+      const totalCount =
+        Math.ceil(
+          totalQuestions / quantity
+        );
 
-/* =========================================
-DISTRIBUTION
-========================================= */
+      const base =
+        Math.floor(
+          totalQuestions / totalCount
+        );
 
-useEffect(()=>{
+      const extra =
+        totalQuestions % totalCount;
 
-if(!includeAllQuestions){
+      const arr = [];
 
-setDistributionPreview([]);
+      for (
+        let i = 0;
+        i < totalCount;
+        i++
+      ) {
 
-return;
+        arr.push(
+          base + (i < extra ? 1 : 0)
+        );
 
-}
+      }
 
-if(totalQuestions <= 0){
+      setDistributionPreview(arr);
 
-setDistributionPreview([]);
+    }
 
-return;
+    if (distributionMode === "extra") {
 
-}
+      const arr = [];
 
-/* BALANCED */
+      const full =
+        Math.floor(
+          totalQuestions / quantity
+        );
 
-if(distributionMode === "balanced"){
+      for (
+        let i = 0;
+        i < full;
+        i++
+      ) {
 
-const totalCount =
-Math.ceil(
-totalQuestions / quantity
-);
+        arr.push(quantity);
 
-const base =
-Math.floor(
-totalQuestions / totalCount
-);
+      }
 
-const extra =
-totalQuestions % totalCount;
+      if (remainder > 0) {
 
-const arr = [];
+        arr.push(remainder);
 
-for(
-let i=0;
-i<totalCount;
-i++
-){
+      }
 
-arr.push(
-base +
-(i < extra ? 1 : 0)
-);
+      setDistributionPreview(arr);
 
-}
+    }
 
-setDistributionPreview(arr);
+    if (distributionMode === "manual") {
 
-}
+      const arr =
+        manualDistribution
+          .split(",")
+          .map((n) =>
+            Number(n.trim())
+          )
+          .filter(Boolean);
 
-/* EXTRA */
+      setDistributionPreview(arr);
 
-if(distributionMode === "extra"){
+    }
 
-const arr = [];
+  }, [
+    includeAllQuestions,
+    distributionMode,
+    manualDistribution,
+    quantity,
+    totalQuestions,
+    remainder,
+  ]);
 
-const full =
-Math.floor(
-totalQuestions / quantity
-);
+  /* =========================================
+     GENERATE MOCKS
+  ========================================= */
 
-for(
-let i=0;
-i<full;
-i++
-){
+  async function handleGenerate() {
 
-arr.push(quantity);
+    try {
 
-}
+      if (!mockName) {
 
-if(remainder > 0){
+        showToast(
+          "Enter mock name",
+          "error"
+        );
 
-arr.push(remainder);
+        return;
 
-}
+      }
 
-setDistributionPreview(arr);
+      if (!subjectId) {
 
-}
+        showToast(
+          "Select subject",
+          "error"
+        );
 
-/* MANUAL */
+        return;
 
-if(distributionMode === "manual"){
+      }
 
-const arr =
-manualDistribution
-.split(",")
+      if (quantity > totalQuestions) {
 
-.map((n)=>
-Number(n.trim())
-)
+        showToast(
+          `Only ${totalQuestions} questions available`,
+          "error"
+        );
 
-.filter(Boolean);
+        return;
 
-setDistributionPreview(arr);
+      }
 
-}
+      setLoading(true);
 
-},[
-includeAllQuestions,
-distributionMode,
-manualDistribution,
-totalQuestions,
-quantity,
-remainder,
-]);
+      setProgress(0);
 
-/* =========================================
-GENERATE
-========================================= */
+      const finalDistribution =
+        includeAllQuestions
+          ? distributionPreview
+          : Array(desiredMocks)
+              .fill(quantity);
 
-async function handleGenerate(){
+      const createdMocks = [];
 
-if(!mockName){
+      for (
+        let i = 0;
+        i < finalDistribution.length;
+        i++
+      ) {
 
-alert(
-"Enter mock name"
-);
+        setProgress(
+          Math.floor(
+            ((i + 1) /
+              finalDistribution.length) *
+              100
+          )
+        );
 
-return;
+        const currentName =
+          `${mockName} ${i + 1}`;
 
-}
+        const response =
+          await generateMocks({
 
-if(!subjectId){
+            mockName: currentName,
 
-alert(
-"Select subject"
-);
+            mockType,
 
-return;
+            subject:
+              subjects.find(
+                (s) =>
+                  s.id === subjectId
+              )?.name ||
 
-}
+              subjects.find(
+                (s) =>
+                  s.id === subjectId
+              )?.title ||
 
-if(quantity > totalQuestions){
+              "",
 
-alert(
-`Only ${totalQuestions} questions available`
-);
+            topic:
+              filteredTopics.find(
+                (item) =>
+                  item.id === topic
+              )?.name ||
 
-return;
+              filteredTopics.find(
+                (item) =>
+                  item.id === topic
+              )?.title ||
 
-}
+              "",
 
-try{
+            subTopic:
+              filteredSubTopics.find(
+                (item) =>
+                  item.id === subTopic
+              )?.name ||
 
-setLoading(true);
+              filteredSubTopics.find(
+                (item) =>
+                  item.id === subTopic
+              )?.title ||
 
-setGenerationProgress(0);
+              "",
 
-const finalDistribution =
+            duration:
+              Number(duration),
 
-includeAllQuestions
+            distribution: [
+              finalDistribution[i],
+            ],
 
-?
+            questions:
+              filteredQuestions,
 
-distributionPreview
+          });
 
-:
+        createdMocks.push(
+          ...response.generatedMocks
+        );
 
-Array(desiredMocks)
-.fill(quantity);
+      }
 
-const response =
-await generateMocks({
+      setGeneratedMocks(
+        createdMocks
+      );
 
-mockName,
+      showToast(
+        `${createdMocks.length} mocks generated successfully`
+      );
 
-mockType,
+    } catch (error) {
 
-subject:
-subjects.find(
-(s)=>
-s.id === subjectId
-)?.name ||
+      console.error(error);
 
-subjects.find(
-(s)=>
-s.id === subjectId
-)?.title ||
+      showToast(
+        error.message ||
+          "Failed to generate mocks",
+        "error"
+      );
 
-"",
+    } finally {
 
-topic:
-filteredTopics.find(
-(item)=>
-item.id === topic
-)?.name ||
+      setLoading(false);
 
-filteredTopics.find(
-(item)=>
-item.id === topic
-)?.title ||
+    }
 
-"",
+  }
 
-subTopic:
-filteredSubTopics.find(
-(item)=>
-item.id === subTopic
-)?.name ||
+  return (
 
-filteredSubTopics.find(
-(item)=>
-item.id === subTopic
-)?.title ||
+    <AdminLayout>
 
-"",
+      <div className="page mock-generator-page">
 
-duration:
-Number(duration),
+        {/* TOAST */}
 
-distribution:
-finalDistribution,
+        {toast.show && (
 
-questions:
-filteredQuestions,
+          <div
+            className={`toast-box ${toast.type}`}
+          >
 
-});
+            {toast.message}
 
-setGeneratedMocks(
-response.generatedMocks
-);
+          </div>
 
-alert(
-`${response.generatedMocks.length} mocks generated successfully`
-);
+        )}
 
-}catch(error){
+        {/* HEADER */}
 
-console.error(error);
+        <div className="page-header">
 
-alert(
-error.message ||
-"Failed to generate mocks"
-);
+          <div>
 
-}finally{
+            <h2>
+              Mock Generator
+            </h2>
 
-setLoading(false);
+            <p>
+              Generate intelligent mock tests automatically
+            </p>
 
-}
+          </div>
 
-}
+        </div>
 
-return(
+        {/* STATS */}
 
-<AdminLayout>
+        <div className="mock-top-stats">
 
-<div className="page mock-generator-page">
+          <div className="mock-stat-card">
 
-<div className="page-header">
+            <div className="mock-stat-icon">
+              📄
+            </div>
 
-<div>
+            <div>
 
-<h2>
-Mock Generator
-</h2>
+              <span>
+                Total Questions
+              </span>
 
-<p>
-Generate intelligent mock tests automatically
-</p>
+              <h2>
+                {totalQuestions}
+              </h2>
 
-</div>
+            </div>
 
-</div>
+          </div>
 
-<div className="mock-top-stats">
+          <div className="mock-stat-card">
 
-<div className="mock-stat-card">
+            <div className="mock-stat-icon green">
+              📋
+            </div>
 
-<div className="mock-stat-icon">
-📄
-</div>
+            <div>
 
-<div className="mock-stat-content">
+              <span>
+                Maximum Mocks
+              </span>
 
-<span>
-Total Questions
-</span>
+              <h2>
+                {maximumMocks}
+              </h2>
 
-<h2>
-{totalQuestions}
-</h2>
+            </div>
 
-</div>
+          </div>
 
-</div>
+        </div>
 
-<div className="mock-stat-card">
+        {/* CONFIG */}
 
-<div className="mock-stat-icon green">
-📋
-</div>
+        <div className="mock-section">
 
-<div className="mock-stat-content">
+          <div className="mock-section-title">
+            ⚙️ Mock Configuration
+          </div>
 
-<span>
-Maximum Mocks
-</span>
+          <div className="mock-generator-grid">
 
-<h2>
-{totalMocks}
-</h2>
+            <div className="form-group">
 
-</div>
+              <label>
+                Mock Name
+              </label>
 
-</div>
+              <input
+                type="text"
+                placeholder="Enter Mock Name"
+                value={mockName}
+                onChange={(e) =>
+                  setMockName(
+                    e.target.value
+                  )
+                }
+              />
 
-</div>
+            </div>
 
-<div className="mock-section">
+            <div className="form-group">
 
-<div className="mock-section-title">
-⚙️ Mock Configuration
-</div>
+              <label>
+                Mock Type
+              </label>
 
-<div className="mock-generator-grid">
+              <select
+                value={mockType}
+                onChange={(e) =>
+                  setMockType(
+                    e.target.value
+                  )
+                }
+              >
 
-<div className="form-group">
+                <option value="full">
+                  Full Mock
+                </option>
 
-<label>
-Mock Name
-</label>
+                <option value="sectional">
+                  Sectional Mock
+                </option>
 
-<input
-type="text"
-placeholder="Enter Mock Name"
-value={mockName}
-onChange={(e)=>
-setMockName(
-e.target.value
-)
-}
-/>
+              </select>
 
-</div>
+            </div>
 
-<div className="form-group">
+            <div className="form-group">
 
-<label>
-Mock Type
-</label>
+              <label>
+                Subject
+              </label>
 
-<select
-value={mockType}
-onChange={(e)=>
-setMockType(
-e.target.value
-)
-}
->
+              <select
+                value={subjectId}
+                onChange={(e) => {
 
-<option value="full">
-Full Mock
-</option>
+                  setSubjectId(
+                    e.target.value
+                  );
 
-<option value="sectional">
-Sectional Mock
-</option>
+                  setTopic("");
+                  setSubTopic("");
 
-</select>
+                }}
+              >
 
-</div>
+                <option value="">
+                  Select Subject
+                </option>
 
-<div className="form-group">
+                {subjects.map((item) => (
 
-<label>
-Subject
-</label>
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
 
-<select
-value={subjectId}
-onChange={(e)=>{
+                    {item.name ||
+                      item.title}
 
-setSubjectId(
-e.target.value
-);
+                  </option>
 
-setTopic("");
-setSubTopic("");
+                ))}
 
-}}
->
+              </select>
 
-<option value="">
-Select Subject
-</option>
+            </div>
 
-{subjects.map((subject)=>(
+          </div>
 
-<option
-key={subject.id}
-value={subject.id}
->
+        </div>
 
-{subject.name ||
-subject.title}
+        {/* DISTRIBUTION */}
 
-</option>
+        <div className="mock-section">
 
-))}
+          <div className="mock-section-title">
+            🎯 Distribution & Strategy
+          </div>
 
-</select>
+          <label className="checkbox-label">
 
-</div>
+            <input
+              type="checkbox"
+              checked={
+                includeAllQuestions
+              }
+              onChange={(e) =>
+                setIncludeAllQuestions(
+                  e.target.checked
+                )
+              }
+            />
 
-<div className="form-group">
+            Include All Available Questions
 
-<label>
-Topic
-</label>
+          </label>
 
-<select
-value={topic}
-onChange={(e)=>{
+          <div className="distribution-options">
 
-setTopic(
-e.target.value
-);
+            <button
+              className={
+                distributionMode ===
+                "balanced"
+                  ? "distribution-btn active"
+                  : "distribution-btn"
+              }
+              onClick={() =>
+                setDistributionMode(
+                  "balanced"
+                )
+              }
+            >
 
-setSubTopic("");
+              Balanced Distribution
 
-}}
->
+            </button>
 
-<option value="">
-All Topics
-</option>
+            <button
+              className={
+                distributionMode ===
+                "extra"
+                  ? "distribution-btn active"
+                  : "distribution-btn"
+              }
+              onClick={() =>
+                setDistributionMode(
+                  "extra"
+                )
+              }
+            >
 
-{filteredTopics.map((item)=>(
+              Create Extra Mock
 
-<option
-key={item.id}
-value={item.id}
->
+            </button>
 
-{item.name ||
-item.title}
+            <button
+              className={
+                distributionMode ===
+                "manual"
+                  ? "distribution-btn active"
+                  : "distribution-btn"
+              }
+              onClick={() =>
+                setDistributionMode(
+                  "manual"
+                )
+              }
+            >
 
-</option>
+              Manual Distribution
 
-))}
+            </button>
 
-</select>
+          </div>
 
-</div>
+        </div>
 
-<div className="form-group">
+        {/* PROGRESS */}
 
-<label>
-Sub Topic
-</label>
+        {loading && (
 
-<select
-value={subTopic}
-onChange={(e)=>
-setSubTopic(
-e.target.value
-)
-}
->
+          <div className="progress-wrapper">
 
-<option value="">
-All Sub Topics
-</option>
+            <div className="progress-bar">
 
-{filteredSubTopics.map((item)=>(
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
 
-<option
-key={item.id}
-value={item.id}
->
+            </div>
 
-{item.name ||
-item.title}
+            <p>
+              {progress}% Completed
+            </p>
 
-</option>
+          </div>
 
-))}
+        )}
 
-</select>
+        {/* BUTTON */}
 
-</div>
+        <button
+          className="generate-btn"
+          disabled={loading}
+          onClick={handleGenerate}
+        >
 
-<div className="form-group">
+          {loading
+            ? "Generating..."
+            : "🚀 Generate Mocks"}
 
-<label>
-Questions Per Mock
-</label>
+        </button>
 
-<div className="custom-input-group">
+        {/* VIEW BUTTON */}
 
-<select
-value={quantity}
-onChange={(e)=>{
+        {generatedMocks.length > 0 && (
 
-const value =
-Number(
-e.target.value
-);
+          <button
+            className="view-mock-btn"
+            onClick={() =>
+              navigate("/admin/exams")
+            }
+          >
 
-if(
-value > totalQuestions
-){
+            View Generated Mocks
 
-alert(
-`Only ${totalQuestions} questions available`
-);
+          </button>
 
-return;
+        )}
 
-}
+      </div>
 
-setQuantity(value);
+    </AdminLayout>
 
-}}
->
-
-<option value={100}>
-100 Questions
-</option>
-
-<option value={50}>
-50 Questions
-</option>
-
-<option value={25}>
-25 Questions
-</option>
-
-{
-![100,50,25]
-.includes(quantity) && (
-
-<option value={quantity}>
-{quantity} Questions
-</option>
-
-)
-}
-
-</select>
-
-<input
-type="number"
-value={quantity}
-onChange={(e)=>{
-
-const value =
-Number(
-e.target.value
-);
-
-if(
-value > totalQuestions
-){
-
-alert(
-`Only ${totalQuestions} questions available`
-);
-
-return;
-
-}
-
-setQuantity(value);
-
-}}
-/>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Duration
-</label>
-
-<div className="custom-input-group">
-
-<select
-value={duration}
-onChange={(e)=>
-setDuration(
-Number(
-e.target.value
-)
-)
-}
->
-
-<option value={60}>
-60 mins
-</option>
-
-<option value={45}>
-45 mins
-</option>
-
-<option value={30}>
-30 mins
-</option>
-
-<option value={15}>
-15 mins
-</option>
-
-{
-![60,45,30,15]
-.includes(duration) && (
-
-<option value={duration}>
-{duration} mins
-</option>
-
-)
-}
-
-</select>
-
-<input
-type="number"
-value={duration}
-onChange={(e)=>
-setDuration(
-Number(
-e.target.value
-)
-)
-}
-/>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Seconds Per Question
-</label>
-
-<div className="custom-input-group">
-
-<input
-type="number"
-placeholder="30"
-value={secondsPerQuestion}
-onChange={(e)=>
-setSecondsPerQuestion(
-Number(
-e.target.value
-)
-)
-}
-/>
-
-<div className="auto-duration-box">
-
-Suggested:
-{" "}
-
-<strong>
-{calculatedMinutes}
- mins
-</strong>
-
-</div>
-
-</div>
-
-</div>
-
-<div className="form-group">
-
-<label>
-Desired Mock Quantity
-</label>
-
-<input
-type="number"
-value={desiredMocks}
-max={totalMocks}
-onChange={(e)=>{
-
-const value =
-Number(
-e.target.value
-);
-
-if(
-value > totalMocks
-){
-
-alert(
-`Maximum ${totalMocks} mocks possible`
-);
-
-return;
-
-}
-
-setDesiredMocks(value);
-
-}}
-/>
-
-</div>
-
-</div>
-
-</div>
-
-<div className="mock-section">
-
-<div className="mock-section-title">
-🎯 Distribution & Strategy
-</div>
-
-<label className="checkbox-label">
-
-<input
-type="checkbox"
-checked={includeAllQuestions}
-onChange={(e)=>
-setIncludeAllQuestions(
-e.target.checked
-)
-}
-/>
-
-Include All Available Questions
-
-</label>
-
-<div className="recommend-box">
-
-⭐ Recommended:
-{" "}
-
-{
-recommendedStrategy ===
-"balanced"
-
-?
-
-"Balanced Distribution"
-
-:
-
-"Create Extra Mock"
-
-}
-
-</div>
-
-<div className="distribution-options">
-
-<button
-className={
-distributionMode ===
-"balanced"
-
-?
-
-"distribution-btn active"
-
-:
-
-"distribution-btn"
-}
-onClick={()=>
-setDistributionMode(
-"balanced"
-)
-}
->
-
-Balanced Distribution
-
-</button>
-
-<button
-className={
-distributionMode ===
-"extra"
-
-?
-
-"distribution-btn active"
-
-:
-
-"distribution-btn"
-}
-onClick={()=>
-setDistributionMode(
-"extra"
-)
-}
->
-
-Create Extra Mock
-
-</button>
-
-<button
-className={
-distributionMode ===
-"manual"
-
-?
-
-"distribution-btn active"
-
-:
-
-"distribution-btn"
-}
-onClick={()=>
-setDistributionMode(
-"manual"
-)
-}
->
-
-Manual Distribution
-
-</button>
-
-</div>
-
-{
-distributionMode ===
-"manual" && (
-
-<input
-type="text"
-placeholder="100,100,19"
-value={manualDistribution}
-onChange={(e)=>
-setManualDistribution(
-e.target.value
-)
-}
-/>
-
-)
-}
-
-<div className="distribution-preview">
-
-{
-distributionPreview.map(
-(item,index)=>(
-
-<div
-className="distribution-card"
-key={index}
->
-
-<h4>
-Mock {index + 1}
-</h4>
-
-<p>
-{item} Questions
-</p>
-
-</div>
-
-)
-}
-
-</div>
-
-</div>
-
-<button
-className="generate-btn"
-onClick={handleGenerate}
-disabled={loading}
->
-
-{
-loading
-
-?
-
-`Generating ${generationProgress}...`
-
-:
-
-"🚀 Generate Mocks"
-
-}
-
-</button>
-
-</div>
-
-</AdminLayout>
-
-);
+  );
 
 }

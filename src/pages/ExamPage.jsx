@@ -1,327 +1,390 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  useNavigate,
-} from "react-router-dom";
-
-import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
-
-import { db } from "../firebase/config";
-
-import {
-  listenSubjects,
-} from "../services/subjectService";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db, auth } from "../firebase/config";
 
 export default function ExamPage() {
-
+  const { examId } = useParams();
   const navigate = useNavigate();
 
-  const [exams, setExams] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+  const STORAGE_KEY = `exam_${examId}`;
 
-  const [selectedMockType, setSelectedMockType] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [selectedSubTopic, setSelectedSubTopic] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [examData, setExamData]   = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers]     = useState({});
+  const [visited, setVisited]     = useState({});
+  const [review, setReview]       = useState({});
+  const [bookmarks, setBookmarks] = useState({});
+  const [timeLeft, setTimeLeft]   = useState(1800);
+  const [cheatCount, setCheatCount] = useState(0);
 
   /* =========================================
-    LOAD EXAMS (real-time)
+     FULLSCREEN
   ========================================= */
-
   useEffect(() => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch((err) => console.log("Fullscreen error:", err));
+    }
+  }, []);
 
-    const unsubscribe = onSnapshot(
-      collection(db, "exams"),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        setExams(data);
+  /* =========================================
+     CHEAT DETECTION
+  ========================================= */
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.hidden) {
+        handleCheating("Tab Switch Detected");
       }
-    );
+    }
+    function handleBlur() {
+      handleCheating("Window Focus Lost");
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, [cheatCount]);
 
-    return () => unsubscribe();
-
-  }, []);
+  function handleCheating(reason) {
+    setCheatCount(prev => {
+      const next = prev + 1;
+      alert(`Warning ${next}/3: ${reason}. Switching tabs or exiting full screen is strictly monitored!`);
+      if (next >= 3) {
+        alert("Exam auto-submitted due to multiple cheating infractions.");
+        submitExam(true);
+      }
+      return next;
+    });
+  }
 
   /* =========================================
-    LOAD SUBJECTS (real-time)
+     FETCH DATA & RESTORE STATE
   ========================================= */
-
   useEffect(() => {
+    async function loadExam() {
+      try {
+        const qSnap = await getDocs(collection(db, `exams/${examId}/questions`));
+        const list = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setQuestions(list);
 
-    const unsubscribe = listenSubjects(setSubjects);
-
-    return () => unsubscribe();
-
-  }, []);
-
-  /* =========================================
-    DERIVED FILTER OPTIONS
-  ========================================= */
-
-  const filteredTopics = useMemo(() => {
-
-    return [
-      ...new Set(
-        exams
-          .filter((e) =>
-            selectedSubject
-              ? e.subjectId === selectedSubject
-              : true
-          )
-          .map((e) => e.topicName)
-          .filter(Boolean)
-      ),
-    ];
-
-  }, [exams, selectedSubject]);
-
-  const filteredSubTopics = useMemo(() => {
-
-    return [
-      ...new Set(
-        exams
-          .filter((e) =>
-            selectedTopic
-              ? e.topicName === selectedTopic
-              : true
-          )
-          .map((e) => e.subTopicName)
-          .filter(Boolean)
-      ),
-    ];
-
-  }, [exams, selectedTopic]);
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setAnswers(parsed.answers || {});
+          setReview(parsed.review || {});
+          setVisited(parsed.visited || {});
+          setBookmarks(parsed.bookmarks || {});
+          setTimeLeft(parsed.timeLeft ?? 1800);
+          setCheatCount(parsed.cheatCount || 0);
+        }
+        
+        if (list.length > 0 && !saved) {
+          setVisited({ [list[0].id]: true });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadExam();
+  }, [examId]);
 
   /* =========================================
-    FILTERED EXAMS
+     AUTO SAVE TO LOCALSTORAGE
   ========================================= */
+  useEffect(() => {
+    if (loading || questions.length === 0) return;
+    const stateObj = { answers, review, visited, bookmarks, timeLeft, cheatCount };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+  }, [answers, review, visited, bookmarks, timeLeft, cheatCount, loading, questions]);
 
-  const filteredExams = exams.filter((exam) => {
+  /* =========================================
+     TIMER
+  ========================================= */
+  useEffect(() => {
+    if (loading) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          submitExam(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loading]);
 
-    const mockTypeMatch = selectedMockType
-      ? (exam.mockType || "sectional") === selectedMockType
-      : true;
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
 
-    const subjectMatch = selectedSubject
-      ? exam.subjectId === selectedSubject
-      : true;
+  /* =========================================
+     NAVIGATION ACTIONS
+  ========================================= */
+  function markVisited(idx) {
+    if (questions[idx]) {
+      setVisited(prev => ({ ...prev, [questions[idx].id]: true }));
+    }
+  }
 
-    const topicMatch = selectedTopic
-      ? exam.topicName === selectedTopic
-      : true;
+  function handleNext() {
+    if (currentQuestion < questions.length - 1) {
+      const nextIdx = currentQuestion + 1;
+      setCurrentQuestion(nextIdx);
+      markVisited(nextIdx);
+    }
+  }
 
-    const subTopicMatch =
-      selectedMockType === "full"
-        ? true
-        : selectedSubTopic
-          ? exam.subTopicName === selectedSubTopic
-          : true;
+  function handlePrev() {
+    if (currentQuestion > 0) {
+      const prevIdx = currentQuestion - 1;
+      setCurrentQuestion(prevIdx);
+      markVisited(prevIdx);
+    }
+  }
 
-    return (
-      mockTypeMatch &&
-      subjectMatch &&
-      topicMatch &&
-      subTopicMatch
-    );
+  function selectOption(optIndex) {
+    const qId = questions[currentQuestion].id;
+    setAnswers(prev => ({ ...prev, [qId]: optIndex }));
+  }
 
+  function clearResponse() {
+    const qId = questions[currentQuestion].id;
+    setAnswers(prev => {
+      const updated = { ...prev };
+      delete updated[qId];
+      return updated;
+    });
+  }
+
+  function toggleMarkForReview() {
+    const qId = questions[currentQuestion].id;
+    setReview(prev => ({ ...prev, [qId]: !prev[qId] }));
+  }
+
+  function toggleBookmark() {
+    const qId = questions[currentQuestion].id;
+    setBookmarks(prev => ({ ...prev, [qId]: !prev[qId] }));
+  }
+
+  /* =========================================
+     SUBMIT EXAM
+  ========================================= */
+  async function submitExam(isAuto = false) {
+    if (!isAuto) {
+      const confirmSub = window.confirm("Are you sure you want to finish and submit your exam?");
+      if (!confirmSub) return;
+    }
+
+    let score = 0;
+    questions.forEach(q => {
+      const uAns = answers[q.id];
+      if (uAns !== undefined) {
+        const map = { A: 0, B: 1, C: 2, D: 3 };
+        let cIndex = 0;
+        if (typeof q.correctAnswer === "number") cIndex = q.correctAnswer;
+        else if (typeof q.correctAnswer === "string") cIndex = map[q.correctAnswer.trim().toUpperCase()] ?? 0;
+        else cIndex = map[q.answer] || 0;
+
+        if (uAns === cIndex) {
+          score += 4; // Assuming standard 4 marks per correct response
+        }
+      }
+    });
+
+    const totalMarksMax = questions.length * 4;
+    const answeredCount = Object.keys(answers).length;
+    const accuracy = answeredCount > 0 ? Math.round((score / (answeredCount * 4)) * 100) : 0;
+    const timeTakenSec = 1800 - timeLeft;
+
+    const finalResult = {
+      examId,
+      score,
+      totalMarks: totalMarksMax,
+      timeTaken: timeTakenSec,
+      accuracy,
+      answers,
+      questions,
+      submittedAt: new Date().toISOString(),
+    };
+
+    try {
+      const user = auth.currentUser;
+      await addDoc(collection(db, "results"), {
+        ...finalResult,
+        userId: user ? user.uid : "anonymous",
+      });
+      localStorage.removeItem(STORAGE_KEY);
+      
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.log(err));
+      }
+
+      navigate("/result", { state: finalResult });
+    } catch (err) {
+      console.error("Error archiving your test record: ", err);
+      alert("Submission failed. Saving backup locally.");
+      navigate("/result", { state: finalResult });
+    }
+  }
+
+  if (loading) return <div className="page"><h2>Loading Exam Questions...</h2></div>;
+  if (questions.length === 0) return <div className="page"><h2>No Questions Found in Exam!</h2></div>;
+
+  const currentQ = questions[currentQuestion];
+  const selectedOpt = answers[currentQ.id];
+
+  // Counter Calculations
+  let answeredCount = 0;
+  let markedCount = 0;
+  let markedAnsweredCount = 0;
+  let notAnsweredCount = 0;
+  let notVisitedCount = 0;
+
+  questions.forEach(q => {
+    const hasAns = answers[q.id] !== undefined;
+    const hasMark = review[q.id];
+    const hasVisit = visited[q.id];
+
+    if (hasMark && hasAns) markedAnsweredCount++;
+    else if (hasMark) markedCount++;
+    else if (hasAns) answeredCount++;
+    else if (hasVisit) notAnsweredCount++;
+    else notVisitedCount++;
   });
 
-  /* =========================================
-    HELPERS
-  ========================================= */
-
-  function getSubjectName(id) {
-    return subjects.find((s) => s.id === id)?.name || "-";
-  }
-
-  function getQuestionCount(exam) {
-    return (
-      exam.totalQuestions ||
-      exam.questionCount ||
-      exam.questionIds?.length ||
-      exam.questions?.length ||
-      0
-    );
-  }
-
-  function isFullMock(exam) {
-    return (exam.mockType || "sectional") === "full";
-  }
-
-  function handleStartExam(examId) {
-    navigate(`/exam/${examId}`);
-  }
-
-  /* =========================================
-    UI
-  ========================================= */
-
   return (
+    <div className="exam-layout-grid">
+      <div className="exam-workspace-pane">
+        <div className="workspace-header">
+          <div className="section-label-chip">Section: General Proficiency</div>
+          <button 
+            className={`bookmark-toggle-btn ${bookmarks[currentQ.id] ? "active" : ""}`}
+            onClick={toggleBookmark}
+          >
+            {bookmarks[currentQ.id] ? "⭐ Bookmarked" : "☆ Bookmark"}
+          </button>
+        </div>
 
-    <div className="page">
+        <div className="question-body-card">
+          <h3 className="question-number-heading">Question {currentQuestion + 1}</h3>
+          <p className="question-text-paragraph">{currentQ.text || currentQ.question}</p>
 
-      {/* ── Header ── */}
-      <div className="page-header">
-        <div>
-          <h2>Exams</h2>
-          <p>Choose a mock to begin</p>
+          <div className="options-vertical-stack">
+            {(currentQ.options || []).map((option, idx) => (
+              <label 
+                key={idx} 
+                className={`option-row-card ${selectedOpt === idx ? "selected" : ""}`}
+              >
+                <input 
+                  type="radio" 
+                  name="exam-option-group" 
+                  checked={selectedOpt === idx} 
+                  onChange={() => selectOption(idx)} 
+                />
+                <span className="option-prefix-icon">{String.fromCharCode(65 + idx)}</span>
+                <span className="option-text-label">{option}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="workspace-action-footer">
+          <div className="footer-left-actions">
+            <button className="action-btn secondary" onClick={toggleMarkForReview}>
+              {review[currentQ.id] ? "Unmark Review" : "Mark for Review & Next"}
+            </button>
+            <button className="action-btn danger" onClick={clearResponse}>Clear Response</button>
+          </div>
+          <div className="footer-right-actions">
+            <button className="action-btn primary" onClick={handlePrev} disabled={currentQuestion === 0}>Previous</button>
+            <button className="action-btn primary" onClick={handleNext} disabled={currentQuestion === questions.length - 1}>Save & Next</button>
+            <button className="action-btn success submit" onClick={() => submitExam(false)}>Submit Exam</button>
+          </div>
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="filter-bar">
+      {/* Structured vertical sidebar wrapper to constrain height overflow */}
+      <div className="exam-sidebar-pane">
+        <div className="timer-countdown-card">
+          <span className="timer-label">Time Remaining</span>
+          <span className="timer-clock">{formatTime(timeLeft)}</span>
+        </div>
 
-        {/* Mock Type */}
-        <select
-          value={selectedMockType}
-          onChange={(e) => {
-            setSelectedMockType(e.target.value);
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Mock Types</option>
-          <option value="full">Full Mock</option>
-          <option value="sectional">Sectional Mock</option>
-        </select>
+        <div className="candidate-profile-summary">
+          <div className="avatar-placeholder">👤</div>
+          <div className="candidate-info">
+            <h4>Anonymous Contender</h4>
+            <span>Assessment Room Active</span>
+          </div>
+        </div>
 
-        {/* Subject */}
-        <select
-          value={selectedSubject}
-          onChange={(e) => {
-            setSelectedSubject(e.target.value);
-            setSelectedTopic("");
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Subjects</option>
-          {subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Topic */}
-        <select
-          value={selectedTopic}
-          onChange={(e) => {
-            setSelectedTopic(e.target.value);
-            setSelectedSubTopic("");
-          }}
-        >
-          <option value="">All Topics</option>
-          {filteredTopics.map((topic) => (
-            <option key={topic} value={topic}>
-              {topic}
-            </option>
-          ))}
-        </select>
-
-        {/* Sub Topic — hidden when Full Mock is selected */}
-        {selectedMockType !== "full" && (
-          <select
-            value={selectedSubTopic}
-            onChange={(e) => setSelectedSubTopic(e.target.value)}
-          >
-            <option value="">All Sub Topics</option>
-            {filteredSubTopics.map((subTopic) => (
-              <option key={subTopic} value={subTopic}>
-                {subTopic}
-              </option>
-            ))}
-          </select>
-        )}
-
-      </div>
-
-      {/* ── Exam Cards ── */}
-      <div className="exam-grid">
-
-        {filteredExams.length === 0 && (
-          <p className="no-exams-msg">No exams found for the selected filters.</p>
-        )}
-
-        {filteredExams.map((exam) => (
-
-          <div key={exam.id} className="exam-card">
-
-            {/* Badge */}
-            <div className="exam-card-badge-row">
-              <div
-                className={`exam-badge ${
-                  isFullMock(exam) ? "full-badge" : "sectional-badge"
-                }`}
-              >
-                {isFullMock(exam) ? "FULL MOCK" : "SECTIONAL MOCK"}
-              </div>
+        {/* Scrollable container setup for indicators and numbers grid */}
+        <div className="sidebar-scrollable-container">
+          <div className="exam-status-legend-grid">
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-answered">{answeredCount}</div>
+              <span>Answered</span>
             </div>
-
-            {/* Exam Name */}
-            <h2 className="exam-card-title">
-              {exam.name}
-            </h2>
-
-            {/* Details */}
-            <div className="exam-details">
-
-              <p>
-                <strong>Subject:</strong>{" "}
-                {getSubjectName(exam.subjectId)}
-              </p>
-
-              <p>
-                <strong>Topic:</strong>{" "}
-                {exam.topicName || "-"}
-              </p>
-
-              {/* Sub Topic — hidden for Full Mock */}
-              {!isFullMock(exam) && (
-                <p>
-                  <strong>Sub Topic:</strong>{" "}
-                  {exam.subTopicName || "-"}
-                </p>
-              )}
-
-              <p>
-                <strong>Questions:</strong>{" "}
-                {getQuestionCount(exam)}
-              </p>
-
-              <p>
-                <strong>Duration:</strong>{" "}
-                {exam.duration || 0} mins
-              </p>
-
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-marked">{markedCount}</div>
+              <span>Marked</span>
             </div>
-
-            {/* Actions */}
-            <div className="exam-actions">
-              <button
-                className="start-btn"
-                onClick={() => handleStartExam(exam.id)}
-              >
-                Start Exam
-              </button>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-markedanswered">{markedAnsweredCount}</div>
+              <span>Marked & Answered</span>
             </div>
-
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-notanswered">{notAnsweredCount}</div>
+              <span>Not Answered</span>
+            </div>
+            <div className="exam-legend-item">
+              <div className="exam-legend-badge legend-notvisited">{notVisitedCount}</div>
+              <span>Not Visited</span>
+            </div>
           </div>
 
-        ))}
+          <div className="palette-grid">
+            {questions.map((question, index) => {
+              const answered = answers[question.id] !== undefined;
+              const marked = review[question.id];
+              const visitedQuestion = visited[question.id];
 
+              let btnClass = "palette-btn";
+              if (marked && answered) { btnClass += " marked-answered"; }
+              else if (marked) { btnClass += " marked"; }
+              else if (answered) { btnClass += " answered"; }
+              else if (visitedQuestion) { btnClass += " not-answered"; }
+              else { btnClass += " not-visited"; }
+
+              if (currentQuestion === index) { btnClass += " current"; }
+
+              return (
+                <button
+                  key={question.id}
+                  className={btnClass}
+                  onClick={() => {
+                    setCurrentQuestion(index);
+                    markVisited(index);
+                  }}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
-
     </div>
-
   );
-
 }

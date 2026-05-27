@@ -1,20 +1,3 @@
-The root cause of both issues lies entirely inside **`ExamPage.jsx`** within its `loadExam` initialization effect.
-
-Here is why both issues are happening:
-
-1. **Why questions are loaded randomly/incorrectly:** Inside `ExamPage.jsx`, your code fetches the exam template correctly, but then it completely ignores the pre-generated array of questions (`currentExam.questions` or `currentExam.questionIds`) attached to that specific mock test. Instead, it re-queries the entire `questions` collection from Firestore and tries to run manual fallback filtering logic. Because `currentExam.examType` is undefined for dynamically generated mocks (the mock generator uses `mockType`), none of your `if/else if` conditions match. It falls back to sorting or slicing the *entire* question database!
-2. **Why 1287 questions show up instead of 100:**
-Because your fallback filters fail to match, the entire database of 1287 questions is loaded into state. Furthermore, `currentExam.questionCount` is undefined (the mock generator saves this field as `quantity` or `totalQuestions`), so the `.slice(0, currentExam.questionCount)` statement passes `undefined`, slicing nothing and returning all 1287 questions.
-
-### The Solution
-
-When a mock test is generated via `mockGeneratorService.js`, the exact, shuffled array of question objects is explicitly saved inside the exam document under the `questions` property.
-
-To fix both bugs at once, `ExamPage.jsx` simply needs to extract `currentExam.questions` directly. If it exists, use it immediately; otherwise, fall back to historical filtering methods.
-
-Here is the complete, updated **`ExamPage.jsx`** file with the corrected logic:
-
-```jsx
 import {
   useEffect,
   useState,
@@ -506,4 +489,4 @@ export default function ExamPage(){
   );
 }
 
-```
+

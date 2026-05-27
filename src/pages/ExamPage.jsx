@@ -1,8 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   collection,
@@ -15,80 +11,63 @@ import { db } from "../firebase/config";
 
 import AdminLayout from "./AdminLayout";
 
-import {
-  listenSubjects,
-} from "../services/subjectService";
+import { listenSubjects } from "../services/subjectService";
 
-export default function Exams(){
+export default function Exams() {
 
-  // =====================================
-  // STATES
-  // =====================================
+  const [exams, setExams] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
-  const [exams,setExams] = useState([]);
-
-  const [subjects,setSubjects] = useState([]);
-
-  const [selectedMockType,setSelectedMockType] =
+  const [selectedMockType, setSelectedMockType] =
     useState("");
 
-  const [selectedSubject,setSelectedSubject] =
+  const [selectedSubject, setSelectedSubject] =
     useState("");
 
-  const [selectedTopic,setSelectedTopic] =
+  const [selectedTopic, setSelectedTopic] =
     useState("");
 
-  const [selectedSubTopic,setSelectedSubTopic] =
+  const [selectedSubTopic, setSelectedSubTopic] =
     useState("");
 
-  // =====================================
   // LOAD EXAMS
-  // =====================================
 
-  useEffect(()=>{
+  useEffect(() => {
 
     const unsubscribe = onSnapshot(
 
-      collection(db,"exams"),
+      collection(db, "exams"),
 
-      (snapshot)=>{
+      (snapshot) => {
 
-        const data = snapshot.docs.map((doc)=>({
-
-          id:doc.id,
-
-          ...doc.data()
-
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
         }));
 
         setExams(data);
-
       }
 
     );
 
-    return ()=> unsubscribe();
+    return () => unsubscribe();
 
-  },[]);
+  }, []);
 
-  // =====================================
   // LOAD SUBJECTS
-  // =====================================
 
-  useEffect(()=>{
+  useEffect(() => {
 
     const unsubscribe =
       listenSubjects(setSubjects);
 
-    return ()=> unsubscribe();
+    return () => unsubscribe();
 
-  },[]);
+  }, []);
 
-  // =====================================
   // FILTERED TOPICS
-  // =====================================
 
-  const filteredTopics = useMemo(()=>{
+  const filteredTopics = useMemo(() => {
 
     return [
 
@@ -96,7 +75,7 @@ export default function Exams(){
 
         exams
 
-          .filter((exam)=>
+          .filter((exam) =>
 
             selectedSubject
               ? exam.subjectId === selectedSubject
@@ -104,7 +83,9 @@ export default function Exams(){
 
           )
 
-          .map((exam)=> exam.topicName)
+          .map((exam) =>
+            exam.topicName || exam.topic || ""
+          )
 
           .filter(Boolean)
 
@@ -112,16 +93,11 @@ export default function Exams(){
 
     ];
 
-  },[
-    exams,
-    selectedSubject
-  ]);
+  }, [exams, selectedSubject]);
 
-  // =====================================
-  // FILTERED SUB TOPICS
-  // =====================================
+  // FILTERED SUBTOPICS
 
-  const filteredSubTopics = useMemo(()=>{
+  const filteredSubTopics = useMemo(() => {
 
     return [
 
@@ -129,15 +105,22 @@ export default function Exams(){
 
         exams
 
-          .filter((exam)=>
+          .filter((exam) =>
 
             selectedTopic
-              ? exam.topicName === selectedTopic
+              ? (
+                  exam.topicName === selectedTopic ||
+                  exam.topic === selectedTopic
+                )
               : true
 
           )
 
-          .map((exam)=> exam.subTopicName)
+          .map((exam) =>
+            exam.subTopicName ||
+            exam.subTopic ||
+            ""
+          )
 
           .filter(Boolean)
 
@@ -145,34 +128,20 @@ export default function Exams(){
 
     ];
 
-  },[
-    exams,
-    selectedTopic
-  ]);
+  }, [exams, selectedTopic]);
 
-  // =====================================
   // FILTER EXAMS
-  // =====================================
 
-  const filteredExams = exams.filter((exam)=>{
-
-    // ---------------------------------
-    // MOCK TYPE FILTER
-    // ---------------------------------
+  const filteredExams = exams.filter((exam) => {
 
     const mockTypeMatch =
 
       selectedMockType
         ? (
             (exam.mockType || "sectional")
-            ===
-            selectedMockType
+            === selectedMockType
           )
         : true;
-
-    // ---------------------------------
-    // SUBJECT FILTER
-    // ---------------------------------
 
     const subjectMatch =
 
@@ -180,20 +149,17 @@ export default function Exams(){
         ? exam.subjectId === selectedSubject
         : true;
 
-    // ---------------------------------
-    // TOPIC FILTER
-    // ---------------------------------
+    const topicValue =
+      exam.topicName || exam.topic || "";
 
     const topicMatch =
 
       selectedTopic
-        ? exam.topicName === selectedTopic
+        ? topicValue === selectedTopic
         : true;
 
-    // ---------------------------------
-    // SUBTOPIC FILTER
-    // ONLY FOR SECTIONAL MOCK
-    // ---------------------------------
+    const subTopicValue =
+      exam.subTopicName || exam.subTopic || "";
 
     const subTopicMatch =
 
@@ -204,76 +170,59 @@ export default function Exams(){
         : (
 
             selectedSubTopic
-
-              ? exam.subTopicName === selectedSubTopic
-
+              ? subTopicValue === selectedSubTopic
               : true
           );
 
     return (
-
       mockTypeMatch &&
       subjectMatch &&
       topicMatch &&
       subTopicMatch
-
     );
 
   });
 
-  // =====================================
-  // DELETE EXAM
-  // =====================================
+  // DELETE
 
-  async function handleDelete(id){
+  async function handleDelete(id) {
 
-    const confirmDelete = window.confirm(
-      "Delete this exam?"
-    );
+    const confirmDelete =
+      window.confirm("Delete exam?");
 
-    if(!confirmDelete) return;
+    if (!confirmDelete) return;
 
-    try{
+    try {
 
-      await deleteDoc(doc(db,"exams",id));
+      await deleteDoc(doc(db, "exams", id));
 
     }
-    catch(error){
+    catch (error) {
 
       console.error(error);
 
       alert("Delete Failed");
-
     }
-
   }
 
-  // =====================================
-  // GET SUBJECT NAME
-  // =====================================
+  // SUBJECT NAME
 
-  function getSubjectName(id){
+  function getSubjectName(id) {
 
     return (
-      subjects.find((s)=> s.id === id)?.name
+      subjects.find((s) => s.id === id)?.name
       || "-"
     );
 
   }
 
-  // =====================================
-  // UI
-  // =====================================
-
-  return(
+  return (
 
     <AdminLayout>
 
       <div className="page">
 
-        {/* ============================= */}
-        {/* PAGE HEADER */}
-        {/* ============================= */}
+        {/* HEADER */}
 
         <div className="page-header">
 
@@ -289,17 +238,15 @@ export default function Exams(){
 
         </div>
 
-        {/* ============================= */}
         {/* FILTERS */}
-        {/* ============================= */}
 
         <div className="filter-bar">
 
-          {/* MOCK TYPE FILTER */}
+          {/* MOCK TYPE */}
 
           <select
             value={selectedMockType}
-            onChange={(e)=>{
+            onChange={(e) => {
 
               setSelectedMockType(
                 e.target.value
@@ -324,11 +271,11 @@ export default function Exams(){
 
           </select>
 
-          {/* SUBJECT FILTER */}
+          {/* SUBJECT */}
 
           <select
             value={selectedSubject}
-            onChange={(e)=>
+            onChange={(e) =>
               setSelectedSubject(
                 e.target.value
               )
@@ -340,7 +287,7 @@ export default function Exams(){
             </option>
 
             {
-              subjects.map((subject)=>(
+              subjects.map((subject) => (
 
                 <option
                   key={subject.id}
@@ -356,11 +303,11 @@ export default function Exams(){
 
           </select>
 
-          {/* TOPIC FILTER */}
+          {/* TOPIC */}
 
           <select
             value={selectedTopic}
-            onChange={(e)=>
+            onChange={(e) =>
               setSelectedTopic(
                 e.target.value
               )
@@ -372,7 +319,7 @@ export default function Exams(){
             </option>
 
             {
-              filteredTopics.map((topic)=>(
+              filteredTopics.map((topic) => (
 
                 <option
                   key={topic}
@@ -388,14 +335,14 @@ export default function Exams(){
 
           </select>
 
-          {/* SUB TOPIC FILTER */}
+          {/* SUBTOPIC */}
 
           {
             selectedMockType !== "full" && (
 
               <select
                 value={selectedSubTopic}
-                onChange={(e)=>
+                onChange={(e) =>
                   setSelectedSubTopic(
                     e.target.value
                   )
@@ -407,20 +354,18 @@ export default function Exams(){
                 </option>
 
                 {
-                  filteredSubTopics.map(
-                    (subTopic)=>(
+                  filteredSubTopics.map((subTopic) => (
 
-                      <option
-                        key={subTopic}
-                        value={subTopic}
-                      >
+                    <option
+                      key={subTopic}
+                      value={subTopic}
+                    >
 
-                        {subTopic}
+                      {subTopic}
 
-                      </option>
+                    </option>
 
-                    )
-                  )
+                  ))
                 }
 
               </select>
@@ -430,165 +375,130 @@ export default function Exams(){
 
         </div>
 
-        {/* ============================= */}
         {/* EXAM CARDS */}
-        {/* ============================= */}
 
         <div className="exam-grid">
 
           {
-            filteredExams.map((exam)=>(
+            filteredExams.map((exam) => {
 
-              <div
-                key={exam.id}
-                className="exam-card"
-              >
+              const topic =
+                exam.topicName ||
+                exam.topic ||
+                "-";
 
-                {/* MOCK TYPE BADGE */}
+              const subTopic =
+                exam.subTopicName ||
+                exam.subTopic ||
+                "-";
 
-                <div className="exam-badge-row">
+              const questionCount =
 
-                  <div
-                    className={`exam-badge ${
-                      (exam.mockType || "sectional")
-                      === "full"
-                        ? "full-badge"
-                        : "sectional-badge"
-                    }`}
-                  >
+                exam.totalQuestions ||
+
+                exam.questionCount ||
+
+                exam.questionIds?.length ||
+
+                exam.questions?.length ||
+
+                0;
+
+              return (
+
+                <div
+                  key={exam.id}
+                  className="exam-card"
+                >
+
+                  <div className="exam-badge-row">
+
+                    <div
+                      className={`exam-badge ${
+                        (exam.mockType || "sectional")
+                        === "full"
+                          ? "full-badge"
+                          : "sectional-badge"
+                      }`}
+                    >
+
+                      {
+                        (exam.mockType || "sectional")
+                        === "full"
+
+                          ? "FULL MOCK"
+
+                          : "SECTIONAL MOCK"
+                      }
+
+                    </div>
+
+                  </div>
+
+                  <h2 className="exam-title">
+
+                    {exam.name || "-"}
+
+                  </h2>
+
+                  <div className="exam-details">
+
+                    <p>
+                      <strong>Subject:</strong>{" "}
+                      {
+                        getSubjectName(
+                          exam.subjectId
+                        )
+                      }
+                    </p>
+
+                    <p>
+                      <strong>Topic:</strong>{" "}
+                      {topic}
+                    </p>
 
                     {
                       (exam.mockType || "sectional")
-                      === "full"
+                      === "sectional" && (
 
-                        ? "FULL MOCK"
+                        <p>
+                          <strong>Sub Topic:</strong>{" "}
+                          {subTopic}
+                        </p>
 
-                        : "SECTIONAL MOCK"
+                      )
                     }
+
+                    <p>
+                      <strong>Questions:</strong>{" "}
+                      {questionCount}
+                    </p>
+
+                    <p>
+                      <strong>Duration:</strong>{" "}
+                      {exam.duration || 0} mins
+                    </p>
+
+                  </div>
+
+                  <div className="exam-actions">
+
+                    <button
+                      className="delete-btn"
+                      onClick={() =>
+                        handleDelete(exam.id)
+                      }
+                    >
+                      Delete
+                    </button>
 
                   </div>
 
                 </div>
 
-                {/* EXAM NAME */}
+              );
 
-                <h2 className="exam-title">
-
-                  {exam.name}
-
-                </h2>
-
-                {/* EXAM DETAILS */}
-
-                <div className="exam-details">
-
-                  {/* SUBJECT */}
-
-                  <p>
-
-                    <strong>
-                      Subject:
-                    </strong>{" "}
-
-                    {
-                      getSubjectName(
-                        exam.subjectId
-                      )
-                    }
-
-                  </p>
-
-                  {/* TOPIC */}
-
-                  <p>
-
-                    <strong>
-                      Topic:
-                    </strong>{" "}
-
-                    {
-                      exam.topicName || "-"
-                    }
-
-                  </p>
-
-                  {/* SUBTOPIC */}
-
-                  {
-                    (exam.mockType || "sectional")
-                    === "sectional" && (
-
-                      <p>
-
-                        <strong>
-                          Sub Topic:
-                        </strong>{" "}
-
-                        {
-                          exam.subTopicName || "-"
-                        }
-
-                      </p>
-
-                    )
-                  }
-
-                  {/* QUESTION COUNT */}
-
-                  <p>
-
-                    <strong>
-                      Questions:
-                    </strong>{" "}
-
-                    {
-
-                      exam.totalQuestions ||
-
-                      exam.questionCount ||
-
-                      exam.questionIds?.length ||
-
-                      exam.questions?.length ||
-
-                      0
-
-                    }
-
-                  </p>
-
-                  {/* DURATION */}
-
-                  <p>
-
-                    <strong>
-                      Duration:
-                    </strong>{" "}
-
-                    {exam.duration || 0} mins
-
-                  </p>
-
-                </div>
-
-                {/* ACTIONS */}
-
-                <div className="exam-actions">
-
-                  <button
-                    className="delete-btn"
-                    onClick={()=>
-                      handleDelete(exam.id)
-                    }
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
-              </div>
-
-            ))
+            })
           }
 
         </div>

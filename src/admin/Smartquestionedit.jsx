@@ -18,7 +18,7 @@ import { db } from "../firebase/config";
 import AdminLayout from "./AdminLayout";
 
 /* =========================================================
-   QUESTION EDITOR
+QUESTION EDITOR
 ========================================================= */
 
 function QuestionEditor({ value, onChange }) {
@@ -88,11 +88,9 @@ function QuestionEditor({ value, onChange }) {
   return (
     <div className="se-editor-shell">
 
-      {/* TOP */}
-
       <div className="se-editor-top">
 
-        {/* MODE */}
+        {/* TABS */}
 
         <div className="se-editor-tabs">
 
@@ -101,7 +99,16 @@ function QuestionEditor({ value, onChange }) {
             className={`se-editor-mode-btn ${
               mode === "visual" ? "active" : ""
             }`}
-            onClick={() => setMode("visual")}
+            onClick={() => {
+              setMode("visual");
+
+              setTimeout(() => {
+                if (editorRef.current) {
+                  editorRef.current.innerHTML =
+                    htmlValue;
+                }
+              }, 0);
+            }}
           >
             Visual
           </button>
@@ -111,7 +118,18 @@ function QuestionEditor({ value, onChange }) {
             className={`se-editor-mode-btn ${
               mode === "html" ? "active" : ""
             }`}
-            onClick={() => setMode("html")}
+            onClick={() => {
+              if (editorRef.current) {
+                const currentHtml =
+                  editorRef.current.innerHTML;
+
+                setHtmlValue(currentHtml);
+
+                onChange(currentHtml);
+              }
+
+              setMode("html");
+            }}
           >
             HTML
           </button>
@@ -213,7 +231,7 @@ function QuestionEditor({ value, onChange }) {
         onChange={handleFile}
       />
 
-      {/* VISUAL / HTML */}
+      {/* EDITOR */}
 
       {mode === "html" ? (
         <textarea
@@ -221,6 +239,7 @@ function QuestionEditor({ value, onChange }) {
           value={htmlValue}
           onChange={(e) => {
             setHtmlValue(e.target.value);
+
             onChange(e.target.value);
           }}
           placeholder="Write HTML here..."
@@ -246,7 +265,7 @@ function QuestionEditor({ value, onChange }) {
 }
 
 /* =========================================================
-   MAIN PAGE
+MAIN PAGE
 ========================================================= */
 
 export default function SmartEditPage() {
@@ -258,11 +277,14 @@ export default function SmartEditPage() {
 
   const [subTopics, setSubTopics] = useState([]);
 
-  const [filteredQuestions, setFilteredQuestions] = useState([]);
+  const [filteredQuestions, setFilteredQuestions] =
+    useState([]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
 
-  const [questionHtml, setQuestionHtml] = useState("");
+  const [questionHtml, setQuestionHtml] =
+    useState("");
 
   const [optionA, setOptionA] = useState("");
 
@@ -272,75 +294,94 @@ export default function SmartEditPage() {
 
   const [optionD, setOptionD] = useState("");
 
-  const [correctAnswer, setCorrectAnswer] = useState("A");
+  const [correctAnswer, setCorrectAnswer] =
+    useState("A");
 
-  const [difficulty, setDifficulty] = useState("easy");
+  const [difficulty, setDifficulty] =
+    useState("easy");
 
-  const [explanation, setExplanation] = useState("");
+  const [explanation, setExplanation] =
+    useState("");
 
-  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSubject, setSelectedSubject] =
+    useState("");
 
-  const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedTopic, setSelectedTopic] =
+    useState("");
 
-  const [selectedSubTopic, setSelectedSubTopic] = useState("");
+  const [selectedSubTopic, setSelectedSubTopic] =
+    useState("");
 
-  const [updatedIds, setUpdatedIds] = useState(new Set());
+  const [updatedIds, setUpdatedIds] =
+    useState(new Set());
 
   const [errors, setErrors] = useState({});
 
   const [isNew, setIsNew] = useState(false);
 
   /* =========================================================
-     FIREBASE
+  FIREBASE
   ========================================================= */
 
   useEffect(() => {
-    return onSnapshot(collection(db, "subjects"), (snap) => {
-      setSubjects(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-    });
+    return onSnapshot(
+      collection(db, "subjects"),
+      (snap) => {
+        setSubjects(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
+      }
+    );
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "topics"), (snap) => {
-      setTopics(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-    });
+    return onSnapshot(
+      collection(db, "topics"),
+      (snap) => {
+        setTopics(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
+      }
+    );
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "subtopics"), (snap) => {
-      setSubTopics(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-    });
+    return onSnapshot(
+      collection(db, "subtopics"),
+      (snap) => {
+        setSubTopics(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
+      }
+    );
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "questions"), (snap) => {
-      setQuestions(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-    });
+    return onSnapshot(
+      collection(db, "questions"),
+      (snap) => {
+        setQuestions(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
+      }
+    );
   }, []);
 
   /* =========================================================
-     FILTER
-  ========================================================= */
+FILTER
+========================================================= */
 
   useEffect(() => {
     const filtered = questions.filter(
@@ -364,8 +405,8 @@ export default function SmartEditPage() {
   ]);
 
   /* =========================================================
-     LOAD QUESTION
-  ========================================================= */
+LOAD QUESTION
+========================================================= */
 
   useEffect(() => {
     if (filteredQuestions.length === 0 || isNew)
@@ -393,8 +434,8 @@ export default function SmartEditPage() {
   }, [filteredQuestions, currentIndex, isNew]);
 
   /* =========================================================
-     VALIDATION
-  ========================================================= */
+VALIDATION
+========================================================= */
 
   function validate() {
     const err = {};
@@ -420,7 +461,8 @@ export default function SmartEditPage() {
     }
 
     if (!explanation.trim()) {
-      err.explanation = "⚠ Explanation required";
+      err.explanation =
+        "⚠ Explanation required";
     }
 
     setErrors(err);
@@ -429,8 +471,8 @@ export default function SmartEditPage() {
   }
 
   /* =========================================================
-     NAVIGATION
-  ========================================================= */
+NAVIGATION
+========================================================= */
 
   function goTo(index) {
     if (
@@ -448,8 +490,11 @@ export default function SmartEditPage() {
     setQuestionHtml("");
 
     setOptionA("");
+
     setOptionB("");
+
     setOptionC("");
+
     setOptionD("");
 
     setCorrectAnswer("A");
@@ -467,9 +512,33 @@ export default function SmartEditPage() {
     clearEditor();
   }
 
+  function cancelEditing() {
+    setIsNew(false);
+
+    const q = filteredQuestions[currentIndex];
+
+    if (!q) return;
+
+    setQuestionHtml(q.question || "");
+
+    setOptionA(q.options?.[0] || "");
+
+    setOptionB(q.options?.[1] || "");
+
+    setOptionC(q.options?.[2] || "");
+
+    setOptionD(q.options?.[3] || "");
+
+    setCorrectAnswer(q.correctAnswer || "A");
+
+    setDifficulty(q.difficulty || "easy");
+
+    setExplanation(q.explanation || "");
+  }
+
   /* =========================================================
-     UPDATE
-  ========================================================= */
+UPDATE
+========================================================= */
 
   async function handleUpdate() {
     if (!validate()) return;
@@ -497,7 +566,9 @@ export default function SmartEditPage() {
 
     setUpdatedIds((prev) => {
       const next = new Set(prev);
+
       next.add(q.id);
+
       return next;
     });
 
@@ -505,8 +576,8 @@ export default function SmartEditPage() {
   }
 
   /* =========================================================
-     ADD
-  ========================================================= */
+ADD
+========================================================= */
 
   async function handleAddNew() {
     if (!validate()) return;
@@ -516,7 +587,10 @@ export default function SmartEditPage() {
       !selectedTopic ||
       !selectedSubTopic
     ) {
-      toast.error("Select subject hierarchy");
+      toast.error(
+        "Select subject/topic/subtopic"
+      );
+
       return;
     }
 
@@ -563,30 +637,34 @@ export default function SmartEditPage() {
 
     setUpdatedIds((prev) => {
       const next = new Set(prev);
+
       next.add(ref.id);
+
       return next;
     });
 
     toast.success(
-      "Hoila 🎉 Your question added successfully"
+      "Hoila 🎉 Question added successfully"
     );
 
     clearEditor();
   }
 
   /* =========================================================
-     STATUS
-  ========================================================= */
+STATUS
+========================================================= */
 
   function getQuestionStatus(q) {
-    if (updatedIds.has(q.id)) return "correct";
+    if (updatedIds.has(q.id)) {
+      return "correct";
+    }
 
     return "unanswered";
   }
 
   /* =========================================================
-     FILTERS
-  ========================================================= */
+FILTERS
+========================================================= */
 
   const filteredTopics = topics.filter(
     (t) =>
@@ -603,8 +681,8 @@ export default function SmartEditPage() {
   );
 
   /* =========================================================
-     UI
-  ========================================================= */
+UI
+========================================================= */
 
   return (
     <AdminLayout>
@@ -658,6 +736,15 @@ export default function SmartEditPage() {
               + Add New
             </button>
 
+            {isNew && (
+              <button
+                className="cancel-btn"
+                onClick={cancelEditing}
+              >
+                Cancel
+              </button>
+            )}
+
             <button
               className="submit-btn"
               onClick={
@@ -692,17 +779,13 @@ export default function SmartEditPage() {
           <div className="analytics-mini-card">
             <span>Difficulty</span>
 
-            <h3
-              className={`level-${difficulty}`}
-            >
-              {difficulty}
-            </h3>
+            <h3>{difficulty}</h3>
           </div>
 
           <div className="analytics-mini-card">
             <span>Status</span>
 
-            <h3 className="status-correct">
+            <h3>
               {isNew
                 ? "Creating"
                 : "Editing"}
@@ -803,253 +886,6 @@ export default function SmartEditPage() {
               </option>
             ))}
           </select>
-
-        </div>
-
-        {/* MAIN */}
-
-        <div className="review-layout">
-
-          {/* LEFT */}
-
-          <div className="review-main">
-
-            <div className="se-review-question-card">
-
-              {/* QUESTION */}
-
-              <div className="se-question-editor-wrap">
-
-                <QuestionEditor
-                  key={
-                    isNew
-                      ? "new"
-                      : currentIndex
-                  }
-                  value={questionHtml}
-                  onChange={setQuestionHtml}
-                />
-
-                {errors.question && (
-                  <div className="se-validation-error">
-                    {errors.question}
-                  </div>
-                )}
-
-              </div>
-
-              {/* DIFFICULTY */}
-
-              <div className="se-difficulty-row">
-
-                {[
-                  "easy",
-                  "medium",
-                  "hard",
-                ].map((d) => (
-                  <button
-                    key={d}
-                    className={`se-diff-chip ${
-                      difficulty === d
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setDifficulty(d)
-                    }
-                  >
-                    {d}
-                  </button>
-                ))}
-
-              </div>
-
-              {/* OPTIONS */}
-
-              <div className="se-option-list">
-
-                {[
-                  {
-                    label: "A",
-                    value: optionA,
-                    set: setOptionA,
-                    error: errors.a,
-                  },
-
-                  {
-                    label: "B",
-                    value: optionB,
-                    set: setOptionB,
-                    error: errors.b,
-                  },
-
-                  {
-                    label: "C",
-                    value: optionC,
-                    set: setOptionC,
-                    error: errors.c,
-                  },
-
-                  {
-                    label: "D",
-                    value: optionD,
-                    set: setOptionD,
-                    error: errors.d,
-                  },
-                ].map(
-                  ({
-                    label,
-                    value,
-                    set,
-                    error,
-                  }) => {
-                    const isCorrect =
-                      correctAnswer ===
-                      label;
-
-                    return (
-                      <div key={label}>
-
-                        <div
-                          className={`se-option-card ${
-                            isCorrect
-                              ? "se-option-correct"
-                              : ""
-                          }`}
-                        >
-
-                          <input
-                            type="radio"
-                            checked={
-                              isCorrect
-                            }
-                            onChange={() =>
-                              setCorrectAnswer(
-                                label
-                              )
-                            }
-                          />
-
-                          <div className="review-option-label">
-                            {label}.
-                          </div>
-
-                          <input
-                            value={value}
-                            onChange={(e) =>
-                              set(
-                                e.target.value
-                              )
-                            }
-                            placeholder={`Option ${label}`}
-                            className="se-opt-input"
-                          />
-
-                        </div>
-
-                        {error && (
-                          <div className="se-validation-error">
-                            {error}
-                          </div>
-                        )}
-
-                      </div>
-                    );
-                  }
-                )}
-
-              </div>
-
-              {/* EXPLANATION */}
-
-              <div className="se-explanation-box">
-
-                <h4>Explanation</h4>
-
-                <textarea
-                  className="se-explanation"
-                  value={explanation}
-                  onChange={(e) =>
-                    setExplanation(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Write explanation..."
-                />
-
-                {errors.explanation && (
-                  <div className="se-validation-error">
-                    {errors.explanation}
-                  </div>
-                )}
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* SIDEBAR */}
-
-          <div className="review-sidebar">
-
-            <h3>Questions</h3>
-
-            <div className="review-legend">
-
-              <div className="review-legend-item">
-
-                <div className="review-dot review-palette-correct"></div>
-
-                Updated
-
-              </div>
-
-              <div className="review-legend-item">
-
-                <div className="review-dot review-palette-unanswered"></div>
-
-                Pending
-
-              </div>
-
-            </div>
-
-            <div className="review-palette">
-
-              {filteredQuestions.map(
-                (q, index) => {
-                  const status =
-                    getQuestionStatus(q);
-
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() =>
-                        goTo(index)
-                      }
-                      className={`review-palette-btn ${
-                        status ===
-                        "correct"
-                          ? "review-palette-correct"
-                          : "review-palette-unanswered"
-                      } ${
-                        currentIndex ===
-                          index &&
-                        !isNew
-                          ? "review-current"
-                          : ""
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  );
-                }
-              )}
-
-            </div>
-
-          </div>
 
         </div>
 

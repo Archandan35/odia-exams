@@ -18,21 +18,20 @@ import { db } from "../firebase/config";
 import AdminLayout from "./AdminLayout";
 
 /* ─────────────────────────────────────────
-   RICH-TEXT TOOLBAR
+   RICH TOOLBAR
 ───────────────────────────────────────── */
 
 function RichToolbar({ onCommand }) {
-
   const tools = [
-    { label: "B",    cmd: "bold",          title: "Bold" },
-    { label: "I",    cmd: "italic",        title: "Italic" },
-    { label: "U",    cmd: "underline",     title: "Underline" },
-    { label: "H₁",  cmd: "h1",            title: "Heading 1" },
-    { label: "H₂",  cmd: "h2",            title: "Heading 2" },
-    { label: "x²",  cmd: "superscript",   title: "Superscript" },
-    { label: "x₂",  cmd: "subscript",     title: "Subscript" },
-    { label: "≡",   cmd: "insertUnorderedList", title: "Bullet List" },
-    { label: "1.",  cmd: "insertOrderedList",   title: "Numbered List" },
+    { label: "B", cmd: "bold" },
+    { label: "I", cmd: "italic" },
+    { label: "U", cmd: "underline" },
+    { label: "H₁", cmd: "h1" },
+    { label: "H₂", cmd: "h2" },
+    { label: "x²", cmd: "superscript" },
+    { label: "x₂", cmd: "subscript" },
+    { label: "≡", cmd: "insertUnorderedList" },
+    { label: "1.", cmd: "insertOrderedList" },
   ];
 
   return (
@@ -40,7 +39,6 @@ function RichToolbar({ onCommand }) {
       {tools.map((t) => (
         <button
           key={t.cmd}
-          title={t.title}
           className="se-toolbar-btn"
           onMouseDown={(e) => {
             e.preventDefault();
@@ -51,11 +49,8 @@ function RichToolbar({ onCommand }) {
         </button>
       ))}
 
-      <div className="se-toolbar-divider" />
-
       <button
-        className="se-toolbar-btn se-toolbar-btn--icon"
-        title="Insert Image URL"
+        className="se-toolbar-btn"
         onMouseDown={(e) => {
           e.preventDefault();
           onCommand("insertImage");
@@ -65,99 +60,62 @@ function RichToolbar({ onCommand }) {
       </button>
 
       <button
-        className="se-toolbar-btn se-toolbar-btn--icon"
-        title="Insert Table"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          onCommand("insertTable");
-        }}
-      >
-        ⊞
-      </button>
-
-      <button
-        className="se-toolbar-btn se-toolbar-btn--icon"
-        title="Toggle HTML source"
+        className="se-toolbar-btn"
         onMouseDown={(e) => {
           e.preventDefault();
           onCommand("toggleHTML");
         }}
       >
-        &lt;/&gt;
+        {"</>"}
       </button>
     </div>
   );
-
 }
 
 /* ─────────────────────────────────────────
-   CONTENT-EDITABLE QUESTION FIELD
+   QUESTION EDITOR
 ───────────────────────────────────────── */
 
 function QuestionEditor({ value, onChange }) {
-
   const editorRef = useRef(null);
+
   const [htmlMode, setHtmlMode] = useState(false);
+
   const [rawHtml, setRawHtml] = useState(value || "");
 
-  /* sync incoming value only on mount / question switch */
   useEffect(() => {
-
     if (!htmlMode && editorRef.current) {
       editorRef.current.innerHTML = value || "";
     }
 
     setRawHtml(value || "");
-
   }, [value]);
 
   function execCmd(cmd) {
-
     if (cmd === "toggleHTML") {
-
       if (!htmlMode) {
-        const html = editorRef.current?.innerHTML || "";
-        setRawHtml(html);
+        setRawHtml(editorRef.current?.innerHTML || "");
       } else {
-        if (editorRef.current) {
-          editorRef.current.innerHTML = rawHtml;
-          onChange(rawHtml);
-        }
+        editorRef.current.innerHTML = rawHtml;
+        onChange(rawHtml);
       }
 
       setHtmlMode((p) => !p);
       return;
-
     }
 
     if (cmd === "insertImage") {
-
-      const url = window.prompt("Image URL:");
+      const url = window.prompt("Image URL");
 
       if (url) {
         document.execCommand(
           "insertHTML",
           false,
-          `<img src="${url}" style="max-width:100%;border-radius:6px;margin:6px 0;" alt="question image" />`
+          `<img src="${url}" style="max-width:100%;border-radius:12px;margin:10px 0;" />`
         );
       }
 
       return;
-
-    }
-
-    if (cmd === "insertTable") {
-
-      const tbl = `
-        <table border="1" style="border-collapse:collapse;width:100%;margin:8px 0;">
-          <tr><th style="padding:6px 10px;background:#1e2535;">Col 1</th><th style="padding:6px 10px;background:#1e2535;">Col 2</th><th style="padding:6px 10px;background:#1e2535;">Col 3</th></tr>
-          <tr><td style="padding:6px 10px;">A1</td><td style="padding:6px 10px;">B1</td><td style="padding:6px 10px;">C1</td></tr>
-          <tr><td style="padding:6px 10px;">A2</td><td style="padding:6px 10px;">B2</td><td style="padding:6px 10px;">C2</td></tr>
-        </table>`;
-
-      document.execCommand("insertHTML", false, tbl);
-      return;
-
     }
 
     if (cmd === "h1" || cmd === "h2") {
@@ -166,7 +124,6 @@ function QuestionEditor({ value, onChange }) {
     }
 
     document.execCommand(cmd, false, null);
-
   }
 
   return (
@@ -189,160 +146,169 @@ function QuestionEditor({ value, onChange }) {
           contentEditable
           suppressContentEditableWarning
           onInput={() => {
-            const html = editorRef.current?.innerHTML || "";
-            onChange(html);
+            onChange(editorRef.current?.innerHTML || "");
           }}
         />
       )}
     </div>
   );
-
 }
 
 /* ─────────────────────────────────────────
-   MAIN: SMART EDIT PAGE
+   MAIN PAGE
 ───────────────────────────────────────── */
 
 export default function SmartEditPage() {
-
-  const [questions,   setQuestions]   = useState([]);
-  const [subjects,    setSubjects]    = useState([]);
-  const [topics,      setTopics]      = useState([]);
-  const [subTopics,   setSubTopics]   = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [subTopics, setSubTopics] = useState([]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  /* form fields */
-  const [questionHtml,  setQuestionHtml]  = useState("");
-  const [optionA,       setOptionA]       = useState("");
-  const [optionB,       setOptionB]       = useState("");
-  const [optionC,       setOptionC]       = useState("");
-  const [optionD,       setOptionD]       = useState("");
-  const [correctAnswer, setCorrectAnswer] = useState("A");
-  const [difficulty,    setDifficulty]    = useState("easy");
-  const [explanation,   setExplanation]   = useState("");
+  const [questionHtml, setQuestionHtml] = useState("");
 
-  /* add-new mode */
-  const [isNew,            setIsNew]            = useState(false);
-  const [selectedSubject,  setSelectedSubject]  = useState("");
-  const [selectedTopic,    setSelectedTopic]    = useState("");
+  const [optionA, setOptionA] = useState("");
+  const [optionB, setOptionB] = useState("");
+  const [optionC, setOptionC] = useState("");
+  const [optionD, setOptionD] = useState("");
+
+  const [correctAnswer, setCorrectAnswer] = useState("A");
+
+  const [difficulty, setDifficulty] = useState("easy");
+
+  const [explanation, setExplanation] = useState("");
+
+  const [isNew, setIsNew] = useState(false);
+
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedSubTopic, setSelectedSubTopic] = useState("");
 
-  /* updated set for palette color */
   const [updatedIds, setUpdatedIds] = useState(new Set());
 
   const optionLabels = ["A", "B", "C", "D"];
 
-  /* ── FIRESTORE LISTENERS ── */
+  /* FIRESTORE */
 
   useEffect(() => {
-    return onSnapshot(collection(db, "subjects"), (snap) =>
-      setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    return onSnapshot(collection(db, "subjects"), (snap) => {
+      setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "topics"), (snap) =>
-      setTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    return onSnapshot(collection(db, "topics"), (snap) => {
+      setTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "subtopics"), (snap) =>
-      setSubTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    return onSnapshot(collection(db, "subtopics"), (snap) => {
+      setSubTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
   }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, "questions"), (snap) => {
-      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setQuestions(data);
+      setQuestions(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }))
+      );
     });
   }, []);
 
-  /* ── LOAD QUESTION INTO FORM ── */
+  /* LOAD QUESTION */
 
   useEffect(() => {
-
     if (questions.length === 0 || isNew) return;
 
     const q = questions[currentIndex];
+
     if (!q) return;
 
     setQuestionHtml(q.question || "");
+
     setOptionA(q.options?.[0] || "");
     setOptionB(q.options?.[1] || "");
     setOptionC(q.options?.[2] || "");
     setOptionD(q.options?.[3] || "");
+
     setCorrectAnswer(q.correctAnswer || "A");
+
     setDifficulty(q.difficulty || "easy");
+
     setExplanation(q.explanation || "");
+  }, [questions, currentIndex, isNew]);
 
-  }, [currentIndex, questions, isNew]);
-
-  /* ── NAVIGATION ── */
+  /* NAVIGATION */
 
   function goTo(index) {
     if (index < 0 || index >= questions.length) return;
+
     setIsNew(false);
+
     setCurrentIndex(index);
   }
 
   function openNew() {
     setIsNew(true);
+
     setQuestionHtml("");
-    setOptionA(""); setOptionB(""); setOptionC(""); setOptionD("");
+
+    setOptionA("");
+    setOptionB("");
+    setOptionC("");
+    setOptionD("");
+
     setCorrectAnswer("A");
+
     setDifficulty("easy");
+
     setExplanation("");
+
     setSelectedSubject("");
     setSelectedTopic("");
     setSelectedSubTopic("");
   }
 
-  /* ── UPDATE ── */
+  /* UPDATE */
 
   async function handleUpdate() {
-
     const q = questions[currentIndex];
+
     if (!q) return;
-
-    if (!questionHtml.trim()) {
-      toast.error("Question cannot be empty");
-      return;
-    }
-
-    await updateDoc(doc(db, "questions", q.id), {
-      question:      questionHtml.trim(),
-      options:       [optionA, optionB, optionC, optionD],
-      correctAnswer: typeof correctAnswer === "number"
-                       ? optionLabels[correctAnswer]
-                       : correctAnswer,
-      difficulty,
-      explanation:   explanation.trim(),
-    });
-
-    setUpdatedIds((prev) => new Set(prev).add(q.id));
-    toast.success("Question updated");
-
-  }
-
-  /* ── ADD NEW ── */
-
-  async function handleAddNew() {
 
     if (!questionHtml.trim()) {
       toast.error("Question required");
       return;
     }
 
-    if (!optionA || !optionB || !optionC || !optionD) {
-      toast.error("All options required");
+    await updateDoc(doc(db, "questions", q.id), {
+      question: questionHtml,
+      options: [optionA, optionB, optionC, optionD],
+      correctAnswer,
+      difficulty,
+      explanation,
+    });
+
+    setUpdatedIds((prev) => new Set(prev).add(q.id));
+
+    toast.success("Question updated");
+  }
+
+  /* ADD NEW */
+
+  async function handleAddNew() {
+    if (!questionHtml.trim()) {
+      toast.error("Question required");
       return;
     }
 
     if (!selectedSubject || !selectedTopic || !selectedSubTopic) {
-      toast.error("Select subject / topic / sub-topic");
+      toast.error("Select hierarchy");
       return;
     }
 
@@ -351,6 +317,7 @@ export default function SmartEditPage() {
       where("question", "==", questionHtml.trim()),
       where("subTopicId", "==", selectedSubTopic)
     );
+
     const dup = await getDocs(dupQ);
 
     if (!dup.empty) {
@@ -359,290 +326,386 @@ export default function SmartEditPage() {
     }
 
     const ref = await addDoc(collection(db, "questions"), {
-      subjectId:     selectedSubject,
-      topicId:       selectedTopic,
-      subTopicId:    selectedSubTopic,
-      question:      questionHtml.trim(),
-      options:       [optionA, optionB, optionC, optionD],
-      correctAnswer: typeof correctAnswer === "number"
-                       ? optionLabels[correctAnswer]
-                       : correctAnswer,
+      subjectId: selectedSubject,
+      topicId: selectedTopic,
+      subTopicId: selectedSubTopic,
+
+      question: questionHtml,
+
+      options: [optionA, optionB, optionC, optionD],
+
+      correctAnswer,
+
       difficulty,
-      explanation:   explanation.trim(),
-      createdAt:     Date.now(),
+
+      explanation,
+
+      createdAt: Date.now(),
     });
 
     setUpdatedIds((prev) => new Set(prev).add(ref.id));
-    toast.success("Question added");
+
+    toast.success("Question Added");
+
     setIsNew(false);
-
   }
-
-  /* ── HELPERS ── */
-
-  function getName(arr, id) {
-    return arr.find((x) => x.id === id)?.name || "Unknown";
-  }
-
-  const filteredTopicsForNew    = topics.filter((t) => t.subjectId === selectedSubject);
-  const filteredSubTopicsForNew = subTopics.filter(
-    (s) => s.subjectId === selectedSubject && s.topicId === selectedTopic
-  );
 
   const currentQ = questions[currentIndex];
 
-  /* ─────────────────── RENDER ─────────────────── */
+  const filteredTopics = topics.filter(
+    (t) => t.subjectId === selectedSubject
+  );
+
+  const filteredSubTopics = subTopics.filter(
+    (s) =>
+      s.subjectId === selectedSubject &&
+      s.topicId === selectedTopic
+  );
+
+  function getQuestionStatus(q) {
+    if (updatedIds.has(q.id)) return "correct";
+    return "unanswered";
+  }
 
   return (
     <AdminLayout>
+      <div className="page">
 
-      <div className="se-shell">
+        {/* TOPBAR */}
 
-        {/* ══ LEFT: EDITOR PANEL ══ */}
-        <div className="se-editor-panel">
+        <div className="review-topbar">
 
-          {/* TOP NAV BAR */}
-          <div className="se-topbar">
+          <div>
+            <h2>Smart Edit Interface</h2>
+            <p>Enterprise Question Editing System</p>
+          </div>
 
-            <div className="se-topbar-left">
-              <button
-                className="se-nav-btn"
-                disabled={currentIndex === 0 || isNew}
-                onClick={() => goTo(currentIndex - 1)}
-              >
-                <span>◀</span> Prev
-              </button>
+          <div className="review-actions">
 
-              <div className="se-position-badge">
-                {isNew ? (
-                  <span className="se-new-badge">New Question</span>
-                ) : (
-                  <>
-                    <span className="se-pos-num">Q.{currentIndex + 1}</span>
-                    <span className="se-pos-sep">/</span>
-                    <span className="se-pos-total">{questions.length}</span>
-                  </>
-                )}
+            <button
+              className="review-nav-btn"
+              disabled={currentIndex === 0 || isNew}
+              onClick={() => goTo(currentIndex - 1)}
+            >
+              ← Previous
+            </button>
+
+            <button
+              className="review-nav-btn"
+              disabled={
+                currentIndex >= questions.length - 1 || isNew
+              }
+              onClick={() => goTo(currentIndex + 1)}
+            >
+              Next →
+            </button>
+
+            <button
+              className="submit-btn"
+              onClick={openNew}
+            >
+              + Add New
+            </button>
+
+            <button
+              className="submit-btn"
+              onClick={isNew ? handleAddNew : handleUpdate}
+            >
+              {isNew ? "✓ Save" : "✓ Update"}
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* ANALYTICS */}
+
+        <div className="review-analytics-strip">
+
+          <div className="analytics-mini-card">
+            <span>Question</span>
+            <h3>
+              {isNew
+                ? "New"
+                : `${currentIndex + 1} / ${questions.length}`}
+            </h3>
+          </div>
+
+          <div className="analytics-mini-card">
+            <span>Difficulty</span>
+            <h3 className={`level-${difficulty}`}>
+              {difficulty}
+            </h3>
+          </div>
+
+          <div className="analytics-mini-card">
+            <span>Status</span>
+            <h3 className="status-correct">
+              {isNew ? "Creating" : "Editing"}
+            </h3>
+          </div>
+
+          <div className="analytics-mini-card">
+            <span>Correct Answer</span>
+            <h3>{correctAnswer}</h3>
+          </div>
+
+        </div>
+
+        {/* MAIN LAYOUT */}
+
+        <div className="review-layout">
+
+          {/* LEFT */}
+
+          <div className="review-main">
+
+            <div className="review-question-card">
+
+              {/* NEW HIERARCHY */}
+
+              {isNew && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fit,minmax(220px,1fr))",
+                    gap: "14px",
+                    marginBottom: "24px",
+                  }}
+                >
+
+                  <select
+                    className="se-select"
+                    value={selectedSubject}
+                    onChange={(e) => {
+                      setSelectedSubject(e.target.value);
+                      setSelectedTopic("");
+                      setSelectedSubTopic("");
+                    }}
+                  >
+                    <option value="">Select Subject</option>
+
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="se-select"
+                    value={selectedTopic}
+                    onChange={(e) => {
+                      setSelectedTopic(e.target.value);
+                      setSelectedSubTopic("");
+                    }}
+                  >
+                    <option value="">Select Topic</option>
+
+                    {filteredTopics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="se-select"
+                    value={selectedSubTopic}
+                    onChange={(e) =>
+                      setSelectedSubTopic(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select Sub Topic
+                    </option>
+
+                    {filteredSubTopics.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
+              )}
+
+              {/* QUESTION */}
+
+              <div className="review-question-header">
+
+                <div className="review-question-badge">
+                  Q.{isNew ? "New" : currentIndex + 1}
+                </div>
+
+                <div className="review-question-text">
+
+                  <QuestionEditor
+                    key={isNew ? "new" : currentIndex}
+                    value={questionHtml}
+                    onChange={setQuestionHtml}
+                  />
+
+                </div>
+
               </div>
 
-              <button
-                className="se-nav-btn"
-                disabled={currentIndex >= questions.length - 1 || isNew}
-                onClick={() => goTo(currentIndex + 1)}
-              >
-                Next <span>▶</span>
-              </button>
-            </div>
+              {/* DIFFICULTY */}
 
-            <div className="se-topbar-right">
-              <div className="se-diff-chips">
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  marginBottom: "24px",
+                  flexWrap: "wrap",
+                }}
+              >
+
                 {["easy", "medium", "hard"].map((d) => (
                   <button
                     key={d}
-                    className={`se-diff-chip se-diff-chip--${d}${difficulty === d ? " active" : ""}`}
+                    className={`se-diff-chip se-diff-chip--${d} ${
+                      difficulty === d ? "active" : ""
+                    }`}
                     onClick={() => setDifficulty(d)}
                   >
-                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                    {d}
                   </button>
                 ))}
+
               </div>
 
-              <button className="se-btn se-btn--new" onClick={openNew}>
-                + Add New
-              </button>
+              {/* OPTIONS */}
 
-              <button
-                className="se-btn se-btn--update"
-                onClick={isNew ? handleAddNew : handleUpdate}
-              >
-                {isNew ? "✓ Save" : "✓ Update"}
-              </button>
-            </div>
+              <div className="review-options">
 
-          </div>
+                {[
+                  { label: "A", value: optionA, set: setOptionA },
+                  { label: "B", value: optionB, set: setOptionB },
+                  { label: "C", value: optionC, set: setOptionC },
+                  { label: "D", value: optionD, set: setOptionD },
+                ].map(({ label, value, set }) => {
 
-          {/* SCROLLABLE CONTENT */}
-          <div className="se-content">
+                  const isCorrect =
+                    correctAnswer === label;
 
-            {/* NEW QUESTION: hierarchy selectors */}
-            {isNew && (
-              <div className="se-hierarchy-row">
-                <select
-                  className="se-select"
-                  value={selectedSubject}
-                  onChange={(e) => {
-                    setSelectedSubject(e.target.value);
-                    setSelectedTopic("");
-                    setSelectedSubTopic("");
-                  }}
-                >
-                  <option value="">Select Subject</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  return (
+                    <div
+                      key={label}
+                      className={`review-option-card ${
+                        isCorrect
+                          ? "review-correct review-selected"
+                          : ""
+                      }`}
+                    >
 
-                <select
-                  className="se-select"
-                  value={selectedTopic}
-                  onChange={(e) => {
-                    setSelectedTopic(e.target.value);
-                    setSelectedSubTopic("");
-                  }}
-                >
-                  <option value="">Select Topic</option>
-                  {filteredTopicsForNew.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-
-                <select
-                  className="se-select"
-                  value={selectedSubTopic}
-                  onChange={(e) => setSelectedSubTopic(e.target.value)}
-                >
-                  <option value="">Select Sub-Topic</option>
-                  {filteredSubTopicsForNew.map((st) => (
-                    <option key={st.id} value={st.id}>{st.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* QUESTION FIELD */}
-            <div className="se-q-row">
-              <div className="se-q-num-badge">
-                Q.{isNew ? "New" : currentIndex + 1}
-              </div>
-              <div className="se-q-field">
-                <QuestionEditor
-                  key={isNew ? "new" : currentIndex}
-                  value={questionHtml}
-                  onChange={setQuestionHtml}
-                />
-              </div>
-            </div>
-
-            {/* OPTIONS */}
-            <div className="se-section-label">Options</div>
-            <div className="se-options-list">
-              {[
-                { label: "A", val: optionA, set: setOptionA },
-                { label: "B", val: optionB, set: setOptionB },
-                { label: "C", val: optionC, set: setOptionC },
-                { label: "D", val: optionD, set: setOptionD },
-              ].map(({ label, val, set }) => {
-
-                const isCorrect = correctAnswer === label;
-
-                return (
-                  <div
-                    key={label}
-                    className={`se-opt-row${isCorrect ? " correct" : ""}`}
-                  >
-                    <label className="se-opt-radio-wrap" title="Mark as correct answer">
                       <input
                         type="radio"
-                        name="correctAnswer"
                         checked={isCorrect}
-                        onChange={() => setCorrectAnswer(label)}
-                        className="se-opt-radio"
+                        onChange={() =>
+                          setCorrectAnswer(label)
+                        }
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          marginTop: "6px",
+                        }}
                       />
-                    </label>
 
-                    <div className={`se-opt-letter${isCorrect ? " correct" : ""}`}>
-                      {label}
+                      <div className="review-option-label">
+                        {label}.
+                      </div>
+
+                      <input
+                        value={value}
+                        onChange={(e) =>
+                          set(e.target.value)
+                        }
+                        placeholder={`Option ${label}`}
+                        className="se-opt-input"
+                      />
+
                     </div>
+                  );
 
-                    <input
-                      className={`se-opt-input${isCorrect ? " correct" : ""}`}
-                      value={val}
-                      onChange={(e) => set(e.target.value)}
-                      placeholder={`Option ${label}`}
-                    />
+                })}
 
-                    {isCorrect && (
-                      <span className="se-correct-tag">✓ Correct</span>
-                    )}
-                  </div>
-                );
+              </div>
 
-              })}
+              {/* EXPLANATION */}
+
+              <div className="review-explanation">
+
+                <h4>Explanation</h4>
+
+                <textarea
+                  className="se-explanation"
+                  value={explanation}
+                  onChange={(e) =>
+                    setExplanation(e.target.value)
+                  }
+                  placeholder="Write explanation..."
+                />
+
+              </div>
+
             </div>
-
-            {/* EXPLANATION */}
-            <div className="se-section-label">Explanation</div>
-            <textarea
-              className="se-explanation"
-              value={explanation}
-              onChange={(e) => setExplanation(e.target.value)}
-              placeholder="Add an explanation for the correct answer..."
-              rows={4}
-            />
 
           </div>
-        </div>
 
-        {/* ══ RIGHT: QUESTION PALETTE ══ */}
-        <div className="se-palette-panel">
+          {/* SIDEBAR */}
 
-          <div className="se-palette-header">
-            <span>Questions</span>
-            <span className="se-palette-count">{questions.length}</span>
-          </div>
+          <div className="review-sidebar">
 
-          <div className="se-palette-legend">
-            <div className="se-leg-item">
-              <span className="se-leg-dot updated" />
-              Updated
+            <h3>Questions</h3>
+
+            <div className="review-legend">
+
+              <div className="review-legend-item">
+                <div className="review-dot review-palette-correct"></div>
+                Updated
+              </div>
+
+              <div className="review-legend-item">
+                <div className="review-dot review-palette-unanswered"></div>
+                Pending
+              </div>
+
             </div>
-            <div className="se-leg-item">
-              <span className="se-leg-dot pending" />
-              Pending
-            </div>
-            <div className="se-leg-item">
-              <span className="se-leg-dot current-dot" />
-              Current
-            </div>
-          </div>
 
-          <div className="se-palette-grid-wrap">
-            <div className="se-palette-grid">
-              {questions.map((q, i) => {
+            <div className="review-palette">
 
-                const isUpdated = updatedIds.has(q.id);
-                const isCurrent = !isNew && i === currentIndex;
+              {questions.map((q, index) => {
 
-                let cls = "se-pal-btn";
-                if (isCurrent)      cls += " current";
-                else if (isUpdated) cls += " updated";
-                else                cls += " pending";
+                const status = getQuestionStatus(q);
 
                 return (
                   <button
                     key={q.id}
-                    className={cls}
-                    onClick={() => goTo(i)}
+                    onClick={() => goTo(index)}
+                    className={`review-palette-btn ${
+                      status === "correct"
+                        ? "review-palette-correct"
+                        : "review-palette-unanswered"
+                    } ${
+                      currentIndex === index
+                        ? "review-current"
+                        : ""
+                    }`}
                   >
-                    {i + 1}
+                    {index + 1}
                   </button>
                 );
-
               })}
 
-              {isNew && (
-                <button className="se-pal-btn current new-q-indicator">
-                  +
-                </button>
-              )}
             </div>
+
           </div>
 
         </div>
 
       </div>
-
     </AdminLayout>
   );
-
 }

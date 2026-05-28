@@ -362,6 +362,9 @@ export default function SmartEditPage() {
   const [errors, setErrors] = useState({});
 
   const [isNew, setIsNew] = useState(false);
+  
+  const [isEditingQuestion, setIsEditingQuestion] =
+  useState(false);
 
   /* =========================================================
 FIREBASE
@@ -541,37 +544,39 @@ CLEAR
   /* =========================================================
 NEW
 ========================================================= */
+function openNew() {
+  setIsNew(true);
 
-  function openNew() {
-    setIsNew(true);
+  setIsEditingQuestion(true);
 
-    clearEditor();
-  }
+  clearEditor();
+}
 
-  function cancelEditing() {
-    setIsNew(false);
+ function cancelEditing() {
+  setIsNew(false);
 
-    const q = filteredQuestions[currentIndex];
+  setIsEditingQuestion(false);
 
-    if (!q) return;
+  const q = filteredQuestions[currentIndex];
 
-    setQuestionHtml(q.question || "");
+  if (!q) return;
 
-    setOptionA(q.options?.[0] || "");
+  setQuestionHtml(q.question || "");
 
-    setOptionB(q.options?.[1] || "");
+  setOptionA(q.options?.[0] || "");
 
-    setOptionC(q.options?.[2] || "");
+  setOptionB(q.options?.[1] || "");
 
-    setOptionD(q.options?.[3] || "");
+  setOptionC(q.options?.[2] || "");
 
-    setCorrectAnswer(q.correctAnswer || "A");
+  setOptionD(q.options?.[3] || "");
 
-    setDifficulty(q.difficulty || "easy");
+  setCorrectAnswer(q.correctAnswer || "A");
 
-    setExplanation(q.explanation || "");
-  }
+  setDifficulty(q.difficulty || "easy");
 
+  setExplanation(q.explanation || "");
+}
   /* =========================================================
 NAVIGATION
 ========================================================= */
@@ -932,10 +937,65 @@ UI
 
               {/* QUESTION */}
 
-              <QuestionEditor
-                value={questionHtml}
-                onChange={setQuestionHtml}
-              />
+             {/* =========================================
+QUESTION VIEW / EDIT MODE
+========================================= */}
+
+<div className="se-edit-toggle-row">
+
+  <button
+    type="button"
+    className={`se-edit-toggle-btn ${
+      !isEditingQuestion ? "active" : ""
+    }`}
+    onClick={() => setIsEditingQuestion(false)}
+  >
+    View Mode
+  </button>
+
+  <button
+    type="button"
+    className={`se-edit-toggle-btn ${
+      isEditingQuestion ? "active" : ""
+    }`}
+    onClick={() => setIsEditingQuestion(true)}
+  >
+    {isEditingQuestion ? "Cancel Edit" : "Edit"}
+  </button>
+
+</div>
+
+{/* QUESTION */}
+
+{isEditingQuestion || isNew ? (
+
+  <QuestionEditor
+    value={questionHtml}
+    onChange={setQuestionHtml}
+  />
+
+) : (
+
+  <div className="se-view-question-box">
+
+    <div
+      className="se-view-question-content"
+      dangerouslySetInnerHTML={{
+        __html:
+          questionHtml ||
+          "<p style='color:#64748b'>No Question</p>",
+      }}
+    />
+
+  </div>
+
+)}
+
+{errors.question && (
+  <div className="se-validation-error">
+    {errors.question}
+  </div>
+)}
 
               {errors.question && (
                 <div className="se-validation-error">
@@ -1002,6 +1062,7 @@ UI
 
                   <input
                     className="se-opt-input"
+                    disabled={!isEditingQuestion && !isNew}
                     placeholder="Option A"
                     value={optionA}
                     onChange={(e) =>
@@ -1039,6 +1100,7 @@ UI
 
                   <input
                     className="se-opt-input"
+                    disabled={!isEditingQuestion && !isNew}
                     placeholder="Option B"
                     value={optionB}
                     onChange={(e) =>
@@ -1076,6 +1138,7 @@ UI
 
                   <input
                     className="se-opt-input"
+                    disabled={!isEditingQuestion && !isNew}
                     placeholder="Option C"
                     value={optionC}
                     onChange={(e) =>
@@ -1113,6 +1176,7 @@ UI
 
                   <input
                     className="se-opt-input"
+                    disabled={!isEditingQuestion && !isNew}
                     placeholder="Option D"
                     value={optionD}
                     onChange={(e) =>
@@ -1162,6 +1226,7 @@ UI
 
                 <textarea
                   className="se-explanation"
+                  disabled={!isEditingQuestion && !isNew}
                   placeholder="Write explanation here..."
                   value={explanation}
                   onChange={(e) =>

@@ -117,7 +117,6 @@ function QuestionEditor({
   }
 
   return (
-
     <div className="se-editor-shell">
 
       {/* SINGLE ROW HEADER TOOLBOX */}
@@ -125,21 +124,6 @@ function QuestionEditor({
         <div className="se-left-controls">
           <div className="drag-handle" style={{ cursor: 'grab', fontSize: '18px', color: '#64748b' }}>☰</div>
           <h3 className="se-section-title" style={{ fontSize: '16px', fontWeight: '700', color: '#60a5fa', margin: 0 }}>Question Field</h3>
-          <label className="se-html-toggle">
-            <input
-              type="checkbox"
-              style={{ width: 'auto', marginRight: '6px' }}
-              checked={globalHtmlMode}
-              onChange={(e) => {
-                // Since this is embedded deep in QuestionEditor, link it to your switch logic
-                if(typeof onChange === 'function') {
-                  // If you pass down the toggle handler from parent use it here, 
-                  // or keep your top-level state if applicable.
-                }
-              }}
-            />
-            <span style={{ fontSize: '13px', color: '#94a3b8', whiteSpace: 'nowrap' }}>View HTML</span>
-          </label>
         </div>
 
         {!readOnly && (
@@ -179,7 +163,6 @@ function QuestionEditor({
       />
 
       {/* HTML MODE */}
-
       {globalHtmlMode ? (
         <div className="se-question-scroll">
           <textarea
@@ -201,25 +184,17 @@ function QuestionEditor({
             ref={editorRef}
             className={`se-editable ${readOnly ? "readonly" : ""}`}
             contentEditable={!readOnly}
-              style={{
-                minHeight: "120px",
-                height: "auto",
-              }}
+            style={{
+              minHeight: "60px",
+              height: "auto",
+            }}
             suppressContentEditableWarning
             data-placeholder="Type your question here..."
-           onInput={() => {
+            onInput={() => {
               if (!editorRef.current) return;
-            
-              editorRef.current.style.height = "auto";
-              editorRef.current.style.height =
-                editorRef.current.scrollHeight + "px";
-            
               const html = editorRef.current.innerHTML;
-            
               setHtmlBuffer(html);
-            
               onChange(html);
-            
             }}
           />
         </div>
@@ -239,7 +214,6 @@ function OptionInput({
   letter,
   globalHtmlMode,
 }) {
-
   if (globalHtmlMode) {
     return (
       <textarea
@@ -253,30 +227,23 @@ function OptionInput({
   }
 
   return (
-   
-    <div className="se-opt-render-box">
+    <div className="se-opt-render-box" style={{ width: "100%" }}>
       {disabled ? (
-        <div className="se-option-field-container readonly-view">
-          <span className="se-option-letter">{letter}</span>
-          <div
-            className="se-opt-display se-scrollable-box"
-            style={{ flex: 1, padding: '4px 0', color: '#f1f5f9' }}
-            dangerouslySetInnerHTML={{
-              __html: value || `<span style="color:#64748b">Empty Option</span>`
-            }}
-          />
-        </div>
+        <div
+          className="se-opt-display se-scrollable-box"
+          style={{ width: "100%", color: "#f1f5f9" }}
+          dangerouslySetInnerHTML={{
+            __html: value || `<span style="color:#64748b">Empty Option</span>`
+          }}
+        />
       ) : (
-        <div className="se-option-field-container edit-view">
-          <span className="se-option-letter">{letter}</span>
-          <input
-            className="se-opt-input"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={`Option ${letter}`}
-            style={{ flex: 1, background: 'transparent', padding: '6px 0' }}
-          />
-        </div>
+        <input
+          className="se-opt-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={`Option ${letter}`}
+          style={{ width: "100%", background: "transparent", border: "none", outline: "none", color: "#fff" }}
+        />
       )}
     </div>
   );
@@ -292,7 +259,6 @@ function ExplanationField({
   disabled,
   globalHtmlMode,
 }) {
-
   if (globalHtmlMode) {
     return (
       <textarea
@@ -309,9 +275,7 @@ function ExplanationField({
     <div
       className="se-explanation-view se-scrollable-box"
       dangerouslySetInnerHTML={{
-        __html:
-          value ||
-          "<span style='color:#64748b'>No explanation</span>"
+        __html: value || "<span style='color:#64748b'>No explanation</span>"
       }}
     />
   ) : (
@@ -329,27 +293,20 @@ function ExplanationField({
 ========================================================= */
 
 export default function SmartEditPage() {
-
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [topics, setTopics] = useState([]);
   const [subTopics, setSubTopics] = useState([]);
-
   const [filteredQuestions, setFilteredQuestions] = useState([]);
-
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const [questionHtml, setQuestionHtml] = useState("");
-
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
   const [optionC, setOptionC] = useState("");
   const [optionD, setOptionD] = useState("");
-
   const [correctAnswer, setCorrectAnswer] = useState("A");
-
   const [difficulty, setDifficulty] = useState("easy");
-
   const [explanation, setExplanation] = useState("");
 
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -357,13 +314,9 @@ export default function SmartEditPage() {
   const [selectedSubTopic, setSelectedSubTopic] = useState("");
 
   const [updatedIds, setUpdatedIds] = useState(new Set());
-
   const [errors, setErrors] = useState({});
-
   const [isNew, setIsNew] = useState(false);
-
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
-
   const [globalHtmlMode, setGlobalHtmlMode] = useState(false);
 
   /* =========================================================
@@ -372,37 +325,25 @@ export default function SmartEditPage() {
 
   useEffect(() => {
     return onSnapshot(collection(db, "subjects"), (snap) => {
-      setSubjects(snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })));
+      setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, "topics"), (snap) => {
-      setTopics(snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })));
+      setTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, "subtopics"), (snap) => {
-      setSubTopics(snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })));
+      setSubTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, "questions"), (snap) => {
-      setQuestions(snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })));
+      setQuestions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
 
@@ -411,51 +352,32 @@ export default function SmartEditPage() {
   ========================================================= */
 
   useEffect(() => {
-
     const filtered = questions.filter((q) =>
-
       (!selectedSubject || q.subjectId === selectedSubject) &&
       (!selectedTopic || q.topicId === selectedTopic) &&
       (!selectedSubTopic || q.subTopicId === selectedSubTopic)
-
     );
-
     setFilteredQuestions(filtered);
-
     setCurrentIndex(0);
-
-  }, [
-    questions,
-    selectedSubject,
-    selectedTopic,
-    selectedSubTopic,
-  ]);
+  }, [questions, selectedSubject, selectedTopic, selectedSubTopic]);
 
   /* =========================================================
      LOAD QUESTION
   ========================================================= */
 
   useEffect(() => {
-
     if (filteredQuestions.length === 0 || isNew) return;
-
     const q = filteredQuestions[currentIndex];
-
     if (!q) return;
 
     setQuestionHtml(q.question || "");
-
     setOptionA(q.options?.[0] || "");
     setOptionB(q.options?.[1] || "");
     setOptionC(q.options?.[2] || "");
     setOptionD(q.options?.[3] || "");
-
     setCorrectAnswer(q.correctAnswer || "A");
-
     setDifficulty(q.difficulty || "easy");
-
     setExplanation(q.explanation || "");
-
   }, [filteredQuestions, currentIndex, isNew]);
 
   /* =========================================================
@@ -463,9 +385,7 @@ export default function SmartEditPage() {
   ========================================================= */
 
   function validate() {
-
     const err = {};
-
     if (!questionHtml.trim()) err.question = "Question required";
     if (!optionA.trim()) err.a = "Option A required";
     if (!optionB.trim()) err.b = "Option B required";
@@ -473,7 +393,6 @@ export default function SmartEditPage() {
     if (!optionD.trim()) err.d = "Option D required";
 
     setErrors(err);
-
     return Object.keys(err).length === 0;
   }
 
@@ -482,20 +401,14 @@ export default function SmartEditPage() {
   ========================================================= */
 
   function clearEditor() {
-
     setQuestionHtml("");
-
     setOptionA("");
     setOptionB("");
     setOptionC("");
     setOptionD("");
-
     setCorrectAnswer("A");
-
     setDifficulty("easy");
-
     setExplanation("");
-
     setErrors({});
   }
 
@@ -514,26 +427,17 @@ export default function SmartEditPage() {
   ========================================================= */
 
   function cancelEditing() {
-
     setIsNew(false);
-
     setIsEditingQuestion(false);
-
     const q = filteredQuestions[currentIndex];
-
     if (!q) return;
 
     setQuestionHtml(q.question || "");
-
     setOptionA(q.options?.[0] || "");
     setOptionB(q.options?.[1] || "");
     setOptionC(q.options?.[2] || "");
-    setOptionD(q.options?.[3] || "");
-
     setCorrectAnswer(q.correctAnswer || "A");
-
     setDifficulty(q.difficulty || "easy");
-
     setExplanation(q.explanation || "");
   }
 
@@ -542,14 +446,8 @@ export default function SmartEditPage() {
   ========================================================= */
 
   function goTo(index) {
-
-    if (
-      index < 0 ||
-      index >= filteredQuestions.length
-    ) return;
-
+    if (index < 0 || index >= filteredQuestions.length) return;
     setCurrentIndex(index);
-
     setIsNew(false);
   }
 
@@ -558,11 +456,8 @@ export default function SmartEditPage() {
   ========================================================= */
 
   async function handleUpdate() {
-
     if (!validate()) return;
-
     const q = filteredQuestions[currentIndex];
-
     if (!q) return;
 
     await updateDoc(doc(db, "questions", q.id), {
@@ -574,13 +469,11 @@ export default function SmartEditPage() {
     });
 
     toast.success("Question updated");
-
     setUpdatedIds((prev) => {
       const next = new Set(prev);
       next.add(q.id);
       return next;
     });
-
     setIsEditingQuestion(false);
   }
 
@@ -589,14 +482,8 @@ export default function SmartEditPage() {
   ========================================================= */
 
   async function handleAddNew() {
-
     if (!validate()) return;
-
-    if (
-      !selectedSubject ||
-      !selectedTopic ||
-      !selectedSubTopic
-    ) {
+    if (!selectedSubject || !selectedTopic || !selectedSubTopic) {
       toast.error("Select subject/topic/subtopic");
       return;
     }
@@ -605,29 +492,17 @@ export default function SmartEditPage() {
       subjectId: selectedSubject,
       topicId: selectedTopic,
       subTopicId: selectedSubTopic,
-
       question: questionHtml,
-
-      options: [
-        optionA,
-        optionB,
-        optionC,
-        optionD,
-      ],
-
+      options: [optionA, optionB, optionC, optionD],
       correctAnswer,
       difficulty,
       explanation,
-
       createdAt: Date.now(),
     });
 
     toast.success("Question added");
-
     setIsNew(false);
-
     setIsEditingQuestion(false);
-
     clearEditor();
   }
 
@@ -636,67 +511,36 @@ export default function SmartEditPage() {
   ========================================================= */
 
   async function handleDelete() {
-
     const q = filteredQuestions[currentIndex];
-
     if (!q) return;
 
-    const confirmDelete = window.confirm(
-      "Delete this question?"
-    );
-
+    const confirmDelete = window.confirm("Delete this question?");
     if (!confirmDelete) return;
 
     await deleteDoc(doc(db, "questions", q.id));
-
     toast.success("Question deleted");
-
-    setCurrentIndex((prev) =>
-      Math.max(0, prev - 1)
-    );
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
   }
 
-  /* =========================================================
-     FILTERS
-  ========================================================= */
-
-  const filteredTopics = topics.filter(
-    (t) =>
-      !selectedSubject ||
-      t.subjectId === selectedSubject
+  const filteredTopics = topics.filter((t) => !selectedSubject || t.subjectId === selectedSubject);
+  const filteredSubTopics = subTopics.filter((s) => 
+    (!selectedSubject || s.subjectId === selectedSubject) &&
+    (!selectedTopic || s.topicId === selectedTopic)
   );
 
-  const filteredSubTopics = subTopics.filter(
-    (s) =>
-      (!selectedSubject ||
-        s.subjectId === selectedSubject) &&
-      (!selectedTopic ||
-        s.topicId === selectedTopic)
-  );
-
-  const isEditable =
-    isEditingQuestion || isNew;
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  const isEditable = isEditingQuestion || isNew;
 
   return (
     <AdminLayout>
-
       <div className="page">
-
         {/* HEADER */}
-
         <div className="review-topbar">
-
           <div>
             <h2>Smart Edit Interface</h2>
             <p>Enterprise Question Editing System</p>
           </div>
 
           <div className="review-actions">
-
             <button
               className="review-nav-btn se-action-btn"
               disabled={currentIndex === 0 || isNew}
@@ -707,50 +551,30 @@ export default function SmartEditPage() {
 
             <button
               className="review-nav-btn se-action-btn"
-              disabled={
-                currentIndex >= filteredQuestions.length - 1 ||
-                isNew
-              }
+              disabled={currentIndex >= filteredQuestions.length - 1 || isNew}
               onClick={() => goTo(currentIndex + 1)}
             >
               Next →
             </button>
 
-            <button
-              className="submit-btn se-action-btn"
-              onClick={openNew}
-            >
+            <button className="submit-btn se-action-btn" onClick={openNew}>
               + Add New
             </button>
 
             {!isNew && (
-              <button
-                className="delete-btn se-action-btn"
-                onClick={handleDelete}
-              >
+              <button className="delete-btn se-action-btn" onClick={handleDelete}>
                 Delete
               </button>
             )}
 
-            <button
-              className="submit-btn se-action-btn"
-              onClick={
-                isNew
-                  ? handleAddNew
-                  : handleUpdate
-              }
-            >
+            <button className="submit-btn se-action-btn" onClick={isNew ? handleAddNew : handleUpdate}>
               {isNew ? "Save" : "Update"}
             </button>
-
           </div>
-
         </div>
 
         {/* FILTER BAR */}
-
         <div className="se-filter-bar">
-
           <select
             className="se-select"
             value={selectedSubject}
@@ -761,15 +585,7 @@ export default function SmartEditPage() {
             }}
           >
             <option value="">All Subjects</option>
-
-            {subjects.map((s) => (
-              <option
-                key={s.id}
-                value={s.id}
-              >
-                {s.name}
-              </option>
-            ))}
+            {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
 
           <select
@@ -781,238 +597,122 @@ export default function SmartEditPage() {
             }}
           >
             <option value="">All Topics</option>
-
-            {filteredTopics.map((t) => (
-              <option
-                key={t.id}
-                value={t.id}
-              >
-                {t.name}
-              </option>
-            ))}
+            {filteredTopics.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
 
           <select
             className="se-select"
             value={selectedSubTopic}
-            onChange={(e) =>
-              setSelectedSubTopic(e.target.value)
-            }
+            onChange={(e) => setSelectedSubTopic(e.target.value)}
           >
-            <option value="">
-              All Sub Topics
-            </option>
-
-            {filteredSubTopics.map((s) => (
-              <option
-                key={s.id}
-                value={s.id}
-              >
-                {s.name}
-              </option>
-            ))}
+            <option value="">All Sub Topics</option>
+            {filteredSubTopics.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-
         </div>
 
         {/* MAIN LAYOUT */}
-
         <div className="review-layout">
-
-          {/* LEFT */}
-
           <div className="review-main">
-
             <div className="se-review-question-card">
-
-              {/* TOP MODE BAR */}
-
+              
+              {/* TOP MODE BAR (Contains View/Edit and Visual/HTML with single row toggle) */}
               <div className="se-edit-toolbar-wrapper">
-
-                {/* VIEW / EDIT */}
-
                 <div className="se-segment-group">
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      !isEditable ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      setIsEditingQuestion(false)
-                    }
+                    className={`se-segment-btn ${!isEditable ? "active" : ""}`}
+                    onClick={() => setIsEditingQuestion(false)}
                   >
                     View
                   </button>
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      isEditable ? "active" : ""
-                    }`}
+                    className={`se-segment-btn ${isEditable ? "active" : ""}`}
                     onClick={() => {
-
-                      if (isEditable) {
-                        cancelEditing();
-                      } else {
-                        setIsEditingQuestion(true);
-                      }
-
+                      if (isEditable) cancelEditing();
+                      else setIsEditingQuestion(true);
                     }}
                   >
                     {isEditable ? "Cancel" : "Edit"}
                   </button>
-
                 </div>
 
-                {/* VISUAL / HTML */}
+                <label className="se-html-toggle">
+                  <input
+                    type="checkbox"
+                    checked={globalHtmlMode}
+                    onChange={(e) => setGlobalHtmlMode(e.target.checked)}
+                  />
+                  <span>View HTML Mode</span>
+                </label>
 
                 <div className="se-segment-group">
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      !globalHtmlMode ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      setGlobalHtmlMode(false)
-                    }
+                    className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
+                    onClick={() => setGlobalHtmlMode(false)}
                   >
                     Visual
                   </button>
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      globalHtmlMode ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      setGlobalHtmlMode(true)
-                    }
+                    className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
+                    onClick={() => setGlobalHtmlMode(true)}
                   >
                     HTML
                   </button>
-
                 </div>
-
               </div>
 
-              {/* QUESTION */}
-
-              {!isEditable ? (
-
-                <div className="se-view-question-box">
-
-                  <div
-                    className="se-readonly-badge"
-                    title="Read Only"
-                  >
-                    🔒
-                  </div>
-
-                  <QuestionEditor
-                    value={questionHtml}
-                    onChange={() => {}}
-                    globalHtmlMode={globalHtmlMode}
-                    readOnly={true}
-                  />
-
-                </div>
-
-              ) : (
-
+              {/* QUESTION FIELD CONTAINER */}
+              <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
+                {!isEditable && <div className="se-readonly-badge" title="Read Only">🔒</div>}
                 <QuestionEditor
                   value={questionHtml}
                   onChange={setQuestionHtml}
                   globalHtmlMode={globalHtmlMode}
+                  readOnly={!isEditable}
                 />
-
-              )}
-
-              {/* DIFFICULTY */}
-
-              <div className="se-difficulty-row">
-
-                {["easy", "medium", "hard"].map(
-                  (level) => (
-
-                    <button
-                      key={level}
-                      type="button"
-                      className={`se-difficulty-btn ${
-                        difficulty === level
-                          ? `active-${level}`
-                          : ""
-                      }`}
-                      onClick={() => {
-
-                        if (!isEditable) return;
-
-                        setDifficulty(level);
-
-                      }}
-                    >
-                      {level}
-                    </button>
-
-                  )
-                )}
-
               </div>
 
-              {/* OPTIONS */}
+              {/* DIFFICULTY */}
+              <div className="se-difficulty-row">
+                {["easy", "medium", "hard"].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`se-difficulty-btn ${difficulty === level ? `active-${level}` : ""}`}
+                    onClick={() => {
+                      if (!isEditable) return;
+                      setDifficulty(level);
+                    }}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
 
+              {/* OPTIONS CONTAINER */}
               <div className="se-option-list se-scrollable-options">
-
                 {[
-                  {
-                    letter: "A",
-                    value: optionA,
-                    setter: setOptionA,
-                  },
-                  {
-                    letter: "B",
-                    value: optionB,
-                    setter: setOptionB,
-                  },
-                  {
-                    letter: "C",
-                    value: optionC,
-                    setter: setOptionC,
-                  },
-                  {
-                    letter: "D",
-                    value: optionD,
-                    setter: setOptionD,
-                  },
+                  { letter: "A", value: optionA, setter: setOptionA },
+                  { letter: "B", value: optionB, setter: setOptionB },
+                  { letter: "C", value: optionC, setter: setOptionC },
+                  { letter: "D", value: optionD, setter: setOptionD },
                 ].map(({ letter, value, setter }) => (
-
                   <div
                     key={letter}
-                    className={`se-option-card ${
-                      correctAnswer === letter
-                        ? "se-option-correct"
-                        : ""
-                    }`}
+                    className={`se-option-card ${correctAnswer === letter ? "se-option-correct" : ""} ${!isEditable ? "readonly-view" : "edit-view"}`}
                   >
-
                     <input
                       type="radio"
-                      checked={
-                        correctAnswer === letter
-                      }
+                      name="correct-answer-group"
+                      checked={correctAnswer === letter}
                       disabled={!isEditable}
-                      onChange={() =>
-                        setCorrectAnswer(letter)
-                      }
+                      onChange={() => setCorrectAnswer(letter)}
                     />
-
-                    <div className="se-option-letter">
-                      {letter}.
-                    </div>
-
+                    <div className="se-option-letter">{letter}.</div>
                     <div className="se-opt-content">
-
                       <OptionInput
                         letter={letter}
                         value={value}
@@ -1020,68 +720,42 @@ export default function SmartEditPage() {
                         disabled={!isEditable}
                         globalHtmlMode={globalHtmlMode}
                       />
-
                     </div>
-
                   </div>
-
                 ))}
-
               </div>
 
               {/* EXPLANATION */}
-
               <div className="se-explanation-wrapper">
-
-                <h3 className="se-section-title">
-                  Explanation
-                </h3>
-
+                <h3 className="se-section-title">Explanation</h3>
                 <ExplanationField
                   value={explanation}
                   onChange={setExplanation}
                   disabled={!isEditable}
                   globalHtmlMode={globalHtmlMode}
                 />
-
               </div>
 
             </div>
-
           </div>
 
           {/* RIGHT SIDEBAR */}
-
           <div className="review-sidebar">
-
             <h3>Questions</h3>
-
             <div className="review-palette">
-
               {filteredQuestions.map((q, index) => (
-
                 <button
                   key={q.id}
-                  className={`review-palette-btn ${
-                    currentIndex === index
-                      ? "review-current"
-                      : ""
-                  }`}
+                  className={`review-palette-btn ${currentIndex === index ? "review-current" : ""}`}
                   onClick={() => goTo(index)}
                 >
                   {index + 1}
                 </button>
-
               ))}
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </AdminLayout>
   );
 }

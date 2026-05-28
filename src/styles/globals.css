@@ -3649,3 +3649,344 @@ font-size:15px;
     width: 100%;
     align-items: stretch;
 }
+
+/* =========================================
+SMART EDIT ENTERPRISE UI
+========================================= */
+
+.se-review-question-card{
+
+background:#0f172a;
+
+border:1px solid #1e293b;
+
+border-radius:20px;
+
+padding:18px;
+
+display:flex;
+
+flex-direction:column;
+
+gap:14px;
+
+height:calc(100vh - 240px);
+
+overflow:hidden;
+
+}
+
+/* FILTER BAR */
+
+.se-filter-bar{
+
+display:grid;
+
+grid-template-columns:
+repeat(3,minmax(0,1fr));
+
+gap:12px;
+
+margin-bottom:18px;
+
+}
+
+/* EDITOR */
+
+.se-editor-shell{
+
+display:flex;
+
+flex-direction:column;
+
+gap:12px;
+
+overflow:hidden;
+
+}
+
+/* TOP */
+
+.se-editor-top{
+
+display:flex;
+
+justify-content:space-between;
+
+gap:12px;
+
+align-items:center;
+
+flex-wrap:wrap;
+
+}
+
+/* TABS */
+
+.se-editor-tabs{
+
+display:flex;
+
+gap:8px;
+
+}
+
+/* MODE BUTTON */
+
+.se-editor-mode-btn{
+
+background:#1e293b;
+
+border:1px solid #334155;
+
+height:40px;
+
+padding:0 16px;
+
+border-radius:12px;
+
+font-size:13px;
+
+font-weight:700;
+
+}
+
+.se-editor-mode-btn.active{
+
+background:#2563eb;
+
+border-color:#60a5fa;
+
+}
+
+/* TOOLBAR */
+
+.se-editor-toolbar{
+
+display:flex;
+
+gap:8px;
+
+flex-wrap:wrap;
+
+}
+
+/* TOOL BUTTON */
+
+.se-toolbar-btn{
+
+background:#1e293b;
+
+border:1px solid #334155;
+
+height:40px;
+
+min-width:40px;
+
+padding:0 14px;
+
+border-radius:12px;
+
+font-size:13px;
+
+font-weight:700;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+transition:0.25s;
+
+}
+
+.se-toolbar-btn:hover{
+
+background:#2563eb;
+
+border-color:#60a5fa;
+
+}
+
+/* QUESTION SCROLL */
+
+.se-question-scroll{
+
+background:#111827;
+
+border:1px solid #1e293b;
+
+border-radius:16px;
+
+overflow-y:auto;
+
+min-height:130px;
+
+max-height:220px;
+
+}
+
+/* EDITABLE */
+
+.se-editable{
+
+min-height:130px;
+
+padding:18px;
+
+outline:none;
+
+font-size:16px;
+
+line-height:1.8;
+
+position:relative;
+
+}
+
+/* PLACEHOLDER */
+
+.se-editable:empty:before{
+
+content:attr(data-placeholder);
+
+color:#64748b;
+
+}
+
+/* HTML */
+
+.se-html-editor{
+
+min-height:220px;
+
+max-height:220px;
+
+resize:none;
+
+font-family:monospace;
+
+}
+
+/* OPTION LIST */
+
+.se-option-list{
+
+display:grid;
+
+grid-template-columns:1fr 1fr;
+
+gap:12px;
+
+}
+
+/* OPTION */
+
+.se-option-card{
+
+background:#1e293b;
+
+border:2px solid transparent;
+
+border-radius:16px;
+
+padding:12px 14px;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+min-height:64px;
+
+transition:0.25s;
+
+}
+
+.se-option-card:hover{
+
+border-color:#2563eb;
+
+}
+
+/* CORRECT */
+
+.se-option-correct{
+
+background:
+rgba(34,197,94,0.14);
+
+border-color:#22c55e;
+
+}
+
+/* INPUT */
+
+.se-opt-input{
+
+background:#0f172a;
+
+border:1px solid #334155;
+
+height:42px;
+
+}
+
+/* ERROR */
+
+.se-validation-error{
+
+margin-top:6px;
+
+font-size:13px;
+
+font-weight:600;
+
+color:#ef4444;
+
+}
+
+/* EXPLANATION */
+
+.se-explanation{
+
+min-height:100px;
+
+max-height:140px;
+
+resize:vertical;
+
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1200px){
+
+.se-option-list{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.se-filter-bar{
+
+grid-template-columns:1fr;
+
+}
+
+.se-editor-top{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+}
+

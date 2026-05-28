@@ -502,7 +502,7 @@ export default function ExamPage() {
 
   return (
 
-    <div className="exam-layout">
+    <div className="exam-layout" style={{ alignItems: "stretch" }}>
 
       {/* LEFT */}
 
@@ -546,9 +546,12 @@ export default function ExamPage() {
     Q.{currentQuestion + 1}
   </div>
 
-  <div className="question-text-main">
-    {currentQ.question || currentQ.text}
-  </div>
+  <div
+    className="question-text-main"
+    dangerouslySetInnerHTML={{
+      __html: currentQ.question || currentQ.text || "",
+    }}
+  />
 
 </div>
 
@@ -636,7 +639,7 @@ export default function ExamPage() {
 
       {/* RIGHT */}
 
-      <div className="navigator">
+      <div className="navigator" style={{ position: "sticky", top: "18px", maxHeight: "calc(100vh - 36px)", height: "fit-content" }}>
 
         <h2 className="palette-title">
           Questions
@@ -688,7 +691,7 @@ export default function ExamPage() {
 
         </div>
 
-        <div className="palette-grid">
+        <div className="palette-grid" style={{ flex: 1, overflowY: "auto", maxHeight: "none" }}>
 
           {questions.map((q, index) => {
 

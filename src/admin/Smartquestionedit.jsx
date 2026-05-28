@@ -118,40 +118,7 @@ function QuestionEditor({
 
   return (
     <div className="se-editor-shell">
-
-      {/* SINGLE ROW HEADER TOOLBOX */}
-      <div className="se-editor-top-bar">
-        <div className="se-left-controls">
-           </div>
-
-        {!readOnly && (
-          <div className="se-editor-toolbar se-toolbar-scroll">
-            {[
-              ["bold", "B"],
-              ["italic", "I"],
-              ["underline", "U"],
-              ["insertUnorderedList", "≡"],
-              ["insertOrderedList", "1."],
-              ["table", "Table"],
-              ["image-url", "URL"],
-              ["image-upload", "Upload"],
-            ].map(([cmd, label]) => (
-              <button
-                key={cmd}
-                type="button"
-                className="se-toolbar-btn"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  exec(cmd);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
+      
       <input
         type="file"
         hidden
@@ -687,20 +654,16 @@ export default function SmartEditPage() {
 </div>
 
               {/* QUESTION FIELD CONTAINER */}
-              <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
-               <div
-                  className="se-readonly-badge"
-                  title="Read Only Mode"
-                >
-                  🔒
-                </div>
-                <QuestionEditor
-                  value={questionHtml}
-                  onChange={setQuestionHtml}
-                  globalHtmlMode={globalHtmlMode}
-                  readOnly={!isEditable}
-                />
-              </div>
+             <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
+              
+                {!isEditable && (
+                  <div
+                    className="se-readonly-badge"
+                    title="Read Only Mode"
+                  >
+                    🔒
+                  </div>
+                )}
 
               {/* DIFFICULTY */}
               <div className="se-difficulty-row">

@@ -60,6 +60,37 @@ function QuestionEditor({ value, onChange }) {
       return;
     }
 
+    if (cmd === "table") {
+      const rows = prompt("Rows?");
+      const cols = prompt("Columns?");
+
+      if (!rows || !cols) return;
+
+      let table = "<table>";
+
+      for (let r = 0; r < Number(rows); r++) {
+        table += "<tr>";
+
+        for (let c = 0; c < Number(cols); c++) {
+          table += "<td> </td>";
+        }
+
+        table += "</tr>";
+      }
+
+      table += "</table>";
+
+      document.execCommand(
+        "insertHTML",
+        false,
+        table
+      );
+
+      onChange(editorRef.current.innerHTML);
+
+      return;
+    }
+
     document.execCommand(cmd, false, null);
 
     onChange(editorRef.current.innerHTML);
@@ -87,6 +118,8 @@ function QuestionEditor({ value, onChange }) {
 
   return (
     <div className="se-editor-shell">
+
+      {/* TOP */}
 
       <div className="se-editor-top">
 
@@ -200,6 +233,17 @@ function QuestionEditor({ value, onChange }) {
             className="se-toolbar-btn"
             onMouseDown={(e) => {
               e.preventDefault();
+              exec("table");
+            }}
+          >
+            Table
+          </button>
+
+          <button
+            type="button"
+            className="se-toolbar-btn"
+            onMouseDown={(e) => {
+              e.preventDefault();
               exec("image-url");
             }}
           >
@@ -221,7 +265,7 @@ function QuestionEditor({ value, onChange }) {
 
       </div>
 
-      {/* IMAGE */}
+      {/* FILE */}
 
       <input
         type="file"
@@ -252,7 +296,7 @@ function QuestionEditor({ value, onChange }) {
             className="se-editable"
             contentEditable
             suppressContentEditableWarning
-            data-placeholder="Type question here..."
+            data-placeholder="Type your question here..."
             onInput={() => {
               onChange(editorRef.current.innerHTML);
             }}
@@ -265,7 +309,7 @@ function QuestionEditor({ value, onChange }) {
 }
 
 /* =========================================================
-MAIN PAGE
+MAIN
 ========================================================= */
 
 export default function SmartEditPage() {
@@ -320,8 +364,8 @@ export default function SmartEditPage() {
   const [isNew, setIsNew] = useState(false);
 
   /* =========================================================
-  FIREBASE
-  ========================================================= */
+FIREBASE
+========================================================= */
 
   useEffect(() => {
     return onSnapshot(
@@ -405,7 +449,7 @@ FILTER
   ]);
 
   /* =========================================================
-LOAD QUESTION
+LOAD
 ========================================================= */
 
   useEffect(() => {
@@ -434,7 +478,7 @@ LOAD QUESTION
   }, [filteredQuestions, currentIndex, isNew]);
 
   /* =========================================================
-VALIDATION
+VALIDATE
 ========================================================= */
 
   function validate() {
@@ -471,20 +515,8 @@ VALIDATION
   }
 
   /* =========================================================
-NAVIGATION
+CLEAR
 ========================================================= */
-
-  function goTo(index) {
-    if (
-      index < 0 ||
-      index >= filteredQuestions.length
-    )
-      return;
-
-    setIsNew(false);
-
-    setCurrentIndex(index);
-  }
 
   function clearEditor() {
     setQuestionHtml("");
@@ -505,6 +537,10 @@ NAVIGATION
 
     setErrors({});
   }
+
+  /* =========================================================
+NEW
+========================================================= */
 
   function openNew() {
     setIsNew(true);
@@ -537,6 +573,22 @@ NAVIGATION
   }
 
   /* =========================================================
+NAVIGATION
+========================================================= */
+
+  function goTo(index) {
+    if (
+      index < 0 ||
+      index >= filteredQuestions.length
+    )
+      return;
+
+    setIsNew(false);
+
+    setCurrentIndex(index);
+  }
+
+  /* =========================================================
 UPDATE
 ========================================================= */
 
@@ -564,6 +616,10 @@ UPDATE
       explanation,
     });
 
+    toast.success(
+      "Hoila 🎉 Question updated successfully"
+    );
+
     setUpdatedIds((prev) => {
       const next = new Set(prev);
 
@@ -571,8 +627,6 @@ UPDATE
 
       return next;
     });
-
-    toast.success("Hoila 🎉 Question updated");
   }
 
   /* =========================================================
@@ -590,57 +644,32 @@ ADD
       toast.error(
         "Select subject/topic/subtopic"
       );
-
       return;
     }
 
-    const dupQ = query(
-      collection(db, "questions"),
-      where("question", "==", questionHtml.trim()),
-      where("subTopicId", "==", selectedSubTopic)
-    );
+    await addDoc(collection(db, "questions"), {
+      subjectId: selectedSubject,
 
-    const dup = await getDocs(dupQ);
+      topicId: selectedTopic,
 
-    if (!dup.empty) {
-      toast.error("Question already exists");
-      return;
-    }
+      subTopicId: selectedSubTopic,
 
-    const ref = await addDoc(
-      collection(db, "questions"),
-      {
-        subjectId: selectedSubject,
+      question: questionHtml,
 
-        topicId: selectedTopic,
+      options: [
+        optionA,
+        optionB,
+        optionC,
+        optionD,
+      ],
 
-        subTopicId: selectedSubTopic,
+      correctAnswer,
 
-        question: questionHtml,
+      difficulty,
 
-        options: [
-          optionA,
-          optionB,
-          optionC,
-          optionD,
-        ],
+      explanation,
 
-        correctAnswer,
-
-        difficulty,
-
-        explanation,
-
-        createdAt: Date.now(),
-      }
-    );
-
-    setUpdatedIds((prev) => {
-      const next = new Set(prev);
-
-      next.add(ref.id);
-
-      return next;
+      createdAt: Date.now(),
     });
 
     toast.success(
@@ -689,16 +718,18 @@ UI
 
       <div className="page">
 
-        {/* TOPBAR */}
+        {/* HEADER */}
 
         <div className="review-topbar">
 
           <div>
+
             <h2>Smart Edit Interface</h2>
 
             <p>
               Enterprise Question Editing System
             </p>
+
           </div>
 
           <div className="review-actions">
@@ -886,6 +917,341 @@ UI
               </option>
             ))}
           </select>
+
+        </div>
+
+        {/* MAIN */}
+
+        <div className="review-layout">
+
+          {/* LEFT */}
+
+          <div className="review-main">
+
+            <div className="se-review-question-card">
+
+              {/* QUESTION */}
+
+              <QuestionEditor
+                value={questionHtml}
+                onChange={setQuestionHtml}
+              />
+
+              {errors.question && (
+                <div className="se-validation-error">
+                  {errors.question}
+                </div>
+              )}
+
+              {/* DIFFICULTY */}
+
+              <div className="se-difficulty-row">
+
+                {[
+                  "easy",
+                  "medium",
+                  "hard",
+                ].map((level) => (
+
+                  <button
+                    key={level}
+                    type="button"
+                    className={`se-difficulty-btn ${
+                      difficulty === level
+                        ? `active-${level}`
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setDifficulty(level)
+                    }
+                  >
+                    {level}
+                  </button>
+
+                ))}
+
+              </div>
+
+              {/* OPTIONS */}
+
+              <div className="se-option-list">
+
+                {/* A */}
+
+                <div
+                  className={`se-option-card ${
+                    correctAnswer === "A"
+                      ? "se-option-correct"
+                      : ""
+                  }`}
+                >
+
+                  <input
+                    type="radio"
+                    checked={
+                      correctAnswer === "A"
+                    }
+                    onChange={() =>
+                      setCorrectAnswer("A")
+                    }
+                  />
+
+                  <div className="se-option-letter">
+                    A.
+                  </div>
+
+                  <input
+                    className="se-opt-input"
+                    placeholder="Option A"
+                    value={optionA}
+                    onChange={(e) =>
+                      setOptionA(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
+                {/* B */}
+
+                <div
+                  className={`se-option-card ${
+                    correctAnswer === "B"
+                      ? "se-option-correct"
+                      : ""
+                  }`}
+                >
+
+                  <input
+                    type="radio"
+                    checked={
+                      correctAnswer === "B"
+                    }
+                    onChange={() =>
+                      setCorrectAnswer("B")
+                    }
+                  />
+
+                  <div className="se-option-letter">
+                    B.
+                  </div>
+
+                  <input
+                    className="se-opt-input"
+                    placeholder="Option B"
+                    value={optionB}
+                    onChange={(e) =>
+                      setOptionB(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
+                {/* C */}
+
+                <div
+                  className={`se-option-card ${
+                    correctAnswer === "C"
+                      ? "se-option-correct"
+                      : ""
+                  }`}
+                >
+
+                  <input
+                    type="radio"
+                    checked={
+                      correctAnswer === "C"
+                    }
+                    onChange={() =>
+                      setCorrectAnswer("C")
+                    }
+                  />
+
+                  <div className="se-option-letter">
+                    C.
+                  </div>
+
+                  <input
+                    className="se-opt-input"
+                    placeholder="Option C"
+                    value={optionC}
+                    onChange={(e) =>
+                      setOptionC(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
+                {/* D */}
+
+                <div
+                  className={`se-option-card ${
+                    correctAnswer === "D"
+                      ? "se-option-correct"
+                      : ""
+                  }`}
+                >
+
+                  <input
+                    type="radio"
+                    checked={
+                      correctAnswer === "D"
+                    }
+                    onChange={() =>
+                      setCorrectAnswer("D")
+                    }
+                  />
+
+                  <div className="se-option-letter">
+                    D.
+                  </div>
+
+                  <input
+                    className="se-opt-input"
+                    placeholder="Option D"
+                    value={optionD}
+                    onChange={(e) =>
+                      setOptionD(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
+              </div>
+
+              {/* ERRORS */}
+
+              {errors.a && (
+                <div className="se-validation-error">
+                  {errors.a}
+                </div>
+              )}
+
+              {errors.b && (
+                <div className="se-validation-error">
+                  {errors.b}
+                </div>
+              )}
+
+              {errors.c && (
+                <div className="se-validation-error">
+                  {errors.c}
+                </div>
+              )}
+
+              {errors.d && (
+                <div className="se-validation-error">
+                  {errors.d}
+                </div>
+              )}
+
+              {/* EXPLANATION */}
+
+              <div className="se-explanation-box">
+
+                <h3 className="se-explanation-title">
+                  Explanation
+                </h3>
+
+                <textarea
+                  className="se-explanation"
+                  placeholder="Write explanation here..."
+                  value={explanation}
+                  onChange={(e) =>
+                    setExplanation(
+                      e.target.value
+                    )
+                  }
+                />
+
+                {errors.explanation && (
+                  <div className="se-validation-error">
+                    {errors.explanation}
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* RIGHT */}
+
+          <div className="review-sidebar">
+
+            <h3>Questions</h3>
+
+            <div className="review-legend">
+
+              <div className="review-legend-item">
+
+                <div
+                  className="review-dot"
+                  style={{
+                    background:
+                      "#16a34a",
+                  }}
+                />
+
+                Updated
+
+              </div>
+
+              <div className="review-legend-item">
+
+                <div
+                  className="review-dot"
+                  style={{
+                    background:
+                      "#475569",
+                  }}
+                />
+
+                Pending
+
+              </div>
+
+            </div>
+
+            <div className="review-palette">
+
+              {filteredQuestions.map(
+                (q, i) => (
+
+                  <button
+                    key={q.id}
+                    className={`review-palette-btn ${
+                      currentIndex === i
+                        ? "review-current"
+                        : ""
+                    } ${
+                      getQuestionStatus(
+                        q
+                      ) === "correct"
+                        ? "review-palette-correct"
+                        : "review-palette-unanswered"
+                    }`}
+                    onClick={() =>
+                      goTo(i)
+                    }
+                  >
+                    {i + 1}
+                  </button>
+
+                )
+              )}
+
+            </div>
+
+          </div>
 
         </div>
 

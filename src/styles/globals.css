@@ -1445,7 +1445,7 @@ table tr:hover{
 .se-view-question-box{
   position:relative;
   border-radius:18px;
-  overflow:hidden;
+  overflow:visible;
   width:100%;
 }
 

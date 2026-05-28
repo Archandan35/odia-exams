@@ -25,15 +25,12 @@ function QuestionEditor({
   readOnly = false,
 }) {
   const editorRef = useRef(null);
-  // Track the last value we pushed INTO the DOM ourselves,
-  // so we never overwrite the user's live typing.
   const lastPushedRef = useRef(null);
 
   useEffect(() => {
     if (!editorRef.current) return;
-    // Only reset the DOM when the value genuinely changed from outside
-    // (e.g. switching questions). If the new value equals what the user
-    // just typed (lastPushedRef), skip — cursor stays put.
+    // Only reset DOM when value changed externally (question switch),
+    // not when user is typing (would reset cursor to position 0).
     if (value !== lastPushedRef.current) {
       lastPushedRef.current = value;
       editorRef.current.innerHTML = value || "";
@@ -52,12 +49,12 @@ function QuestionEditor({
           style={{
             minHeight: "100px",
             height: "auto",
+            cursor: readOnly ? "default" : "text",
+            userSelect: readOnly ? "none" : "text",
           }}
           onInput={() => {
             if (!editorRef.current) return;
             const html = editorRef.current.innerHTML;
-            // Record what the user typed so the useEffect above
-            // knows NOT to reset innerHTML for this value.
             lastPushedRef.current = html;
             onChange(html);
           }}
@@ -309,64 +306,84 @@ export default function SmartEditPage() {
   }, [filteredQuestions, currentIndex, isNew]);
 
   /* =========================================================
-     HTML TO VISUAL
+     HTML ↔ VISUAL SYNC
   ========================================================= */
 
+  // Build the canonical HTML string from current visual state
+  function buildHtmlFromState({
+    qHtml = questionHtml,
+    a = optionA, b = optionB, c = optionC, d = optionD,
+    answer = correctAnswer,
+    diff = difficulty,
+    expl = explanation,
+  } = {}) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body>
+
+<div data-field="question">
+${qHtml || ""}
+</div>
+
+<p data-field="optionA">${a}</p>
+<p data-field="optionB">${b}</p>
+<p data-field="optionC">${c}</p>
+<p data-field="optionD">${d}</p>
+
+<div data-field="explanation">
+${expl}
+</div>
+
+<div data-correct="${answer}" data-difficulty="${diff}"></div>
+
+</body>
+</html>`;
+  }
+
+  // Parse HTML string back into visual state fields
   function applyHtmlToVisual(html) {
     setHtmlCode(html);
 
     const parser = new DOMParser();
+    const parsed = parser.parseFromString(html, "text/html");
 
-    const doc = parser.parseFromString(
-      html,
-      "text/html"
-    );
+    const get = (sel) => parsed.querySelector(sel);
 
-    const h1 = doc.querySelector("h1");
+    // Question
+    const qNode = get('[data-field="question"]');
+    if (qNode) setQuestionHtml(qNode.innerHTML.trim());
 
-    if (h1) {
-      setQuestionHtml(h1.outerHTML);
-    } else {
-      setQuestionHtml(doc.body.innerHTML);
-    }
+    // Options — try data-field first, fall back to <p> order
+    const oA = get('[data-field="optionA"]');
+    const oB = get('[data-field="optionB"]');
+    const oC = get('[data-field="optionC"]');
+    const oD = get('[data-field="optionD"]');
+    const paras = parsed.querySelectorAll("p");
 
-    const paragraphs =
-      doc.querySelectorAll("p");
+    if (oA) setOptionA(oA.innerHTML);
+    else if (paras[0]) setOptionA(paras[0].innerHTML);
 
-    if (paragraphs[0]) {
-      setOptionA(paragraphs[0].innerHTML);
-    }
+    if (oB) setOptionB(oB.innerHTML);
+    else if (paras[1]) setOptionB(paras[1].innerHTML);
 
-    if (paragraphs[1]) {
-      setOptionB(paragraphs[1].innerHTML);
-    }
+    if (oC) setOptionC(oC.innerHTML);
+    else if (paras[2]) setOptionC(paras[2].innerHTML);
 
-    if (paragraphs[2]) {
-      setOptionC(paragraphs[2].innerHTML);
-    }
+    if (oD) setOptionD(oD.innerHTML);
+    else if (paras[3]) setOptionD(paras[3].innerHTML);
 
-    if (paragraphs[3]) {
-      setOptionD(paragraphs[3].innerHTML);
-    }
+    // Explanation
+    const exNode = get('[data-field="explanation"]') || get('.explanation');
+    if (exNode) setExplanation(exNode.innerHTML.trim());
 
-    const explanationNode =
-      doc.querySelector(".explanation");
-
-    if (explanationNode) {
-      setExplanation(
-        explanationNode.innerHTML
-      );
-    }
-
-    const difficultyNode =
-      doc.querySelector("[data-difficulty]");
-
-    if (difficultyNode) {
-      setDifficulty(
-        difficultyNode.getAttribute(
-          "data-difficulty"
-        )
-      );
+    // Correct answer + difficulty
+    const meta = get('[data-correct]') || get('[data-difficulty]');
+    if (meta) {
+      const ans = meta.getAttribute("data-correct");
+      const diff = meta.getAttribute("data-difficulty");
+      if (ans) setCorrectAnswer(ans);
+      if (diff) setDifficulty(diff);
     }
   }
 
@@ -796,7 +813,8 @@ export default function SmartEditPage() {
                     type="button"
                     className="se-segment-btn"
                     onClick={() => {
-                      setHtmlCode(`<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n</head>\n<body>\n\n${questionHtml || ""}\n\n<p>${optionA}</p>\n<p>${optionB}</p>\n<p>${optionC}</p>\n<p>${optionD}</p>\n\n<div class="explanation">\n${explanation}\n</div>\n\n<div data-difficulty="${difficulty}"></div>\n\n</body>\n</html>`);
+                      const fresh = buildHtmlFromState();
+                      setHtmlCode(fresh);
                       setShowHtmlModal(true);
                     }}
                   >
@@ -919,14 +937,10 @@ export default function SmartEditPage() {
                     key={level}
                     type="button"
                     className={`se-difficulty-btn ${
-                      difficulty === level
-                        ? `active-${level}`
-                        : ""
-                    }`}
+                      difficulty === level ? `active-${level}` : ""
+                    } ${isEditable ? "se-editable-mode" : ""}`}
                     onClick={() => {
-                      if (!isEditable)
-                        return;
-
+                      if (!isEditable) return;
                       setDifficulty(level);
                     }}
                   >
@@ -973,11 +987,8 @@ export default function SmartEditPage() {
                     <div
                       key={letter}
                       className={`se-option-card ${
-                        correctAnswer ===
-                        letter
-                          ? "se-option-correct"
-                          : ""
-                      } se-option-hover`}
+                        correctAnswer === letter ? "se-option-correct" : ""
+                      } se-option-hover ${isEditable ? "se-option-editable" : ""}`}
                     >
 
                       <input
@@ -1146,35 +1157,42 @@ export default function SmartEditPage() {
             <div className="se-html-modal">
 
               <div className="se-html-modal-header">
-
-                <h2>HTML Editor</h2>
-
-                <button
-                  type="button"
-                  className="se-toolbar-btn"
-                  onClick={() =>
-                    setShowHtmlModal(
-                      false
-                    )
-                  }
-                >
-                  Close
-                </button>
-
+                <div style={{ display:"flex", flexDirection:"column", gap:"2px" }}>
+                  <h2 style={{ margin:0 }}>HTML Editor</h2>
+                  <span style={{ fontSize:"12px", color:"#60a5fa" }}>
+                    ⟳ Live sync — edits here update Visual mode instantly
+                  </span>
+                </div>
+                <div style={{ display:"flex", gap:"8px" }}>
+                  <button
+                    type="button"
+                    className="se-toolbar-btn"
+                    style={{ background:"#16a34a", color:"white", borderColor:"#16a34a" }}
+                    onClick={() => setShowHtmlModal(false)}
+                  >
+                    ✓ Apply & Close
+                  </button>
+                  <button
+                    type="button"
+                    className="se-toolbar-btn"
+                    onClick={() => {
+                      // Discard HTML changes — rebuild from current visual state
+                      setHtmlCode(buildHtmlFromState());
+                      setShowHtmlModal(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
 
               <textarea
                 className="se-html-popup-editor"
                 value={htmlCode}
                 onChange={(e) => {
-                  const val =
-                    e.target.value;
-
+                  const val = e.target.value;
                   setHtmlCode(val);
-
-                  applyHtmlToVisual(
-                    val
-                  );
+                  applyHtmlToVisual(val);
                 }}
               />
 

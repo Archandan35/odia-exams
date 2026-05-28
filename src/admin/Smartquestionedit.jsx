@@ -169,6 +169,19 @@ export default function SmartEditPage() {
 
   const [htmlCode, setHtmlCode] = useState("");
 
+  const [showLinkModal, setShowLinkModal] =
+    useState(false);
+
+  const [showTableModal, setShowTableModal] =
+    useState(false);
+
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkText, setLinkText] = useState("");
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
+
+  const imageUploadRef = useRef(null);
+
   const isEditable =
     isEditingQuestion || isNew;
 
@@ -509,6 +522,53 @@ export default function SmartEditPage() {
     toast.success("Question deleted");
   }
 
+  /* =========================================================
+     INSERT HELPERS
+  ========================================================= */
+
+  function insertLink() {
+    if (!linkUrl) return;
+    const text = linkText || linkUrl;
+    document.execCommand(
+      "insertHTML",
+      false,
+      `<a href="${linkUrl}" target="_blank" style="color:#60a5fa;text-decoration:underline">${text}</a>`
+    );
+    setLinkUrl("");
+    setLinkText("");
+    setShowLinkModal(false);
+  }
+
+  function insertTable() {
+    let html = `<table style="border-collapse:collapse;width:100%;margin:8px 0">`;
+    for (let r = 0; r < tableRows; r++) {
+      html += "<tr>";
+      for (let c = 0; c < tableCols; c++) {
+        const tag = r === 0 ? "th" : "td";
+        html += `<${tag} style="border:1px solid #334155;padding:8px 12px;background:${r===0?"#1e293b":"#111827"};text-align:left">&nbsp;</${tag}>`;
+      }
+      html += "</tr>";
+    }
+    html += "</table><br>";
+    document.execCommand("insertHTML", false, html);
+    setShowTableModal(false);
+  }
+
+  function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<img src="${ev.target.result}" style="max-width:100%;border-radius:10px;margin:6px 0" />`
+      );
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
   const filteredTopics = topics.filter(
     (t) =>
       !selectedSubject ||
@@ -689,154 +749,124 @@ export default function SmartEditPage() {
 
             <div className="se-review-question-card">
 
-              {/* TOP BAR */}
+              {/* TOP BAR — single unified row */}
 
               <div className="se-edit-toolbar-wrapper">
 
-                {/* VIEW EDIT */}
-
+                {/* VIEW / EDIT toggle */}
                 <div className="se-segment-group">
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      !isEditable
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setIsEditingQuestion(
-                        false
-                      )
-                    }
+                    className={`se-segment-btn ${!isEditable ? "active" : ""}`}
+                    onClick={() => setIsEditingQuestion(false)}
                   >
                     View
                   </button>
-
                   <button
                     type="button"
-                    className={`se-segment-btn ${
-                      isEditable
-                        ? "active"
-                        : ""
-                    }`}
+                    className={`se-segment-btn ${isEditable ? "active" : ""}`}
                     onClick={() => {
-                      if (isEditable) {
-                        cancelEditing();
-                      } else {
-                        setIsEditingQuestion(
-                          true
-                        );
-                      }
+                      if (isEditable) { cancelEditing(); }
+                      else { setIsEditingQuestion(true); }
                     }}
                   >
-                    {isEditable
-                      ? "Cancel"
-                      : "Edit"}
+                    {isEditable ? "Cancel" : "Edit"}
                   </button>
-
                 </div>
 
-                {/* VISUAL HTML */}
-
+                {/* VISUAL / HTML toggle */}
                 <div className="se-segment-group">
-
                   <button
                     type="button"
                     className="se-segment-btn active"
-                    onClick={() =>
-                      setShowHtmlModal(
-                        false
-                      )
-                    }
+                    onClick={() => setShowHtmlModal(false)}
                   >
                     Visual
                   </button>
-
                   <button
                     type="button"
                     className="se-segment-btn"
                     onClick={() => {
-
-                      setHtmlCode(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-</head>
-<body>
-
-${questionHtml || ""}
-
-<p>${optionA}</p>
-<p>${optionB}</p>
-<p>${optionC}</p>
-<p>${optionD}</p>
-
-<div class="explanation">
-${explanation}
-</div>
-
-<div data-difficulty="${difficulty}"></div>
-
-</body>
-</html>
-`);
-
-                      setShowHtmlModal(
-                        true
-                      );
+                      setHtmlCode(`<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n</head>\n<body>\n\n${questionHtml || ""}\n\n<p>${optionA}</p>\n<p>${optionB}</p>\n<p>${optionC}</p>\n<p>${optionD}</p>\n\n<div class="explanation">\n${explanation}\n</div>\n\n<div data-difficulty="${difficulty}"></div>\n\n</body>\n</html>`);
+                      setShowHtmlModal(true);
                     }}
                   >
                     HTML
                   </button>
-
                 </div>
 
-                {/* TOOLBAR */}
-
+                {/* FORMATTING + INSERT TOOLBAR — always visible in edit mode */}
                 {isEditable && (
-                  <div className="se-editor-toolbar se-toolbar-scroll">
+                  <div className="se-editor-toolbar">
 
+                    {/* Format buttons */}
                     {[
                       ["bold", "B"],
                       ["italic", "I"],
                       ["underline", "U"],
-                      [
-                        "insertUnorderedList",
-                        "≡",
-                      ],
-                      [
-                        "insertOrderedList",
-                        "1.",
-                      ],
-                    ].map(
-                      ([cmd, label]) => (
-                        <button
-                          key={cmd}
-                          type="button"
-                          className="se-toolbar-btn"
-                          onMouseDown={(
-                            e
-                          ) => {
-                            e.preventDefault();
+                      ["insertUnorderedList", "≡"],
+                      ["insertOrderedList", "1."],
+                    ].map(([cmd, label]) => (
+                      <button
+                        key={cmd}
+                        type="button"
+                        className="se-toolbar-btn"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          document.execCommand(cmd, false, null);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
 
-                            document.execCommand(
-                              cmd,
-                              false,
-                              null
-                            );
-                          }}
-                        >
-                          {label}
-                        </button>
-                      )
-                    )}
+                    {/* Divider */}
+                    <span className="se-toolbar-divider" />
+
+                    {/* Link insert */}
+                    <button
+                      type="button"
+                      className="se-toolbar-btn"
+                      title="Insert Link"
+                      onClick={() => setShowLinkModal(true)}
+                    >
+                      🔗 Link
+                    </button>
+
+                    {/* Table insert */}
+                    <button
+                      type="button"
+                      className="se-toolbar-btn"
+                      title="Insert Table"
+                      onClick={() => setShowTableModal(true)}
+                    >
+                      ⊞ Table
+                    </button>
+
+                    {/* Image upload */}
+                    <button
+                      type="button"
+                      className="se-toolbar-btn"
+                      title="Upload Image"
+                      onClick={() => imageUploadRef.current?.click()}
+                    >
+                      🖼 Image
+                    </button>
+                    <input
+                      ref={imageUploadRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                    />
 
                   </div>
                 )}
 
               </div>
+
+              {/* SCROLLABLE CONTENT AREA */}
+              <div className="se-content-scroll">
 
               {/* QUESTION */}
 
@@ -995,7 +1025,9 @@ ${explanation}
                   disabled={!isEditable}
                 />
 
-              </div>
+              </div>{/* end se-explanation-wrapper */}
+
+              </div>{/* end se-content-scroll */}
 
             </div>
           </div>
@@ -1030,6 +1062,72 @@ ${explanation}
 
           </div>
         </div>
+
+        {/* LINK MODAL */}
+        {showLinkModal && (
+          <div className="se-html-modal-overlay">
+            <div className="se-mini-modal">
+              <div className="se-html-modal-header">
+                <h2>Insert Link</h2>
+                <button type="button" className="se-toolbar-btn" onClick={() => setShowLinkModal(false)}>✕</button>
+              </div>
+              <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <input
+                  style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "10px 14px", color: "white", fontSize: "14px" }}
+                  placeholder="Display text (optional)"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                />
+                <input
+                  style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "10px 14px", color: "white", fontSize: "14px" }}
+                  placeholder="https://url..."
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                  <button type="button" className="se-toolbar-btn" onClick={() => setShowLinkModal(false)}>Cancel</button>
+                  <button type="button" style={{ background: "#2563eb", color: "white", border: "none", borderRadius: "10px", padding: "10px 20px", fontWeight: 700, cursor: "pointer" }} onClick={insertLink}>Insert</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TABLE MODAL */}
+        {showTableModal && (
+          <div className="se-html-modal-overlay">
+            <div className="se-mini-modal">
+              <div className="se-html-modal-header">
+                <h2>Insert Table</h2>
+                <button type="button" className="se-toolbar-btn" onClick={() => setShowTableModal(false)}>✕</button>
+              </div>
+              <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                  <label style={{ color: "#94a3b8", fontSize: "14px", minWidth: "60px" }}>Rows</label>
+                  <input
+                    type="number" min="1" max="20"
+                    style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "8px 12px", color: "white", fontSize: "14px", width: "80px" }}
+                    value={tableRows}
+                    onChange={(e) => setTableRows(Number(e.target.value))}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                  <label style={{ color: "#94a3b8", fontSize: "14px", minWidth: "60px" }}>Columns</label>
+                  <input
+                    type="number" min="1" max="10"
+                    style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "8px 12px", color: "white", fontSize: "14px", width: "80px" }}
+                    value={tableCols}
+                    onChange={(e) => setTableCols(Number(e.target.value))}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                  <button type="button" className="se-toolbar-btn" onClick={() => setShowTableModal(false)}>Cancel</button>
+                  <button type="button" style={{ background: "#2563eb", color: "white", border: "none", borderRadius: "10px", padding: "10px 20px", fontWeight: 700, cursor: "pointer" }} onClick={insertTable}>Insert</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* HTML MODAL */}
 

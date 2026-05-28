@@ -3660,7 +3660,7 @@ background:#0f172a;
 
 border:1px solid #1e293b;
 
-border-radius:20px;
+border-radius:22px;
 
 padding:18px;
 
@@ -3670,13 +3670,15 @@ flex-direction:column;
 
 gap:14px;
 
-height:calc(100vh - 240px);
-
 overflow:hidden;
+
+max-height:calc(100vh - 220px);
 
 }
 
-/* FILTER BAR */
+/* =========================================
+FILTER BAR
+========================================= */
 
 .se-filter-bar{
 
@@ -3687,11 +3689,33 @@ repeat(3,minmax(0,1fr));
 
 gap:12px;
 
-margin-bottom:18px;
+margin-bottom:16px;
 
 }
 
-/* EDITOR */
+.se-select{
+
+height:48px;
+
+border-radius:14px;
+
+background:#1e293b;
+
+border:1px solid #334155;
+
+padding:0 14px;
+
+font-size:14px;
+
+font-weight:600;
+
+color:white;
+
+}
+
+/* =========================================
+EDITOR
+========================================= */
 
 .se-editor-shell{
 
@@ -3713,7 +3737,23 @@ display:flex;
 
 justify-content:space-between;
 
-gap:12px;
+align-items:center;
+
+gap:14px;
+
+flex-wrap:wrap;
+
+}
+
+/* =========================================
+VISUAL / HTML TABS
+========================================= */
+
+.se-editor-tabs{
+
+display:flex;
+
+gap:10px;
 
 align-items:center;
 
@@ -3721,33 +3761,37 @@ flex-wrap:wrap;
 
 }
 
-/* TABS */
-
-.se-editor-tabs{
-
-display:flex;
-
-gap:8px;
-
-}
-
-/* MODE BUTTON */
-
 .se-editor-mode-btn{
 
 background:#1e293b;
 
 border:1px solid #334155;
 
-height:40px;
+height:42px;
 
-padding:0 16px;
+padding:0 18px;
 
 border-radius:12px;
 
 font-size:13px;
 
 font-weight:700;
+
+color:#cbd5e1;
+
+transition:0.25s;
+
+width:auto !important;
+
+}
+
+.se-editor-mode-btn:hover{
+
+background:#2563eb;
+
+border-color:#60a5fa;
+
+color:white;
 
 }
 
@@ -3757,21 +3801,25 @@ background:#2563eb;
 
 border-color:#60a5fa;
 
+color:white;
+
 }
 
-/* TOOLBAR */
+/* =========================================
+TOOLBAR
+========================================= */
 
 .se-editor-toolbar{
 
 display:flex;
 
-gap:8px;
+gap:10px;
 
 flex-wrap:wrap;
 
-}
+align-items:center;
 
-/* TOOL BUTTON */
+}
 
 .se-toolbar-btn{
 
@@ -3779,9 +3827,9 @@ background:#1e293b;
 
 border:1px solid #334155;
 
-height:40px;
+height:42px;
 
-min-width:40px;
+min-width:42px;
 
 padding:0 14px;
 
@@ -3799,6 +3847,10 @@ justify-content:center;
 
 transition:0.25s;
 
+color:white;
+
+width:auto !important;
+
 }
 
 .se-toolbar-btn:hover{
@@ -3807,9 +3859,13 @@ background:#2563eb;
 
 border-color:#60a5fa;
 
+transform:translateY(-1px);
+
 }
 
-/* QUESTION SCROLL */
+/* =========================================
+QUESTION AREA
+========================================= */
 
 .se-question-scroll{
 
@@ -3817,21 +3873,37 @@ background:#111827;
 
 border:1px solid #1e293b;
 
-border-radius:16px;
+border-radius:18px;
 
 overflow-y:auto;
 
-min-height:130px;
+min-height:180px;
 
-max-height:220px;
+max-height:240px;
 
 }
 
-/* EDITABLE */
+.se-question-scroll::-webkit-scrollbar{
+
+width:8px;
+
+}
+
+.se-question-scroll::-webkit-scrollbar-thumb{
+
+background:#334155;
+
+border-radius:20px;
+
+}
+
+/* =========================================
+EDITABLE
+========================================= */
 
 .se-editable{
 
-min-height:130px;
+min-height:180px;
 
 padding:18px;
 
@@ -3839,9 +3911,25 @@ outline:none;
 
 font-size:16px;
 
-line-height:1.8;
+line-height:1.9;
 
 position:relative;
+
+overflow-wrap:break-word;
+
+word-break:break-word;
+
+color:#f8fafc;
+
+}
+
+.se-editable img{
+
+max-width:100%;
+
+border-radius:12px;
+
+margin:10px 0;
 
 }
 
@@ -3855,33 +3943,114 @@ color:#64748b;
 
 }
 
-/* HTML */
+/* =========================================
+HTML MODE
+========================================= */
 
 .se-html-editor{
 
-min-height:220px;
+min-height:240px;
 
-max-height:220px;
+max-height:240px;
 
 resize:none;
 
 font-family:monospace;
 
+font-size:14px;
+
+background:#111827;
+
+border:1px solid #334155;
+
+padding:16px;
+
+line-height:1.7;
+
 }
 
-/* OPTION LIST */
+/* =========================================
+DIFFICULTY
+========================================= */
+
+.se-difficulty-row{
+
+display:flex;
+
+gap:12px;
+
+flex-wrap:wrap;
+
+margin-top:2px;
+
+margin-bottom:4px;
+
+}
+
+.se-diff-chip{
+
+background:#1e293b;
+
+border:1px solid #334155;
+
+color:#cbd5e1;
+
+padding:10px 18px;
+
+border-radius:12px;
+
+font-weight:700;
+
+font-size:13px;
+
+transition:0.25s;
+
+width:auto !important;
+
+}
+
+.se-diff-chip:hover{
+
+background:#2563eb;
+
+border-color:#60a5fa;
+
+color:white;
+
+}
+
+.se-diff-chip.active{
+
+background:#2563eb;
+
+border-color:#60a5fa;
+
+color:white;
+
+}
+
+/* =========================================
+OPTION GRID
+========================================= */
 
 .se-option-list{
 
 display:grid;
 
-grid-template-columns:1fr 1fr;
+grid-template-columns:
+repeat(2,minmax(0,1fr));
 
-gap:12px;
+gap:14px;
+
+width:100%;
+
+align-items:stretch;
 
 }
 
-/* OPTION */
+/* =========================================
+OPTION CARD
+========================================= */
 
 .se-option-card{
 
@@ -3893,15 +4062,20 @@ border-radius:16px;
 
 padding:12px 14px;
 
-display:flex;
+display:grid;
+
+grid-template-columns:
+20px 28px minmax(0,1fr);
 
 align-items:center;
 
-gap:12px;
+gap:10px;
 
-min-height:64px;
+min-height:72px;
 
 transition:0.25s;
+
+overflow:hidden;
 
 }
 
@@ -3920,21 +4094,75 @@ rgba(34,197,94,0.14);
 
 border-color:#22c55e;
 
+box-shadow:
+0 0 0 1px rgba(34,197,94,0.3);
+
 }
 
-/* INPUT */
+/* RADIO */
+
+.se-option-card input[type="radio"]{
+
+width:18px !important;
+
+height:18px;
+
+accent-color:#22c55e;
+
+margin:0;
+
+}
+
+/* OPTION LABEL */
+
+.se-option-card .review-option-label{
+
+font-size:15px;
+
+font-weight:800;
+
+color:#93c5fd;
+
+margin:0;
+
+}
+
+/* OPTION INPUT */
 
 .se-opt-input{
+
+width:100%;
+
+height:44px;
+
+padding:0 14px;
 
 background:#0f172a;
 
 border:1px solid #334155;
 
-height:42px;
+border-radius:12px;
+
+min-width:0;
+
+font-size:14px;
+
+color:white;
 
 }
 
-/* ERROR */
+.se-opt-input:focus{
+
+border-color:#3b82f6;
+
+box-shadow:
+0 0 0 3px rgba(59,130,246,0.15);
+
+}
+
+/* =========================================
+ERROR
+========================================= */
 
 .se-validation-error{
 
@@ -3942,31 +4170,131 @@ margin-top:6px;
 
 font-size:13px;
 
-font-weight:600;
+font-weight:700;
 
 color:#ef4444;
 
+padding-left:4px;
+
 }
 
-/* EXPLANATION */
+/* =========================================
+EXPLANATION
+========================================= */
+
+.se-explanation-box{
+
+display:flex;
+
+flex-direction:column;
+
+gap:10px;
+
+margin-top:6px;
+
+min-height:150px;
+
+}
+
+.se-explanation-box h4{
+
+font-size:18px;
+
+font-weight:700;
+
+color:#60a5fa;
+
+}
 
 .se-explanation{
 
-min-height:100px;
+width:100%;
 
-max-height:140px;
+min-height:120px;
+
+max-height:180px;
+
+overflow-y:auto;
 
 resize:vertical;
 
+padding:16px;
+
+border-radius:16px;
+
+background:#111827;
+
+border:1px solid #334155;
+
+line-height:1.8;
+
+font-size:14px;
+
+color:white;
+
 }
 
-/* RESPONSIVE */
+/* =========================================
+QUESTION WRAP
+========================================= */
+
+.se-question-editor-wrap{
+
+display:flex;
+
+flex-direction:column;
+
+gap:4px;
+
+}
+
+/* =========================================
+BUTTON FIX
+========================================= */
+
+.review-actions button{
+
+width:auto !important;
+
+flex:none !important;
+
+}
+
+/* =========================================
+SIDEBAR FIX
+========================================= */
+
+.review-sidebar{
+
+overflow:hidden;
+
+}
+
+.review-palette{
+
+overflow-y:auto;
+
+max-height:calc(100vh - 340px);
+
+padding-right:4px;
+
+}
+
+/* =========================================
+RESPONSIVE
+========================================= */
 
 @media(max-width:1200px){
 
 .se-option-list{
 
 grid-template-columns:1fr;
+
+}
+
+.se-review-question-card{
+
+max-height:none;
 
 }
 
@@ -3988,5 +4316,61 @@ align-items:flex-start;
 
 }
 
+.se-editor-toolbar{
+
+width:100%;
+
 }
 
+.se-option-list{
+
+grid-template-columns:1fr;
+
+}
+
+.se-question-scroll{
+
+max-height:260px;
+
+}
+
+}
+
+@media(max-width:500px){
+
+.se-option-card{
+
+grid-template-columns:
+20px 24px minmax(0,1fr);
+
+padding:10px;
+
+gap:8px;
+
+}
+
+.se-opt-input{
+
+font-size:13px;
+
+padding:0 10px;
+
+}
+
+.se-editor-toolbar{
+
+gap:8px;
+
+}
+
+.se-toolbar-btn{
+
+min-width:38px;
+
+height:38px;
+
+padding:0 10px;
+
+}
+
+}

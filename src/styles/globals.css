@@ -4163,7 +4163,7 @@ pointer-events:none;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: nowrap; /* Strictly forces items onto one line */
+  flex-wrap: nowrap !important; /* Forces single row view */
   gap: 16px;
   width: 100%;
   margin-bottom: 12px;
@@ -4177,7 +4177,7 @@ pointer-events:none;
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0; /* Prevents text elements from collapsing */
+  flex-shrink: 0;
 }
 
 .se-html-toggle {
@@ -4191,11 +4191,11 @@ pointer-events:none;
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;
-  overflow-x: auto; /* Fallback scrolling for smaller viewports */
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
 }
 
-/* Inline Option rows for View/Edit modes */
+/* Options Alignment Controls */
 .se-option-field-container {
   display: flex;
   align-items: center;
@@ -4216,4 +4216,22 @@ pointer-events:none;
   font-weight: 700;
   color: #3b82f6;
   font-size: 16px;
+}
+
+/* Natural auto height adjustments */
+.se-explanation,
+.se-explanation-view,
+.se-editable {
+  width: 100%;
+  padding: 16px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  line-height: 1.8;
+  word-break: break-word;
+  height: auto !important; 
+  min-height: 60px !important; 
+  max-height: 450px; 
+  overflow-y: auto; 
+  resize: vertical;
 }

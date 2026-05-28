@@ -117,7 +117,7 @@ function QuestionEditor({
   }
 
   return (
-    return (
+
     <div className="se-editor-shell">
 
       {/* SINGLE ROW HEADER TOOLBOX */}
@@ -253,7 +253,7 @@ function OptionInput({
   }
 
   return (
-    return (
+   
     <div className="se-opt-render-box">
       {disabled ? (
         <div className="se-option-field-container readonly-view">

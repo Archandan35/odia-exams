@@ -3823,24 +3823,25 @@ box-sizing:border-box;
 .se-toolbar-btn,
 .se-edit-toggle-btn,
 .se-difficulty-btn{
-bheight:42px;
+background:var(--se-card);
+border:1px solid var(--se-border);
 
-padding:0 16px;
+height:42px;
+padding:0 18px;
 
 border-radius:12px;
-
-background:#1e293b;
-
-border:1px solid #334155;
-
-color:white;
 
 font-size:14px;
 font-weight:700;
 
-white-space:nowrap;
+color:white;
 
-flex-shrink:0;
+display:flex;
+align-items:center;
+justify-content:center;
+
+cursor:pointer;
+transition:var(--se-transition);
 }
 
 .se-editor-mode-btn:hover,

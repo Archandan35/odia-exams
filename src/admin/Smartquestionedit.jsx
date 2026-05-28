@@ -712,11 +712,13 @@ export default function SmartEditPage() {
                       correctAnswer === letter ? "se-option-correct" : ""
                     }`}
                   >
-                    <input
+                   <input
                       type="radio"
                       checked={correctAnswer === letter}
+                      disabled={!isEditingQuestion && !isNew}
                       onChange={() => setCorrectAnswer(letter)}
                     />
+                    
                     <div className="se-option-letter">{letter}.</div>
                     <input
                       className="se-opt-input"

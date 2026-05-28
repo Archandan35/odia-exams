@@ -293,14 +293,11 @@ button:hover{
 .page{
   width:100%;
   max-width:100vw;
-  padding:20px;
+  padding:25px;
   box-sizing:border-box;
   background:#020617;
-  height:100vh;
-  overflow:hidden;
+  min-height:100vh;
   color:#f8fafc;
-  display:flex;
-  flex-direction:column;
 }
 
 .mobile-menu-btn{ display:none; }

@@ -183,7 +183,7 @@ function QuestionEditor({
             className={`se-editable ${readOnly ? "readonly" : ""}`}
             contentEditable={!readOnly}
             style={{
-              minHeight: "60px",
+              minHeight: "100px",
               height: "auto",
             }}
             suppressContentEditableWarning
@@ -610,61 +610,90 @@ export default function SmartEditPage() {
 
         {/* MAIN LAYOUT */}
         <div className="review-layout">
-          <div className="review-main">
+          <div className="review-main se-main-scroll-area">
             <div className="se-review-question-card">
               
               {/* TOP MODE BAR (Contains View/Edit and Visual/HTML with single row toggle) */}
-              <div className="se-edit-toolbar-wrapper">
-                <div className="se-segment-group">
-                  <button
-                    type="button"
-                    className={`se-segment-btn ${!isEditable ? "active" : ""}`}
-                    onClick={() => setIsEditingQuestion(false)}
-                  >
-                    View
-                  </button>
-                  <button
-                    type="button"
-                    className={`se-segment-btn ${isEditable ? "active" : ""}`}
-                    onClick={() => {
-                      if (isEditable) cancelEditing();
-                      else setIsEditingQuestion(true);
-                    }}
-                  >
-                    {isEditable ? "Cancel" : "Edit"}
-                  </button>
-                </div>
+             <div className="se-edit-toolbar-wrapper">
 
-                <label className="se-html-toggle">
-                  <input
-                    type="checkbox"
-                    checked={globalHtmlMode}
-                    onChange={(e) => setGlobalHtmlMode(e.target.checked)}
-                  />
-                  <span>View HTML Mode</span>
-                </label>
+  {/* VIEW / EDIT */}
+  <div className="se-segment-group">
+    <button
+      type="button"
+      className={`se-segment-btn ${!isEditable ? "active" : ""}`}
+      onClick={() => setIsEditingQuestion(false)}
+    >
+      View
+    </button>
 
-                <div className="se-segment-group">
-                  <button
-                    type="button"
-                    className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
-                    onClick={() => setGlobalHtmlMode(false)}
-                  >
-                    Visual
-                  </button>
-                  <button
-                    type="button"
-                    className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
-                    onClick={() => setGlobalHtmlMode(true)}
-                  >
-                    HTML
-                  </button>
-                </div>
-              </div>
+    <button
+      type="button"
+      className={`se-segment-btn ${isEditable ? "active" : ""}`}
+      onClick={() => {
+        if (isEditable) cancelEditing();
+        else setIsEditingQuestion(true);
+      }}
+    >
+      {isEditable ? "Cancel" : "Edit"}
+    </button>
+  </div>
+
+  {/* VISUAL / HTML */}
+  <div className="se-segment-group">
+    <button
+      type="button"
+      className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
+      onClick={() => setGlobalHtmlMode(false)}
+    >
+      Visual
+    </button>
+
+    <button
+      type="button"
+      className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
+      onClick={() => setGlobalHtmlMode(true)}
+    >
+      HTML
+    </button>
+  </div>
+
+  {/* TOOLBAR */}
+  {!(!isEditable) && (
+    <div className="se-editor-toolbar se-toolbar-scroll">
+      {[
+        ["bold", "B"],
+        ["italic", "I"],
+        ["underline", "U"],
+        ["insertUnorderedList", "≡"],
+        ["insertOrderedList", "1."],
+        ["table", "Table"],
+        ["image-url", "URL"],
+        ["image-upload", "Upload"],
+      ].map(([cmd, label]) => (
+        <button
+          key={cmd}
+          type="button"
+          className="se-toolbar-btn"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            exec(cmd);
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )}
+</div>
 
               {/* QUESTION FIELD CONTAINER */}
               <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
-                {!isEditable && <div className="se-readonly-badge" title="Read Only">🔒</div>}
+               <div
+                  className="se-readonly-badge"
+                  title="Read Only Mode"
+                >
+                  🔒
+                </div>
                 <QuestionEditor
                   value={questionHtml}
                   onChange={setQuestionHtml}
@@ -700,8 +729,7 @@ export default function SmartEditPage() {
                 ].map(({ letter, value, setter }) => (
                   <div
                     key={letter}
-                    className={`se-option-card ${correctAnswer === letter ? "se-option-correct" : ""} ${!isEditable ? "readonly-view" : "edit-view"}`}
-                  >
+                    className={`se-option-card ${correctAnswer === letter ? "se-option-correct" : ""} ${!isEditable ? "readonly-view" : "edit-view"} se-option-hover`}                  >
                     <input
                       type="radio"
                       name="correct-answer-group"

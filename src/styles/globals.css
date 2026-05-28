@@ -1286,10 +1286,6 @@ table tr:hover{
   flex-wrap:nowrap;
   gap:12px;
   width:100%;
-  padding:6px 12px;
-  background:#1e293b;
-  border-radius:8px 8px 0 0;
-  border-bottom:1px solid #334155;
 }
 
 .se-left-controls{

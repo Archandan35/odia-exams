@@ -3619,3 +3619,19 @@ font-size:15px;
 }
 
 
+.smart-edit-btn {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.smart-edit-btn:hover {
+  opacity: 0.88;
+}

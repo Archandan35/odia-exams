@@ -22,9 +22,10 @@ import AdminLayout from "./AdminLayout";
 function QuestionEditor({
   value,
   onChange,
-  globalHtmlMode,
   readOnly = false,
-}) {
+})
+
+{
   const editorRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -127,9 +128,6 @@ function QuestionEditor({
         onChange={handleFile}
       />
 
-      {/* HTML MODE */}
-     
-        /* VISUAL MODE */
         <div className="se-question-scroll">
           <div
             ref={editorRef}
@@ -163,19 +161,8 @@ function OptionInput({
   onChange,
   disabled,
   letter,
-  globalHtmlMode,
 }) {
-  if (globalHtmlMode) {
-    return (
-      <textarea
-        className="se-html-editor se-html-editor--option"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={`Option ${letter} HTML`}
-      />
-    );
-  }
+ 
 
   return (
     <div className="se-opt-render-box" style={{ width: "100%" }}>
@@ -208,19 +195,7 @@ function ExplanationField({
   value,
   onChange,
   disabled,
-  globalHtmlMode,
 }) {
-  if (globalHtmlMode) {
-    return (
-      <textarea
-        className="se-html-editor se-html-editor--explanation"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Explanation HTML..."
-      />
-    );
-  }
 
   return disabled ? (
     <div
@@ -482,7 +457,6 @@ export default function SmartEditPage() {
   );
 
   const isEditable = isEditingQuestion || isNew;
-  const isEditable = isEditingQuestion || isNew;
 
 /* =========================================================
    HTML TO VISUAL PARSER
@@ -666,7 +640,7 @@ return (
   <div className="se-segment-group">
     <button
       type="button"
-      className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
+      className="se-segment-btn active"
       onClick={() => {
   setShowHtmlModal(false);
 }}
@@ -676,7 +650,7 @@ return (
 
     <button
       type="button"
-      className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
+      className="se-segment-btn"
       onClick={() => {
   setHtmlCode(`
 <!DOCTYPE html>
@@ -715,14 +689,14 @@ ${questionHtml || ""}
           className="se-toolbar-btn"
           onMouseDown={(e) => {
             e.preventDefault();
-            exec(cmd);
+            document.execCommand(cmd, false, null);
           }}
         >
           {label}
         </button>
       ))}
     </div>
-  )}
+
 </div>
 
               {/* QUESTION FIELD CONTAINER */}
@@ -734,6 +708,12 @@ ${questionHtml || ""}
                     title="Read Only Mode"
                   >
                     🔒
+
+                    <QuestionEditor
+                        value={questionHtml}
+                        onChange={setQuestionHtml}
+                        readOnly={!isEditable}
+                      />
                   </div>
                 )}
 
@@ -779,7 +759,7 @@ ${questionHtml || ""}
                         value={value}
                         onChange={setter}
                         disabled={!isEditable}
-                        globalHtmlMode={globalHtmlMode}
+                       
                       />
                     </div>
                   </div>
@@ -793,7 +773,7 @@ ${questionHtml || ""}
                   value={explanation}
                   onChange={setExplanation}
                   disabled={!isEditable}
-                  globalHtmlMode={globalHtmlMode}
+                  
                 />
               </div>
 

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. BASE RESETS & SCROLLBARS
+   1. BASE SYSTEM RESETS & SCROLLBARS
    ========================================================================== */
 * {
   margin: 0;
@@ -45,14 +45,13 @@ body {
   border-radius: 20px;
 }
 
-/* Links */
 a {
   text-decoration: none;
   color: inherit;
 }
 
 /* ==========================================================================
-   2. GLOBAL INTERACTION ELEMENTS (INPUTS, BUTTONS, TABLES)
+   2. GLOBAL FORM CONTROLS & INTERACTION ELEMENTS
    ========================================================================== */
 input,
 select,
@@ -98,7 +97,7 @@ button:hover {
   transform: translateY(-1px);
 }
 
-/* Contextual Button Modifiers */
+/* Button Structural Context Modifiers */
 .edit-btn { background: #2563eb; }
 .cancel-btn { background: #475569; }
 .submit-btn { background: #16a34a !important; }
@@ -114,7 +113,7 @@ button:hover {
   cursor: pointer;
 }
 
-/* Table Configurations */
+/* Tables Framework */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -141,8 +140,13 @@ td {
   color: #e2e8f0;
 }
 
+/* Global Content Specific Visibility Forces */
+h1, h2, h3, h4, h5, h6, p, span, td, th, label, div {
+  color: inherit;
+}
+
 /* ==========================================================================
-   3. CORE APP PANELS & FRAMEWORKS (SIDEBAR, NAVIGATION, CONTAINERS)
+   3. STRUCTURAL WRAPPERS & ADMIN ARCHITECTURE (SIDEBAR, NAVS)
    ========================================================================== */
 .admin-layout {
   display: flex;
@@ -200,7 +204,7 @@ td {
 
 .menu-title {
   font-size: 13px;
-  color:#94a3b8;
+  color: #94a3b8;
   margin: 25px 0 10px;
 }
 
@@ -239,7 +243,6 @@ td {
   margin-left: 235px;
 }
 
-/* Structural Header & Topbar Navigations */
 .top-navbar,
 .topbar {
   display: flex;
@@ -305,7 +308,7 @@ td {
 }
 
 /* ==========================================================================
-   4. LAYOUT COMPONENTS & INTERFACES (CARDS, POPS, WIDGETS)
+   4. DATA CONTAINERS & DASHBOARD WIDGET INTERFACES
    ========================================================================== */
 .glass-card {
   background: rgba(15,23,42,0.8);
@@ -377,15 +380,39 @@ td {
 }
 .chart-card h3 { margin-bottom: 20px; }
 
+/* Dynamic Filter Strip Desktop Framework */
 .filter-bar {
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  align-items: center;
 }
 .filter-bar input { max-width: 420px; }
 
-/* Popups & Pagination */
+.inline-filters {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.inline-filters select, 
+.question-search {
+  max-width: 240px;
+  min-width: 160px;
+  width: auto;
+}
+
+.questions-toolbar-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Modals & Dialog Components */
 .popup-overlay {
   position: fixed;
   inset: 0;
@@ -421,7 +448,6 @@ td {
   margin-top: 25px;
 }
 
-/* Authentication Screen */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -445,7 +471,7 @@ td {
 .auth-card h1 { font-size: 36px; margin-bottom: 10px; }
 
 /* ==========================================================================
-   5. LIVE EXAMINATION RENDERING MODULE
+   5. LIVE EXAMINATION ENGINE & RENDERING INTERFACES
    ========================================================================== */
 .exam-layout {
   display: grid;
@@ -526,7 +552,33 @@ td {
   word-break: break-word;
 }
 
-/* Exam Options Setup */
+.option-label-box {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+}
+
+.selected-option .option-label-box {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.option-value {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.7;
+  word-break: break-word;
+  color: #f1f5f9;
+}
+
 .options-list {
   display: flex;
   flex-direction: column;
@@ -551,11 +603,7 @@ td {
 
 .option-card { background: #1e293b; }
 .option-card:hover { border-color: #2563eb; }
-
-.selected-option {
-  background: #2563eb;
-  border-color: #60a5fa;
-}
+.selected-option { background: #2563eb; border-color: #60a5fa; }
 
 .option-radio {
   width: 24px !important;
@@ -577,33 +625,7 @@ td {
   overflow: visible;
   max-height: none;
 }
-
-.option-label-box {
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 800;
-  color: white;
-}
-
-.selected-option .option-label-box {
-  background: rgba(255,255,255,0.25);
-}
-
-.option-value {
-  flex: 1;
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1.7;
-  word-break: break-word;
-  color: #f1f5f9;
-}
+.option-label { font-size: 22px; font-weight: 700; margin-right: 10px; }
 
 .exam-buttons {
   display: flex;
@@ -622,7 +644,7 @@ td {
   min-width: 120px;
 }
 
-/* Question Palette Navigator (Right side) */
+/* Right Navigation Exam Board */
 .navigator {
   display: flex;
   flex-direction: column;
@@ -668,29 +690,30 @@ td {
   color: white;
 }
 
-.legend-answered, .palette-btn.answered { background: #16a34a; }
-.legend-marked, .palette-btn.marked { background: #9333ea; }
-.legend-notanswered, .palette-btn.not-answered { background: #dc2626; }
-.legend-notvisited, .palette-btn.not-visited { background: #475569; }
-.palette-btn.marked-answered { background: #7e22ce; }
-.palette-btn.current { border: 3px solid #60a5fa; }
+.legend-answered { background: #16a34a; }
+.legend-marked { background: #9333ea; }
+.legend-notanswered { background: #dc2626; }
+.legend-notvisited { background: #475569; }
 
-.palette-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(48px, 1fr));
-  gap: 10px;
-  overflow-y: auto;
+/* Repaired Fluid Non-Breaking Palette Layout */
+.palette-grid,
+.review-palette {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)) !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
   overflow-x: hidden;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 240px);
   padding-right: 2px;
 }
 
 .palette-btn {
-  height: 52px;
+  height: 44px;
   border: none;
   border-radius: 12px;
+  background: #475569;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
@@ -699,63 +722,53 @@ td {
 }
 .palette-btn:hover { opacity: 0.9; }
 
+.palette-btn.answered { background: #16a34a; }
+.palette-btn.marked { background: #9333ea; }
+.palette-btn.marked-answered { background: #7e22ce; }
+.palette-btn.not-answered { background: #dc2626; }
+.palette-btn.not-visited { background: #475569; }
+.palette-btn.current { border: 3px solid #60a5fa; }
+
 /* ==========================================================================
-   6. ADMIN PANEL QUESTIONS TOOLBAR & FILTERS
+   6. REVIEW & ADMINISTRATIVE BULK INTERFACES
    ========================================================================== */
-.questions-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+.question-review-card {
+  background: #111827;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #1e293b;
 }
 
-.questions-toolbar-left {
-  flex: 1;
-  min-width: 300px;
+.review-options {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.question-search {
-  width: 100%;
-  max-width: 520px;
-}
-
-.inline-filters {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
-}
-.inline-filters select {
-  min-width: 220px;
-  height: 48px;
+  margin-top: 18px;
+  margin-bottom: 18px;
 }
 
-.questions-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+.review-option {
+  padding: 14px;
+  border-radius: 12px;
+  background: #1e293b;
 }
 
-.add-question-btn {
-  height: 48px;
-  padding: 0 22px;
-  border: none;
-  border-radius: 14px;
-  font-weight: 700;
-  background: linear-gradient(90deg, #2563eb, #3b82f6);
-  color: white;
-  cursor: pointer;
+.correct-option { background: #166534; }
+.wrong-option { background: #991b1b; }
+
+.explanation-box {
+  margin-top: 18px;
+  padding: 15px;
+  background: #1e293b;
+  border-radius: 12px;
+  line-height: 1.7;
 }
 
-/* ==========================================================================
-   7. BULK IMPORT ENGINE LAYOUTS
-   ========================================================================== */
+.review-question-text { font-size: 18px; }
+.review-option-text { font-size: 15px; }
+.review-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+
+/* Bulk Import Framework */
 .bulk-import-page { padding: 20px; color: #f8fafc; }
 
 .bulk-import-header {
@@ -780,7 +793,7 @@ td {
 
 .bulk-import-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0,1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
   align-items: stretch;
@@ -809,255 +822,198 @@ td {
   border-radius: 18px;
   margin-bottom: 20px;
 }
-.bulk-filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: 14px; }
+
+.bulk-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  align-items: center;
+}
 .bulk-filter-grid select { height: 48px; }
+
 .bulk-action-btn { height: 48px; padding: 0 20px; border-radius: 12px; font-weight: 600; }
 .bulk-danger { background: #dc2626; }
 .bulk-success { background: #16a34a; }
 
-.bulk-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px; }
-.bulk-stat-box { background: #0f172a; border: 1px solid #1e293b; padding: 18px; border-radius: 16px; text-align: center; }
-.bulk-stat-box h4 { font-size: 14px; color: #94a3b8; margin-bottom: 10px; }
-.bulk-stat-box h2 { font-size: 30px; }
-
-.bulk-preview-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 18px; padding: 20px; overflow: hidden; }
-.bulk-preview-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.bulk-top-scroll { overflow-x: auto; overflow-y: hidden; height: 18px; margin-bottom: 10px; }
-.bulk-top-scroll div { height: 1px; }
-
-.bulk-table-wrapper { overflow: auto; border-radius: 14px; }
-.bulk-table-wrapper table { min-width: 1700px; width: 100%; border-collapse: collapse; }
-.bulk-table-wrapper th { background: #111827; padding: 14px; font-size: 13px; text-align: left; white-space: nowrap; }
-.bulk-table-wrapper td { padding: 12px; border-bottom: 1px solid #1e293b; font-size: 13px; vertical-align: top; }
-.bulk-answer-radio { transform: scale(1.1); }
-
-.bulk-popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-.bulk-popup { width: 800px; max-width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 25px; max-height: 90vh; overflow: auto; }
-.bulk-popup h2 { margin-bottom: 18px; }
-.bulk-popup pre { background: #111827; padding: 16px; border-radius: 12px; overflow: auto; margin-bottom: 20px; color: #e2e8f0; }
-
-/* ==========================================================================
-   8. COMPREHENSIVE EXAM REVIEW DASHBOARD
-   ========================================================================== */
-.review-layout {
+.bulk-stats {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 20px;
-  align-items: start;
-  margin-top: 20px;
-  min-height: calc(100vh - 170px);
-}
-
-.review-main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 18px;
-  height: auto;
-  overflow: visible;
-}
-
-.review-sidebar {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 20px;
-  padding: 22px;
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-}
-.review-sidebar h3 { font-size: 22px; margin-bottom: 18px; }
-
-.review-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
   margin-bottom: 20px;
 }
-.review-topbar h2 { font-size: 28px; margin-bottom: 6px; }
-.review-topbar p { font-size: 14px; color: #94a3b8; }
-.review-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
-/* Review Visual Strip Metrics */
-.review-analytics-strip {
-  display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
-  width: 100%;
-  align-items: stretch;
+/* Smart Workspace Split Screens Workspace Framework */
+.se-workspace {
+  display: grid !important;
+  grid-template-columns: 1fr 360px !important;
+  gap: 24px !important;
+  align-items: start !important;
+  width: 100% !important;
 }
 
-.analytics-mini-card {
-  background: #0f172a;
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #1e293b;
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 88px;
-  justify-content: center;
-}
-.analytics-mini-card span { font-size: 12px; font-weight: 600; color: #94a3b8; }
-.analytics-mini-card h3 { font-size: 18px; font-weight: 700; line-height: 1.4; color: #f8fafc; word-break: break-word; }
-
-/* Metadata Metric Indicators */
-.speed-fast { color: #22c55e !important; }
-.speed-average { color: #3b82f6 !important; }
-.speed-slow { color: #f59e0b !important; }
-.status-correct { color: #22c55e !important; }
-.status-wrong { color: #ef4444 !important; }
-.status-unanswered { color: #facc15 !important; }
-.level-easy { color: #22c55e !important; }
-.level-medium { color: #facc15 !important; }
-.level-hard { color: #ef4444 !important; }
-
-.review-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 6px; }
-.review-stat-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
-.review-stat-card h4 { font-size: 14px; color: #94a3b8; font-weight: 600; }
-.review-stat-card h2 { font-size: 26px; font-weight: 700; line-height: 1; }
-
-/* Structural Question Isolation Cards */
-.question-review-card,
-.review-question-card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 20px;
-  padding: 26px;
-  overflow: hidden;
+.se-opt-content {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
 }
 
-.review-question-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
-.review-question-badge { min-width: 62px; height: 35px; border-radius: 16px; background: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
-.review-question-text { font-size: 20px; font-weight: 600; line-height: 1.8; color: #f8fafc; flex: 1; }
+.se-opt-input {
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  padding: 4px 0 !important;
+}
 
-.review-options { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
-.review-option-card { position: relative; padding: 18px; border-radius: 16px; background: #1e293b; border: 2px solid transparent; display: flex; align-items: flex-start; gap: 14px; transition: 0.3s; overflow: hidden; }
-.review-option-card:hover { border-color: #334155; }
-.review-option-label { font-size: 16px; font-weight: 700; color: #93c5fd; min-width: 30px; line-height: 1.6; }
-.review-option-text { font-size: 16px; line-height: 1.8; color: #f8fafc; flex: 1; word-break: break-word; }
+.se-editor-top-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 6px 12px !important;
+  background: #1e293b !important;
+  border-radius: 8px 8px 0 0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
 
-/* Status Option Highlights */
-.correct-option, .review-correct { background: #14532d; border-color: #22c55e; }
-.wrong-option, .review-wrong { background: #7f1d1d; border-color: #ef4444; }
-.review-selected { box-shadow: 0 0 0 2px #60a5fa; }
+.se-left-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
 
-.answer-tag { position: absolute; top: 12px; right: 12px; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #2563eb; color: white; }
-.correct-tag { background: #16a34a; }
-.wrong-tag { background: #dc2626; }
-
-.explanation-box, .review-explanation, .review-answer-box { margin-top: 22px; padding: 18px; border-radius: 16px; background: #111827; border: 1px solid #1e293b; }
-.review-explanation h4 { font-size: 18px; margin-bottom: 10px; color: #60a5fa; }
-.review-explanation p, .review-answer-box p { font-size: 15px; line-height: 1.8; color: #e2e8f0; }
-.review-answer-box strong { color: #60a5fa; }
-
-.review-navigation { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 24px; flex-wrap: wrap; }
-.review-nav-btn { padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 190px; }
-.review-question-count { font-size: 16px; font-weight: 700; color: #94a3b8; }
-
-.review-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
-.review-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e2e8f0; }
-.review-dot { width: 14px; height: 14px; border-radius: 4px; }
-
-.review-palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.review-palette-btn { width: 100%; min-width: 0; height: 46px; border-radius: 12px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: 0.3s; background: #475569; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 1; }
-.review-current { border: 3px solid #60a5fa; }
-.review-palette-correct { background: #16a34a; }
-.review-palette-wrong { background: #dc2626; }
-.review-palette-unanswered { background: #475569; }
+.se-html-toggle {
+  display: flex !important;
+}
 
 /* ==========================================================================
-   9. GLOBAL INFRASTRUCTURE REUSABLE UTILITIES & KEYFRAMES
+   7. DECORATIVE DEPLOYMENTS & KEYFRAME ANIMATIONS
    ========================================================================== */
-.mobile-menu-btn { display: none; }
-.import-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 25px; }
-
-.import-card {
-  background: #0f172a;
-  padding: 18px;
-  border-radius: 20px;
-  border: 1px solid #1e293b;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  transition: 0.3s;
+.active-link {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
 }
-.import-card:hover { transform: translateY(-4px); border-color: #2563eb; }
-.import-card h3 { font-size: 22px; color: #f8fafc; }
-.import-card p { color: #94a3b8; line-height: 1.6; }
+
+.sidebar { transition: 0.3s; }
+.sidebar::-webkit-scrollbar { display: none; }
+
+.exam-main { animation: fadeIn 0.4s ease; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+.mobile-menu-btn { display: none; }
+
 /* ==========================================================================
-   10. CONSOLIDATED RESPONSIVE BREAKPOINTS
+   8. RESPONSIVE BREAKPOINTS & VIEWPORT CONSTRAINTS
    ========================================================================== */
-@media (max-width: 1500px) {
-  .bulk-import-grid, .bulk-stats { grid-template-columns: repeat(3, 1fr); }
-}
-
 @media (max-width: 1200px) {
-  .exam-layout, .review-layout { grid-template-columns: 1fr; }
-  .exam-layout { height: auto; overflow: auto; }
-  .navigator { width: 100%; min-width: 100%; }
-  .palette-grid { max-height: none; overflow: visible; }
-  .review-sidebar { position: relative; top: auto; }
-  
-  .questions-toolbar { flex-wrap: nowrap; }
-  .question-search { max-width: 600px; }
-  .inline-filters { width: 100%; flex-wrap: nowrap; }
-  .inline-filters select { flex: 1; min-width: 0; }
-  .questions-toolbar-right { flex-shrink: 0; }
+  .exam-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: auto;
+  }
+  .navigator {
+    width: 100%;
+    min-width: 100%;
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+  .palette-grid {
+    max-height: none;
+    overflow: visible;
+  }
+  .se-workspace {
+    grid-template-columns: 1fr !important;
+  }
 }
 
-@media (max-width: 1000px) {
-  .navigator { border-left: none; border-top: 1px solid #1e293b; }
-  .charts-grid, .bulk-filter-grid, .bulk-import-grid, .bulk-stats { grid-template-columns: 1fr 1fr; }
-  .large-popup { width: 95%; }
+@media (max-width: 1024px) {
+  .bulk-import-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 768px) {
-  .header-actions, .review-navigation, .questions-toolbar-right, .questions-toolbar-right button, .review-nav-btn { width: 100%; }
-  .header-actions button { flex: 1; }
-  .admin-content, .main-content { margin-left: 0; padding: 20px; }
-  .page-header, .bulk-import-header, .questions-toolbar, .review-topbar { flex-direction: column; align-items: flex-start; }
-  
-  .admin-layout { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: fixed; left: -100%; top: 0; height: 100vh; z-index: 999; }
-  .sidebar-open { left: 0; }
-  .mobile-menu-btn { display: block; }
-  
-  .question-card h2 { font-size: 26px; }
+  .admin-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    z-index: 999;
+  }
+  .sidebar-open {
+    left: 0;
+  }
+  .admin-content,
+  .main-content {
+    margin-left: 0;
+    padding: 20px;
+  }
+  .page-header, 
+  .bulk-import-header, 
+  .questions-toolbar, 
+  .review-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mobile-menu-btn {
+    display: block;
+  }
+  .question-card h2 { font-size: 24px; }
   .question-card p { font-size: 18px; }
   .option-text { font-size: 17px; }
-  .palette-grid, .review-palette { grid-template-columns: repeat(4, 1fr); }
   
-  .auth-card { width: 100%; }
-  .bulk-import-grid, .bulk-filter-grid, .bulk-stats, .inline-filters, .questions-toolbar-right { grid-template-columns: 1fr; flex-direction: column; }
-  .inline-filters select, .question-search { max-width: 100%; width: 100%; min-width: 100%; }
-  .review-question-text { font-size: 18px; }
-  .review-option-text { font-size: 15px; }
-  .review-stat-grid { grid-template-columns: 1fr 1fr; }
+  .inline-filters {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    width: 100%;
+  }
+  .inline-filters select, 
+  .question-search {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  .questions-toolbar-right {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
+  .bulk-import-grid, 
+  .bulk-filter-grid, 
+  .bulk-stats {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 600px) {
-  .page { padding: 12px; }
+  .page {
+    padding: 12px;
+  }
+  .bulk-import-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 500px) {
-  .exam-main { padding: 15px; }
-  .palette-grid, .review-palette { grid-template-columns: repeat(3, 1fr); }
-  .exam-buttons, .review-navigation { flex-direction: column; }
-  .exam-buttons button { width: 100%; }
-  .review-stat-grid { grid-template-columns: 1fr; }
-  .review-question-badge { width: 54px; height: 54px; font-size: 16px; }
-  .review-question-text { font-size: 16px; }
-  .review-option-card { padding: 16px; }
+  .exam-buttons {
+    flex-direction: column;
+  }
+  .exam-buttons button {
+    width: 100%;
+  }
+  .exam-main {
+    padding: 0px;
+  }
 }

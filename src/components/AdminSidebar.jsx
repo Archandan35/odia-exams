@@ -31,7 +31,7 @@ path:"/admin/questions",
 },
 
 {
-title:"Smart Edit",
+title:"Smart Question Edit",
 path:"/admin/smartquestionedit",
 },
 

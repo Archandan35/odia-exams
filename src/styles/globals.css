@@ -870,17 +870,14 @@ table tr:hover{
   gap:20px;
   align-items:stretch;
   margin-top:20px;
-  height:calc(100vh - 240px);
-  min-height:500px;
 }
 
 .review-main{
   display:flex;
   flex-direction:column;
   min-width:0;
-  gap:0;
+  gap:18px;
   height:100%;
-  overflow:hidden;
 }
 
 /* Topbar */
@@ -1278,8 +1275,6 @@ table tr:hover{
   width:100%;
   min-width:0;
   overflow:hidden;
-  height:100%;
-  min-height:0;
 }
 
 /* Editor top bar */
@@ -1396,10 +1391,12 @@ table tr:hover{
   min-height:100px;
   max-height:none;
   overflow-y:visible;
-  resize:vertical;
+  resize:none;
   outline:none;
   white-space:pre-wrap;
   height:auto;
+  cursor:default;
+  user-select:none;
 }
 
 .se-editable img{ 
@@ -1490,9 +1487,11 @@ table tr:hover{
   transition:0.2s;
   position:relative;
   min-height:70px;
+  cursor:default;
 }
 
-.se-option-hover:hover{
+/* Only show hover highlight in edit mode */
+.se-option-hover.se-option-editable:hover{
   border-color:#3b82f6;
   background:#172033;
 }
@@ -1507,9 +1506,13 @@ table tr:hover{
   height:20px !important;
   min-width:20px;
   margin:0;
-  cursor:pointer;
+  cursor:default;
   accent-color:#3b82f6;
   flex-shrink:0;
+}
+
+.se-option-editable input[type="radio"]{
+  cursor:pointer;
 }
 
 .se-option-letter{
@@ -1551,7 +1554,11 @@ table tr:hover{
   width:100%;
 }
 
-.se-opt-display{ line-height:1.7; }
+.se-opt-display{
+  line-height:1.7;
+  cursor:default;
+  user-select:none;
+}
 
 /* Explanation */
 .se-explanation-wrapper{
@@ -1577,6 +1584,12 @@ table tr:hover{
   border:1px solid #334155;
   color:white;
   font-weight:700;
+  cursor:default;
+}
+
+/* In edit mode, difficulty buttons get pointer cursor */
+.se-difficulty-btn.se-editable-mode{
+  cursor:pointer;
 }
 
 .active-easy  { background:#16a34a; }
@@ -2457,20 +2470,22 @@ table tr:hover{
 }
 
 .se-main-scroll-area{
-  display:flex;
-  flex-direction:column;
-  height:100%;
+  height:calc(100vh - 140px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:6px;
   min-height:0;
-  overflow:hidden;
 }
 
 .se-editable.readonly{
-  cursor:not-allowed;
+  cursor:default;
   opacity:0.96;
+  user-select:none;
+  pointer-events:none;
 }
 
 .se-editable.readonly:hover{
-  border-color:#475569;
+  border-color:#334155;
 }
 
 
@@ -2512,8 +2527,8 @@ table tr:hover{
 
 /* Scrollable container for question + options + explanation */
 .se-content-scroll{
-  flex:1;
-  min-height:0;
+  height:calc(100vh - 280px);
+  min-height:400px;
   overflow-y:auto;
   overflow-x:hidden;
   display:flex;
@@ -2522,6 +2537,7 @@ table tr:hover{
   padding-right:6px;
   scrollbar-width:thin;
   scrollbar-color:#334155 transparent;
+  flex:1;
 }
 
 .se-content-scroll::-webkit-scrollbar{ width:6px; }

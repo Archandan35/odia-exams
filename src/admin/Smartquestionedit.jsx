@@ -895,16 +895,10 @@ ${expl}
               {/* SCROLLABLE CONTENT AREA */}
               <div className="se-content-scroll">
 
-              {/* QUESTION */}
+              {/* View-mode wrapper: badge appears on hover over ANY field */}
+              <div className={!isEditable ? "se-view-content-group" : ""}>
 
-              <div
-                className={
-                  !isEditable
-                    ? "se-view-question-box"
-                    : "se-edit-question-box"
-                }
-              >
-
+                {/* Shared hover badge — only in view mode */}
                 {!isEditable && (
                   <div className="se-view-only-badge" title="View Only — click Edit to make changes">
                     <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -914,23 +908,18 @@ ${expl}
                   </div>
                 )}
 
+              {/* QUESTION */}
+              <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
                 <QuestionEditor
                   value={questionHtml}
                   onChange={setQuestionHtml}
                   readOnly={!isEditable}
                 />
-
               </div>
 
               {/* DIFFICULTY */}
-
               <div className="se-difficulty-row">
-
-                {[
-                  "easy",
-                  "medium",
-                  "hard",
-                ].map((level) => (
+                {["easy", "medium", "hard"].map((level) => (
                   <button
                     key={level}
                     type="button"
@@ -945,105 +934,52 @@ ${expl}
                     {level}
                   </button>
                 ))}
-
               </div>
 
               {/* OPTIONS */}
-
               <div className="se-option-list">
-
                 {[
-                  {
-                    letter: "A",
-                    value: optionA,
-                    setter: setOptionA,
-                  },
-
-                  {
-                    letter: "B",
-                    value: optionB,
-                    setter: setOptionB,
-                  },
-
-                  {
-                    letter: "C",
-                    value: optionC,
-                    setter: setOptionC,
-                  },
-
-                  {
-                    letter: "D",
-                    value: optionD,
-                    setter: setOptionD,
-                  },
-                ].map(
-                  ({
-                    letter,
-                    value,
-                    setter,
-                  }) => (
-                    <div
-                      key={letter}
-                      className={`se-option-card ${
-                        correctAnswer === letter ? "se-option-correct" : ""
-                      } se-option-hover ${isEditable ? "se-option-editable" : ""}`}
-                    >
-
-                      <input
-                        type="radio"
-                        checked={
-                          correctAnswer ===
-                          letter
-                        }
-                        disabled={
-                          !isEditable
-                        }
-                        onChange={() =>
-                          setCorrectAnswer(
-                            letter
-                          )
-                        }
+                  { letter: "A", value: optionA, setter: setOptionA },
+                  { letter: "B", value: optionB, setter: setOptionB },
+                  { letter: "C", value: optionC, setter: setOptionC },
+                  { letter: "D", value: optionD, setter: setOptionD },
+                ].map(({ letter, value, setter }) => (
+                  <div
+                    key={letter}
+                    className={`se-option-card ${
+                      correctAnswer === letter ? "se-option-correct" : ""
+                    } se-option-hover ${isEditable ? "se-option-editable" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      checked={correctAnswer === letter}
+                      disabled={!isEditable}
+                      onChange={() => setCorrectAnswer(letter)}
+                    />
+                    <div className="se-option-letter">{letter}.</div>
+                    <div className="se-opt-content">
+                      <OptionInput
+                        letter={letter}
+                        value={value}
+                        onChange={setter}
+                        disabled={!isEditable}
                       />
-
-                      <div className="se-option-letter">
-                        {letter}.
-                      </div>
-
-                      <div className="se-opt-content">
-
-                        <OptionInput
-                          letter={letter}
-                          value={value}
-                          onChange={setter}
-                          disabled={
-                            !isEditable
-                          }
-                        />
-
-                      </div>
                     </div>
-                  )
-                )}
-
+                  </div>
+                ))}
               </div>
 
               {/* EXPLANATION */}
-
               <div className="se-explanation-wrapper">
-
-                <h3 className="se-section-title">
-                  Explanation
-                </h3>
-
+                <h3 className="se-section-title">Explanation</h3>
                 <ExplanationField
                   value={explanation}
-                  onChange={
-                    setExplanation
-                  }
+                  onChange={setExplanation}
                   disabled={!isEditable}
                 />
+              </div>
 
-              </div>{/* end se-explanation-wrapper */}
+              </div>{/* end se-view-content-group */}
 
               </div>{/* end se-content-scroll */}
 

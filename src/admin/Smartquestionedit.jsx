@@ -106,9 +106,12 @@ function QuestionEditor({ value, onChange }) {
             className={`se-editor-mode-btn ${mode === "visual" ? "active" : ""}`}
             onClick={() => {
               setMode("visual");
+            
               setTimeout(() => {
                 if (editorRef.current) {
                   editorRef.current.innerHTML = htmlValue;
+            
+                  onChange(htmlValue);
                 }
               }, 0);
             }}
@@ -175,8 +178,15 @@ function QuestionEditor({ value, onChange }) {
           className="se-html-editor"
           value={htmlValue}
           onChange={(e) => {
-            setHtmlValue(e.target.value);
-            onChange(e.target.value);
+            const val = e.target.value;
+          
+            setHtmlValue(val);
+          
+            onChange(val);
+          
+            if (editorRef.current) {
+              editorRef.current.innerHTML = val;
+            }
           }}
           placeholder="Write HTML here..."
         />

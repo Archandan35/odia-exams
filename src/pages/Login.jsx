@@ -1,156 +1,89 @@
-import {
-useState,
-} from "react";
+import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "../firebase/config";
+import { useNavigate, Link } from "react-router-dom";
 
-import {
-signInWithEmailAndPassword,
-} from "firebase/auth";
+export default function Login() {
+  const nav = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-import {
-collection,
-query,
-where,
-getDocs,
-} from "firebase/firestore";
+  async function login() {
+    try {
+      setLoading(true);
+      const res = await signInWithEmailAndPassword(auth, email, password);
 
-import {
-auth,
-db,
-} from "../firebase/config";
+      const q = query(
+        collection(db, "users"),
+        where("uid", "==", res.user.uid)
+      );
+      const snapshot = await getDocs(q);
+      const role = !snapshot.empty ? snapshot.docs[0].data().role : "student";
 
-import {
-useNavigate,
-Link,
-} from "react-router-dom";
+      nav(role === "admin" ? "/admin" : "/dashboard");
+    } catch (e) {
+      alert(e.message);
+    }
+    setLoading(false);
+  }
 
-export default function Login(){
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
 
-const nav =
-useNavigate();
+        {/* Heading Block */}
+        <div className="auth-heading">
+          <div className="auth-badge">
+            <span>🎓</span> Exam Portal
+          </div>
+          <h1>
+            Welcome<br />
+            UGC NET – ODIA<br />
+            Aspirant
+          </h1>
+          <p className="auth-subtitle">Best of luck for your exam.</p>
+        </div>
 
-const [email,setEmail] =
-useState("");
+        {/* Email Field */}
+        <div className="auth-field">
+          <label>Email Address</label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
-const [password,
-setPassword] =
-useState("");
+        {/* Password Field */}
+        <div className="auth-field">
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
 
-const [loading,
-setLoading] =
-useState(false);
+        {/* Login Button */}
+        <button
+          className="auth-btn"
+          onClick={login}
+          disabled={loading}
+        >
+          {loading ? "Signing in…" : "Sign In →"}
+        </button>
 
-async function login(){
+        {/* Footer */}
+        <div className="auth-footer">
+          Don't have an account?
+          <Link to="/register">Create Account</Link>
+        </div>
 
-try{
-
-setLoading(true);
-
-const res =
-await signInWithEmailAndPassword(
-auth,
-email,
-password
-);
-
-const q = query(
-collection(db,"users"),
-where(
-"uid",
-"==",
-res.user.uid
-)
-);
-
-const snapshot =
-await getDocs(q);
-
-let role =
-"student";
-
-if(!snapshot.empty){
-
-role =
-snapshot.docs[0]
-.data().role;
-
-}
-
-if(role === "admin"){
-
-nav("/admin");
-
-}else{
-
-nav("/dashboard");
-
-}
-
-}catch(e){
-
-alert(e.message);
-
-}
-
-setLoading(false);
-
-}
-
-return(
-
-<div className="auth-container">
-
-<div className="auth-card">
-
-<h1>
-Odia Exam Portal
-</h1>
-
-<input
-placeholder="Email"
-value={email}
-onChange={(e)=>
-setEmail(
-e.target.value
-)
-}
-/>
-
-<input
-type="password"
-placeholder="Password"
-value={password}
-onChange={(e)=>
-setPassword(
-e.target.value
-)
-}
-/>
-
-<button
-onClick={login}
-disabled={loading}
->
-
-{
-loading
-?
-"Logging in..."
-:
-"Login"
-}
-
-</button>
-
-<Link to="/register">
-
-Create Account
-
-</Link>
-
-</div>
-
-</div>
-
-);
-
+      </div>
+    </div>
+  );
 }

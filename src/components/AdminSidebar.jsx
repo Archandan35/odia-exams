@@ -31,6 +31,11 @@ path:"/admin/questions",
 },
 
 {
+title:"Smart Edit",
+path:"/admin/smartquestionedit",
+},
+
+{
 title:"Bulk Import",
 path:"/admin/bulk-import",
 },

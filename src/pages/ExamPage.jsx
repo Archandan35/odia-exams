@@ -506,7 +506,7 @@ export default function ExamPage() {
 
       {/* LEFT */}
 
-      <div className="exam-main">
+      <div className="exam-main" style={{ position: "sticky", top: "18px", height: "calc(100vh - 36px)", overflow: "hidden" }}>
 
         <div className="topbar">
 
@@ -538,7 +538,7 @@ export default function ExamPage() {
 
         </div>
 
-        <div className="question-card">
+        <div className="question-card" style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
 
          <div className="question-header-row">
 

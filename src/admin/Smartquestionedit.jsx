@@ -122,9 +122,6 @@ function QuestionEditor({
       {/* SINGLE ROW HEADER TOOLBOX */}
       <div className="se-editor-top-bar">
         <div className="se-left-controls">
-          <div className="drag-handle" style={{ cursor: 'grab', fontSize: '18px', color: '#64748b' }}>☰</div>
-          <h3 className="se-section-title" style={{ fontSize: '16px', fontWeight: '700', color: '#60a5fa', margin: 0 }}>Question Field</h3>
-        </div>
 
         {!readOnly && (
           <div className="se-editor-toolbar se-toolbar-scroll">

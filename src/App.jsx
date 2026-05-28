@@ -279,12 +279,11 @@ export default function App() {
         {/* ================================= */}
 
 
-      
-       <Route
+      <Route
   path="/admin/smartquestionedit"
   element={
     <AdminRoute>
-      <Smartquestionedit />
+      <SmartEditPage />
     </AdminRoute>
   }
 />

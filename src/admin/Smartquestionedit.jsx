@@ -180,16 +180,25 @@ function QuestionEditor({
             ref={editorRef}
             className={`se-editable ${readOnly ? "readonly" : ""}`}
             contentEditable={!readOnly}
+              style={{
+                minHeight: "120px",
+                height: "auto",
+              }}
             suppressContentEditableWarning
             data-placeholder="Type your question here..."
-            onInput={() => {
+           onInput={() => {
               if (!editorRef.current) return;
-
+            
+              editorRef.current.style.height = "auto";
+              editorRef.current.style.height =
+                editorRef.current.scrollHeight + "px";
+            
               const html = editorRef.current.innerHTML;
-
+            
               setHtmlBuffer(html);
-
+            
               onChange(html);
+            
             }}
           />
         </div>

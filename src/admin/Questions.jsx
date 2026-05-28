@@ -21,6 +21,8 @@ import { db } from "../firebase/config";
 
 import AdminLayout from "./AdminLayout";
 
+import { useNavigate } from "react-router-dom";
+
 export default function Questions() {
 
   const [subjects,setSubjects] = useState([]);

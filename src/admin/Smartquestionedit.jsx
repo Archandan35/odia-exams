@@ -123,6 +123,99 @@ function QuestionEditor({ value, onChange }) {
 
       <div className="se-editor-top">
 
+      <div className="se-editor-toolbar">
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("bold");
+    }}
+  >
+    B
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("italic");
+    }}
+  >
+    I
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("underline");
+    }}
+  >
+    U
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("insertUnorderedList");
+    }}
+  >
+    ≡
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("insertOrderedList");
+    }}
+  >
+    1.
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("table");
+    }}
+  >
+    Table
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("image-url");
+    }}
+  >
+    URL
+  </button>
+
+  <button
+    type="button"
+    className="se-toolbar-btn"
+    onMouseDown={(e) => {
+      e.preventDefault();
+      exec("image-upload");
+    }}
+  >
+    Upload
+  </button>
+
+</div>
+
+        
         {/* TABS */}
 
         <div className="se-editor-tabs">
@@ -942,13 +1035,16 @@ QUESTION VIEW / EDIT MODE
 ========================================= */}
 
 <div className="se-edit-toggle-row">
+<div className="se-edit-toggle-row">
 
   <button
     type="button"
     className={`se-edit-toggle-btn ${
       !isEditingQuestion ? "active" : ""
     }`}
-    onClick={() => setIsEditingQuestion(false)}
+    onClick={() => {
+      setIsEditingQuestion(false);
+    }}
   >
     View Mode
   </button>
@@ -958,7 +1054,13 @@ QUESTION VIEW / EDIT MODE
     className={`se-edit-toggle-btn ${
       isEditingQuestion ? "active" : ""
     }`}
-    onClick={() => setIsEditingQuestion(true)}
+    onClick={() => {
+      if (isEditingQuestion) {
+        cancelEditing();
+      } else {
+        setIsEditingQuestion(true);
+      }
+    }}
   >
     {isEditingQuestion ? "Cancel Edit" : "Edit"}
   </button>
@@ -969,10 +1071,18 @@ QUESTION VIEW / EDIT MODE
 
 {isEditingQuestion || isNew ? (
 
-  <QuestionEditor
-    value={questionHtml}
-    onChange={setQuestionHtml}
-  />
+  <>
+    <QuestionEditor
+      value={questionHtml}
+      onChange={setQuestionHtml}
+    />
+
+    {errors.question && (
+      <div className="se-validation-error">
+        {errors.question}
+      </div>
+    )}
+  </>
 
 ) : (
 
@@ -1021,9 +1131,12 @@ QUESTION VIEW / EDIT MODE
                         ? `active-${level}`
                         : ""
                     }`}
-                    onClick={() =>
-                      setDifficulty(level)
-                    }
+                    onClick={() => {
+                      if (!isEditingQuestion && !isNew)
+                        return;
+                    
+                      setDifficulty(level);
+                    }}
                   >
                     {level}
                   </button>

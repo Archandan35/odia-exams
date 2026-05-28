@@ -274,9 +274,9 @@ button:hover{
 .admin-content{
   flex:1;
   padding:20px;
-  overflow:hidden;
+  overflow:auto;
   margin-left:235px;
-  height:100vh;
+  min-height:100vh;
 }
 
 .main-content{

@@ -25,9 +25,17 @@ function QuestionEditor({
   readOnly = false,
 }) {
   const editorRef = useRef(null);
+  // Track the last value we pushed INTO the DOM ourselves,
+  // so we never overwrite the user's live typing.
+  const lastPushedRef = useRef(null);
 
   useEffect(() => {
-    if (editorRef.current) {
+    if (!editorRef.current) return;
+    // Only reset the DOM when the value genuinely changed from outside
+    // (e.g. switching questions). If the new value equals what the user
+    // just typed (lastPushedRef), skip — cursor stays put.
+    if (value !== lastPushedRef.current) {
+      lastPushedRef.current = value;
       editorRef.current.innerHTML = value || "";
     }
   }, [value]);
@@ -47,9 +55,10 @@ function QuestionEditor({
           }}
           onInput={() => {
             if (!editorRef.current) return;
-
             const html = editorRef.current.innerHTML;
-
+            // Record what the user typed so the useEffect above
+            // knows NOT to reset innerHTML for this value.
+            lastPushedRef.current = html;
             onChange(html);
           }}
         />

@@ -868,36 +868,16 @@ table tr:hover{
   display:grid;
   grid-template-columns:minmax(0,1fr) 340px;
   gap:20px;
-  align-items:stretch;
+  align-items:start;
   margin-top:20px;
-  flex:1;
-  min-height:0;
-  overflow:hidden;
+  min-height:calc(100vh - 170px);
 }
 
 .review-main{
   display:flex;
   flex-direction:column;
   min-width:0;
-  min-height:0;
-  overflow:hidden;
-}
-
-.se-main-scroll-area{
-  height:100%;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-right:6px;
-  min-height:0;
-}
-
-.se-main-scroll-area::-webkit-scrollbar{
-  width:8px;
-}
-
-.se-main-scroll-area::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:20px;
+  gap:18px;
 }
 
 /* Topbar */
@@ -1147,7 +1127,7 @@ table tr:hover{
   flex-direction:column;
   overflow:hidden;
   height:calc(100vh - 60px);
-
+}
 
 .review-sidebar h3{
   font-size:22px;
@@ -1182,16 +1162,6 @@ table tr:hover{
   padding-right:4px;
   flex:1;
   align-content:start;
-  min-height:0;
-}
-
-.review-palette::-webkit-scrollbar{
-  width:8px;
-}
-
-.review-palette::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:20px;
 }
 
 .review-palette::-webkit-scrollbar       { width:10px; }
@@ -1306,8 +1276,7 @@ table tr:hover{
   gap:16px;
   width:100%;
   min-width:0;
-  min-height:max-content;
-  overflow:visible;
+  overflow:hidden;
 }
 
 /* Editor top bar */
@@ -1408,7 +1377,6 @@ table tr:hover{
   border-radius:18px;
   background:#111827;
   border:1px solid #1e293b;
-  overflow:visible;
 }
 
 .se-editable,
@@ -1422,11 +1390,11 @@ table tr:hover{
   line-height:1.8;
   word-break:break-word;
   min-height:100px;
-  overflow-y:visible;
-  resize:none;
+  max-height:500px;
+  overflow-y:auto;
+  resize:vertical;
   outline:none;
   white-space:pre-wrap;
-  height:auto;
 }
 
 .se-editable img{ max-width:100%; border-radius:12px; }

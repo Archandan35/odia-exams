@@ -274,6 +274,21 @@ export default function App() {
           }
         />
 
+        {/* ================================= */}
+        {/* Smart question edit */}
+        {/* ================================= */}
+
+
+      
+       <Route
+  path="/admin/smartquestionedit"
+  element={
+    <AdminRoute>
+      <Smartquestionedit />
+    </AdminRoute>
+  }
+/>
+
       </Routes>
 
     </BrowserRouter>

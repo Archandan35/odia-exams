@@ -3641,3 +3641,11 @@ font-size:15px;
    SMART QUESTION EDIT PAGE LAYOUT (Prefix: se-)
 ────────────────────────────────────────────────────────── */
 
+.se-review-analytics-strip{
+      display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+    width: 100%;
+    align-items: stretch;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+
 import {
   collection,
   onSnapshot,
@@ -7,13 +8,17 @@ import {
   addDoc,
   deleteDoc,
 } from "firebase/firestore";
+
 import toast from "react-hot-toast";
+
 import { db } from "../firebase/config";
+
 import AdminLayout from "./AdminLayout";
 
 /* =========================================================
    QUESTION EDITOR
 ========================================================= */
+
 function QuestionEditor({
   value,
   onChange,
@@ -22,10 +27,12 @@ function QuestionEditor({
 }) {
   const editorRef = useRef(null);
   const fileRef = useRef(null);
+
   const [htmlBuffer, setHtmlBuffer] = useState(value || "");
 
   useEffect(() => {
     setHtmlBuffer(value || "");
+
     if (!globalHtmlMode && editorRef.current) {
       editorRef.current.innerHTML = value || "";
     }
@@ -41,70 +48,81 @@ function QuestionEditor({
 
     if (cmd === "image-url") {
       const url = window.prompt("Enter Image URL");
+
       if (url) {
         document.execCommand(
           "insertHTML",
           false,
           `<img src="${url}" style="max-width:100%;border-radius:12px;margin:10px 0;" />`
         );
+
         onChange(editorRef.current.innerHTML);
       }
+
       return;
     }
 
     if (cmd === "table") {
       const rows = prompt("Rows?");
       const cols = prompt("Columns?");
+
       if (!rows || !cols) return;
 
       let table = `
         <table border="1" style="width:100%;border-collapse:collapse;margin:10px 0;">
       `;
+
       for (let r = 0; r < Number(rows); r++) {
         table += "<tr>";
+
         for (let c = 0; c < Number(cols); c++) {
           table += `<td style="padding:8px;"> </td>`;
         }
+
         table += "</tr>";
       }
+
       table += "</table>";
 
       document.execCommand("insertHTML", false, table);
+
       onChange(editorRef.current.innerHTML);
+
       return;
     }
 
     document.execCommand(cmd, false, null);
+
     onChange(editorRef.current.innerHTML);
   }
 
   function handleFile(e) {
     const file = e.target.files[0];
+
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = () => {
       document.execCommand(
         "insertHTML",
         false,
         `<img src="${reader.result}" style="max-width:100%;border-radius:12px;margin:10px 0;" />`
       );
+
       onChange(editorRef.current.innerHTML);
     };
+
     reader.readAsDataURL(file);
   }
 
   return (
     <div className="se-editor-shell">
+
       {/* SINGLE ROW HEADER TOOLBOX */}
       <div className="se-editor-top-bar">
         <div className="se-left-controls">
-          {readOnly && (
-            <div className="se-readonly-indicator" title="Read Only Mode">
-              <span>🔒 Read Only</span>
-            </div>
-          )}
-        </div>
+           </div>
 
         {!readOnly && (
           <div className="se-editor-toolbar se-toolbar-scroll">
@@ -142,7 +160,7 @@ function QuestionEditor({
         onChange={handleFile}
       />
 
-      {/* HTML / VISUAL MODE */}
+      {/* HTML MODE */}
       {globalHtmlMode ? (
         <div className="se-question-scroll">
           <textarea
@@ -158,11 +176,16 @@ function QuestionEditor({
           />
         </div>
       ) : (
+        /* VISUAL MODE */
         <div className="se-question-scroll">
           <div
             ref={editorRef}
             className={`se-editable ${readOnly ? "readonly" : ""}`}
             contentEditable={!readOnly}
+            style={{
+              minHeight: "60px",
+              height: "auto",
+            }}
             suppressContentEditableWarning
             data-placeholder="Type your question here..."
             onInput={() => {
@@ -181,6 +204,7 @@ function QuestionEditor({
 /* =========================================================
    OPTION INPUT
 ========================================================= */
+
 function OptionInput({
   value,
   onChange,
@@ -216,6 +240,7 @@ function OptionInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={`Option ${letter}`}
+          style={{ width: "100%", background: "transparent", border: "none", outline: "none", color: "#fff" }}
         />
       )}
     </div>
@@ -225,6 +250,7 @@ function OptionInput({
 /* =========================================================
    EXPLANATION FIELD
 ========================================================= */
+
 function ExplanationField({
   value,
   onChange,
@@ -263,6 +289,7 @@ function ExplanationField({
 /* =========================================================
    MAIN COMPONENT
 ========================================================= */
+
 export default function SmartEditPage() {
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -279,9 +306,11 @@ export default function SmartEditPage() {
   const [correctAnswer, setCorrectAnswer] = useState("A");
   const [difficulty, setDifficulty] = useState("easy");
   const [explanation, setExplanation] = useState("");
+
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedSubTopic, setSelectedSubTopic] = useState("");
+
   const [updatedIds, setUpdatedIds] = useState(new Set());
   const [errors, setErrors] = useState({});
   const [isNew, setIsNew] = useState(false);
@@ -291,6 +320,7 @@ export default function SmartEditPage() {
   /* =========================================================
      FIREBASE
   ========================================================= */
+
   useEffect(() => {
     return onSnapshot(collection(db, "subjects"), (snap) => {
       setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -318,40 +348,57 @@ export default function SmartEditPage() {
   /* =========================================================
      FILTER QUESTIONS
   ========================================================= */
+
   useEffect(() => {
-    const filtered = questions.filter(
-      (q) =>
-        (!selectedSubject || q.subjectId === selectedSubject) &&
-        (!selectedTopic || q.topicId === selectedTopic) &&
-        (!selectedSubTopic || q.subTopicId === selectedSubTopic)
+    const filtered = questions.filter((q) =>
+      (!selectedSubject || q.subjectId === selectedSubject) &&
+      (!selectedTopic || q.topicId === selectedTopic) &&
+      (!selectedSubTopic || q.subTopicId === selectedSubTopic)
     );
     setFilteredQuestions(filtered);
+    setCurrentIndex(0);
   }, [questions, selectedSubject, selectedTopic, selectedSubTopic]);
 
   /* =========================================================
-     LOAD CURRENT QUESTION
+     LOAD QUESTION
   ========================================================= */
-  useEffect(() => {
-    if (filteredQuestions.length > 0 && currentIndex < filteredQuestions.length) {
-      const q = filteredQuestions[currentIndex];
-      setQuestionHtml(q.questionHtml || "");
-      setOptionA(q.optionA || "");
-      setOptionB(q.optionB || "");
-      setOptionC(q.optionC || "");
-      setOptionD(q.optionD || "");
-      setCorrectAnswer(q.correctAnswer || "A");
-      setDifficulty(q.difficulty || "easy");
-      setExplanation(q.explanation || "");
-      setIsNew(false);
-      setIsEditingQuestion(false);
-    } else {
-      clearForm();
-      setIsNew(true);
-      setIsEditingQuestion(true);
-    }
-  }, [filteredQuestions, currentIndex]);
 
-  function clearForm() {
+  useEffect(() => {
+    if (filteredQuestions.length === 0 || isNew) return;
+    const q = filteredQuestions[currentIndex];
+    if (!q) return;
+
+    setQuestionHtml(q.question || "");
+    setOptionA(q.options?.[0] || "");
+    setOptionB(q.options?.[1] || "");
+    setOptionC(q.options?.[2] || "");
+    setOptionD(q.options?.[3] || "");
+    setCorrectAnswer(q.correctAnswer || "A");
+    setDifficulty(q.difficulty || "easy");
+    setExplanation(q.explanation || "");
+  }, [filteredQuestions, currentIndex, isNew]);
+
+  /* =========================================================
+     VALIDATE
+  ========================================================= */
+
+  function validate() {
+    const err = {};
+    if (!questionHtml.trim()) err.question = "Question required";
+    if (!optionA.trim()) err.a = "Option A required";
+    if (!optionB.trim()) err.b = "Option B required";
+    if (!optionC.trim()) err.c = "Option C required";
+    if (!optionD.trim()) err.d = "Option D required";
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  }
+
+  /* =========================================================
+     CLEAR
+  ========================================================= */
+
+  function clearEditor() {
     setQuestionHtml("");
     setOptionA("");
     setOptionB("");
@@ -360,250 +407,308 @@ export default function SmartEditPage() {
     setCorrectAnswer("A");
     setDifficulty("easy");
     setExplanation("");
+    setErrors({});
   }
 
-  function handleCreateNew() {
-    clearForm();
+  /* =========================================================
+     NEW
+  ========================================================= */
+
+  function openNew() {
     setIsNew(true);
     setIsEditingQuestion(true);
+    clearEditor();
   }
 
-  function startEdit() {
-    if (filteredQuestions.length === 0) return;
-    setIsEditingQuestion(true);
+  /* =========================================================
+     CANCEL
+  ========================================================= */
+
+  function cancelEditing() {
+    setIsNew(false);
+    setIsEditingQuestion(false);
+    const q = filteredQuestions[currentIndex];
+    if (!q) return;
+
+    setQuestionHtml(q.question || "");
+    setOptionA(q.options?.[0] || "");
+    setOptionB(q.options?.[1] || "");
+    setOptionC(q.options?.[2] || "");
+    setCorrectAnswer(q.correctAnswer || "A");
+    setDifficulty(q.difficulty || "easy");
+    setExplanation(q.explanation || "");
   }
 
-  function cancelEdit() {
-    if (isNew) {
-      if (filteredQuestions.length > 0) {
-        setCurrentIndex(0);
-      } else {
-        clearForm();
-      }
-    } else {
-      const q = filteredQuestions[currentIndex];
-      if (q) {
-        setQuestionHtml(q.questionHtml || "");
-        setOptionA(q.optionA || "");
-        setOptionB(q.optionB || "");
-        setOptionC(q.optionC || "");
-        setOptionD(q.optionD || "");
-        setCorrectAnswer(q.correctAnswer || "A");
-        setDifficulty(q.difficulty || "easy");
-        setExplanation(q.explanation || "");
-      }
-      setIsEditingQuestion(false);
-    }
+  /* =========================================================
+     NAVIGATION
+  ========================================================= */
+
+  function goTo(index) {
+    if (index < 0 || index >= filteredQuestions.length) return;
+    setCurrentIndex(index);
+    setIsNew(false);
   }
 
-  async function saveQuestion() {
-    const data = {
-      questionHtml,
-      optionA,
-      optionB,
-      optionC,
-      optionD,
+  /* =========================================================
+     UPDATE
+  ========================================================= */
+
+  async function handleUpdate() {
+    if (!validate()) return;
+    const q = filteredQuestions[currentIndex];
+    if (!q) return;
+
+    await updateDoc(doc(db, "questions", q.id), {
+      question: questionHtml,
+      options: [optionA, optionB, optionC, optionD],
       correctAnswer,
       difficulty,
       explanation,
+    });
+
+    toast.success("Question updated");
+    setUpdatedIds((prev) => {
+      const next = new Set(prev);
+      next.add(q.id);
+      return next;
+    });
+    setIsEditingQuestion(false);
+  }
+
+  /* =========================================================
+     ADD
+  ========================================================= */
+
+  async function handleAddNew() {
+    if (!validate()) return;
+    if (!selectedSubject || !selectedTopic || !selectedSubTopic) {
+      toast.error("Select subject/topic/subtopic");
+      return;
+    }
+
+    await addDoc(collection(db, "questions"), {
       subjectId: selectedSubject,
       topicId: selectedTopic,
       subTopicId: selectedSubTopic,
-    };
+      question: questionHtml,
+      options: [optionA, optionB, optionC, optionD],
+      correctAnswer,
+      difficulty,
+      explanation,
+      createdAt: Date.now(),
+    });
 
-    try {
-      if (isNew) {
-        const docRef = await addDoc(collection(db, "questions"), data);
-        setUpdatedIds((prev) => new Set([...prev, docRef.id]));
-        toast.success("Question created successfully!");
-      } else {
-        const q = filteredQuestions[currentIndex];
-        await updateDoc(doc(db, "questions", q.id), data);
-        setUpdatedIds((prev) => new Set([...prev, q.id]));
-        toast.success("Question updated successfully!");
-      }
-      setIsEditingQuestion(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Error saving question.");
-    }
+    toast.success("Question added");
+    setIsNew(false);
+    setIsEditingQuestion(false);
+    clearEditor();
   }
+
+  /* =========================================================
+     DELETE
+  ========================================================= */
 
   async function handleDelete() {
-    if (isNew || filteredQuestions.length === 0) return;
-    if (!window.confirm("Are you sure you want to delete this question?")) return;
-
     const q = filteredQuestions[currentIndex];
-    try {
-      await deleteDoc(doc(db, "questions", q.id));
-      toast.success("Question deleted.");
-      if (currentIndex > 0) {
-        setCurrentIndex(currentIndex - 1);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error deleting question.");
-    }
+    if (!q) return;
+
+    const confirmDelete = window.confirm("Delete this question?");
+    if (!confirmDelete) return;
+
+    await deleteDoc(doc(db, "questions", q.id));
+    toast.success("Question deleted");
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
   }
 
-  function goTo(idx) {
-    setCurrentIndex(idx);
-  }
+  const filteredTopics = topics.filter((t) => !selectedSubject || t.subjectId === selectedSubject);
+  const filteredSubTopics = subTopics.filter((s) => 
+    (!selectedSubject || s.subjectId === selectedSubject) &&
+    (!selectedTopic || s.topicId === selectedTopic)
+  );
 
-  const isEditable = isEditingQuestion;
+  const isEditable = isEditingQuestion || isNew;
 
   return (
     <AdminLayout>
       <div className="page">
-        {/* DROPDOWN SELECTORS */}
-        <div className="filter-grid">
+        {/* HEADER */}
+        <div className="review-topbar">
+          <div>
+            <h2>Smart Edit Interface</h2>
+            <p>Enterprise Question Editing System</p>
+          </div>
+
+          <div className="review-actions">
+            <button
+              className="review-nav-btn se-action-btn"
+              disabled={currentIndex === 0 || isNew}
+              onClick={() => goTo(currentIndex - 1)}
+            >
+              ← Previous
+            </button>
+
+            <button
+              className="review-nav-btn se-action-btn"
+              disabled={currentIndex >= filteredQuestions.length - 1 || isNew}
+              onClick={() => goTo(currentIndex + 1)}
+            >
+              Next →
+            </button>
+
+            <button className="submit-btn se-action-btn" onClick={openNew}>
+              + Add New
+            </button>
+
+            {!isNew && (
+              <button className="delete-btn se-action-btn" onClick={handleDelete}>
+                Delete
+              </button>
+            )}
+
+            <button className="submit-btn se-action-btn" onClick={isNew ? handleAddNew : handleUpdate}>
+              {isNew ? "Save" : "Update"}
+            </button>
+          </div>
+        </div>
+
+        {/* FILTER BAR */}
+        <div className="se-filter-bar">
           <select
-            className="filter-select"
+            className="se-select"
             value={selectedSubject}
             onChange={(e) => {
               setSelectedSubject(e.target.value);
               setSelectedTopic("");
               setSelectedSubTopic("");
-              setCurrentIndex(0);
             }}
           >
-            <option value="">Select Subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
+            <option value="">All Subjects</option>
+            {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
 
           <select
-            className="filter-select"
+            className="se-select"
             value={selectedTopic}
             onChange={(e) => {
               setSelectedTopic(e.target.value);
               setSelectedSubTopic("");
-              setCurrentIndex(0);
             }}
-            disabled={!selectedSubject}
           >
-            <option value="">Select Topic</option>
-            {topics
-              .filter((t) => t.subjectId === selectedSubject)
-              .map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
+            <option value="">All Topics</option>
+            {filteredTopics.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
 
           <select
-            className="filter-select"
+            className="se-select"
             value={selectedSubTopic}
-            onChange={(e) => {
-              setSelectedSubTopic(e.target.value);
-              setCurrentIndex(0);
-            }}
-            disabled={!selectedTopic}
+            onChange={(e) => setSelectedSubTopic(e.target.value)}
           >
-            <option value="">Select SubTopic</option>
-            {subTopics
-              .filter((st) => st.topicId === selectedTopic)
-              .map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.name}
-                </option>
-              ))}
+            <option value="">All Sub Topics</option>
+            {filteredSubTopics.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
 
-        {/* SINGLE HORIZONTAL BAR FOR ALL CORE CONFIG CONTROLS */}
-        <div className="se-controls-row">
-          <div className="se-btn-group">
-            {isEditingQuestion ? (
-              <>
-                <button className="se-action-btn edit-btn" onClick={saveQuestion}>
-                  Save
-                </button>
-                <button className="se-action-btn cancel-btn" onClick={cancelEdit}>
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="se-action-btn edit-btn" onClick={startEdit}>
-                  Edit Mode
-                </button>
-                <button className="se-action-btn delete-btn" onClick={handleDelete}>
-                  Delete
-                </button>
-              </>
-            )}
-            <button className="se-action-btn submit-btn" onClick={handleCreateNew}>
-              + Add New
-            </button>
-          </div>
-
-          <div className="se-btn-group">
-            <button
-              className={`se-action-btn ${!globalHtmlMode ? "active" : ""}`}
-              onClick={() => setGlobalHtmlMode(false)}
-            >
-              Visual View
-            </button>
-            <button
-              className={`se-action-btn ${globalHtmlMode ? "active" : ""}`}
-              onClick={() => setGlobalHtmlMode(true)}
-            >
-              HTML View
-            </button>
-          </div>
-
-          <div className="se-btn-group">
-            <select
-              className="se-select-compact"
-              value={correctAnswer}
-              disabled={!isEditable}
-              onChange={(e) => setCorrectAnswer(e.target.value)}
-            >
-              <option value="A">Correct: A</option>
-              <option value="B">Correct: B</option>
-              <option value="C">Correct: C</option>
-              <option value="D">Correct: D</option>
-            </select>
-
-            <select
-              className="se-select-compact"
-              value={difficulty}
-              disabled={!isEditable}
-              onChange={(e) => setDifficulty(e.target.value)}
-            >
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-        </div>
-
-        {/* WORKSPACE LAYOUT CONTAINER */}
+        {/* MAIN LAYOUT */}
         <div className="review-layout">
           <div className="review-main">
-            <div className="se-editor-shell-container">
-              {/* QUESTION EDITOR FIELD */}
-              <QuestionEditor
-                value={questionHtml}
-                onChange={setQuestionHtml}
-                globalHtmlMode={globalHtmlMode}
-                readOnly={!isEditable}
-              />
+            <div className="se-review-question-card">
+              
+              {/* TOP MODE BAR (Contains View/Edit and Visual/HTML with single row toggle) */}
+              <div className="se-edit-toolbar-wrapper">
+                <div className="se-segment-group">
+                  <button
+                    type="button"
+                    className={`se-segment-btn ${!isEditable ? "active" : ""}`}
+                    onClick={() => setIsEditingQuestion(false)}
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    className={`se-segment-btn ${isEditable ? "active" : ""}`}
+                    onClick={() => {
+                      if (isEditable) cancelEditing();
+                      else setIsEditingQuestion(true);
+                    }}
+                  >
+                    {isEditable ? "Cancel" : "Edit"}
+                  </button>
+                </div>
 
-              {/* OPTIONS HANDLING SECTION */}
-              <div className="se-options-grid">
+                <label className="se-html-toggle">
+                  <input
+                    type="checkbox"
+                    checked={globalHtmlMode}
+                    onChange={(e) => setGlobalHtmlMode(e.target.checked)}
+                  />
+                  <span>View HTML Mode</span>
+                </label>
+
+                <div className="se-segment-group">
+                  <button
+                    type="button"
+                    className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
+                    onClick={() => setGlobalHtmlMode(false)}
+                  >
+                    Visual
+                  </button>
+                  <button
+                    type="button"
+                    className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
+                    onClick={() => setGlobalHtmlMode(true)}
+                  >
+                    HTML
+                  </button>
+                </div>
+              </div>
+
+              {/* QUESTION FIELD CONTAINER */}
+              <div className={!isEditable ? "se-view-question-box" : "se-edit-question-box"}>
+                {!isEditable && <div className="se-readonly-badge" title="Read Only">🔒</div>}
+                <QuestionEditor
+                  value={questionHtml}
+                  onChange={setQuestionHtml}
+                  globalHtmlMode={globalHtmlMode}
+                  readOnly={!isEditable}
+                />
+              </div>
+
+              {/* DIFFICULTY */}
+              <div className="se-difficulty-row">
+                {["easy", "medium", "hard"].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`se-difficulty-btn ${difficulty === level ? `active-${level}` : ""}`}
+                    onClick={() => {
+                      if (!isEditable) return;
+                      setDifficulty(level);
+                    }}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+
+              {/* OPTIONS CONTAINER */}
+              <div className="se-option-list se-scrollable-options">
                 {[
-                  ["A", optionA, setOptionA],
-                  ["B", optionB, setOptionB],
-                  ["C", optionC, setOptionC],
-                  ["D", optionD, setOptionD],
-                ].map(([letter, value, setter]) => (
-                  <div key={letter} className="se-option-row">
+                  { letter: "A", value: optionA, setter: setOptionA },
+                  { letter: "B", value: optionB, setter: setOptionB },
+                  { letter: "C", value: optionC, setter: setOptionC },
+                  { letter: "D", value: optionD, setter: setOptionD },
+                ].map(({ letter, value, setter }) => (
+                  <div
+                    key={letter}
+                    className={`se-option-card ${correctAnswer === letter ? "se-option-correct" : ""} ${!isEditable ? "readonly-view" : "edit-view"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="correct-answer-group"
+                      checked={correctAnswer === letter}
+                      disabled={!isEditable}
+                      onChange={() => setCorrectAnswer(letter)}
+                    />
                     <div className="se-option-letter">{letter}.</div>
                     <div className="se-opt-content">
                       <OptionInput
@@ -618,7 +723,7 @@ export default function SmartEditPage() {
                 ))}
               </div>
 
-              {/* EXPLANATION FIELD */}
+              {/* EXPLANATION */}
               <div className="se-explanation-wrapper">
                 <h3 className="se-section-title">Explanation</h3>
                 <ExplanationField
@@ -628,19 +733,18 @@ export default function SmartEditPage() {
                   globalHtmlMode={globalHtmlMode}
                 />
               </div>
+
             </div>
           </div>
 
-          {/* RIGHT NAVIGATION PALETTE SIDEBAR */}
+          {/* RIGHT SIDEBAR */}
           <div className="review-sidebar">
-            <h3>Questions ({filteredQuestions.length})</h3>
+            <h3>Questions</h3>
             <div className="review-palette">
               {filteredQuestions.map((q, index) => (
                 <button
                   key={q.id}
-                  className={`review-palette-btn ${
-                    currentIndex === index ? "review-current" : ""
-                  }`}
+                  className={`review-palette-btn ${currentIndex === index ? "review-current" : ""}`}
                   onClick={() => goTo(index)}
                 >
                   {index + 1}

@@ -870,14 +870,17 @@ table tr:hover{
   gap:20px;
   align-items:stretch;
   margin-top:20px;
+  height:calc(100vh - 240px);
+  min-height:500px;
 }
 
 .review-main{
   display:flex;
   flex-direction:column;
   min-width:0;
-  gap:18px;
+  gap:0;
   height:100%;
+  overflow:hidden;
 }
 
 /* Topbar */
@@ -1275,6 +1278,8 @@ table tr:hover{
   width:100%;
   min-width:0;
   overflow:hidden;
+  height:100%;
+  min-height:0;
 }
 
 /* Editor top bar */
@@ -1440,7 +1445,7 @@ table tr:hover{
 .se-view-question-box{
   position:relative;
   border-radius:18px;
-  overflow:visible;
+  overflow:hidden;
   width:100%;
 }
 
@@ -2470,11 +2475,11 @@ table tr:hover{
 }
 
 .se-main-scroll-area{
-  height:calc(100vh - 140px);
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-right:6px;
+  display:flex;
+  flex-direction:column;
+  height:100%;
   min-height:0;
+  overflow:hidden;
 }
 
 .se-editable.readonly{
@@ -2512,12 +2517,29 @@ table tr:hover{
 }
 
 .se-html-modal-header{
-  height:70px;
+  flex-shrink:0;
+  min-height:70px;
   padding:0 24px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   border-bottom:1px solid #1e293b;
+}
+
+.se-html-popup-editor{
+  flex:1;
+  min-height:0;
+  width:100%;
+  background:#020617;
+  color:#f8fafc;
+  border:none;
+  outline:none;
+  resize:none;
+  padding:20px 24px;
+  font-size:14px;
+  font-family:monospace;
+  line-height:1.8;
+  overflow-y:auto;
 }
 
 
@@ -2527,8 +2549,8 @@ table tr:hover{
 
 /* Scrollable container for question + options + explanation */
 .se-content-scroll{
-  height:calc(100vh - 280px);
-  min-height:400px;
+  flex:1;
+  min-height:0;
   overflow-y:auto;
   overflow-x:hidden;
   display:flex;
@@ -2537,7 +2559,6 @@ table tr:hover{
   padding-right:6px;
   scrollbar-width:thin;
   scrollbar-color:#334155 transparent;
-  flex:1;
 }
 
 .se-content-scroll::-webkit-scrollbar{ width:6px; }
@@ -2553,6 +2574,31 @@ table tr:hover{
   background:#334155;
   flex-shrink:0;
   margin:0 2px;
+}
+
+/* View-only hover badge */
+.se-view-only-badge{
+  position:absolute;
+  inset:0;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.2s;
+  z-index:10;
+  background:rgba(0,0,0,0.18);
+}
+
+.se-view-question-box:hover .se-view-only-badge{
+  opacity:1;
+}
+
+.se-view-only-badge svg{
+  width:44px;
+  height:44px;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));
 }
 
 /* Mini modal for link / table dialogs */

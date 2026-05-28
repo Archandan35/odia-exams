@@ -906,19 +906,17 @@ ${expl}
               >
 
                 {!isEditable && (
-                  <div
-                    className="se-readonly-badge"
-                    title="Read Only Mode"
-                  >
-                    🔒
+                  <div className="se-view-only-badge" title="View Only — click Edit to make changes">
+                    <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="22" cy="22" r="20" fill="#dc2626" fillOpacity="0.92" stroke="white" strokeWidth="2.5"/>
+                      <line x1="10" y1="10" x2="34" y2="34" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+                    </svg>
                   </div>
                 )}
 
                 <QuestionEditor
                   value={questionHtml}
-                  onChange={
-                    setQuestionHtml
-                  }
+                  onChange={setQuestionHtml}
                   readOnly={!isEditable}
                 />
 

@@ -117,37 +117,58 @@ function QuestionEditor({
   }
 
   return (
+    return (
     <div className="se-editor-shell">
 
-      {/* TOOLBAR */}
-
-      {!readOnly && (
-        <div className="se-editor-toolbar se-toolbar-scroll">
-
-          {[
-            ["bold", "B"],
-            ["italic", "I"],
-            ["underline", "U"],
-            ["insertUnorderedList", "≡"],
-            ["insertOrderedList", "1."],
-            ["table", "Table"],
-            ["image-url", "URL"],
-            ["image-upload", "Upload"],
-          ].map(([cmd, label]) => (
-            <button
-              key={cmd}
-              type="button"
-              className="se-toolbar-btn"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                exec(cmd);
+      {/* SINGLE ROW HEADER TOOLBOX */}
+      <div className="se-editor-top-bar">
+        <div className="se-left-controls">
+          <div className="drag-handle" style={{ cursor: 'grab', fontSize: '18px', color: '#64748b' }}>☰</div>
+          <h3 className="se-section-title" style={{ fontSize: '16px', fontWeight: '700', color: '#60a5fa', margin: 0 }}>Question Field</h3>
+          <label className="se-html-toggle">
+            <input
+              type="checkbox"
+              style={{ width: 'auto', marginRight: '6px' }}
+              checked={globalHtmlMode}
+              onChange={(e) => {
+                // Since this is embedded deep in QuestionEditor, link it to your switch logic
+                if(typeof onChange === 'function') {
+                  // If you pass down the toggle handler from parent use it here, 
+                  // or keep your top-level state if applicable.
+                }
               }}
-            >
-              {label}
-            </button>
-          ))}
+            />
+            <span style={{ fontSize: '13px', color: '#94a3b8', whiteSpace: 'nowrap' }}>View HTML</span>
+          </label>
         </div>
-      )}
+
+        {!readOnly && (
+          <div className="se-editor-toolbar se-toolbar-scroll">
+            {[
+              ["bold", "B"],
+              ["italic", "I"],
+              ["underline", "U"],
+              ["insertUnorderedList", "≡"],
+              ["insertOrderedList", "1."],
+              ["table", "Table"],
+              ["image-url", "URL"],
+              ["image-upload", "Upload"],
+            ].map(([cmd, label]) => (
+              <button
+                key={cmd}
+                type="button"
+                className="se-toolbar-btn"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  exec(cmd);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <input
         type="file"
@@ -232,26 +253,31 @@ function OptionInput({
   }
 
   return (
+    return (
     <div className="se-opt-render-box">
-
       {disabled ? (
-        <div
-          className="se-opt-display se-scrollable-box"
-          dangerouslySetInnerHTML={{
-            __html:
-              value ||
-              `<span style="color:#64748b">Option ${letter}</span>`
-          }}
-        />
+        <div className="se-option-field-container readonly-view">
+          <span className="se-option-letter">{letter}</span>
+          <div
+            className="se-opt-display se-scrollable-box"
+            style={{ flex: 1, padding: '4px 0', color: '#f1f5f9' }}
+            dangerouslySetInnerHTML={{
+              __html: value || `<span style="color:#64748b">Empty Option</span>`
+            }}
+          />
+        </div>
       ) : (
-        <input
-          className="se-opt-input"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={`Option ${letter}`}
-        />
+        <div className="se-option-field-container edit-view">
+          <span className="se-option-letter">{letter}</span>
+          <input
+            className="se-opt-input"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={`Option ${letter}`}
+            style={{ flex: 1, background: 'transparent', padding: '6px 0' }}
+          />
+        </div>
       )}
-
     </div>
   );
 }

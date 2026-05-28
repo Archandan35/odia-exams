@@ -56,6 +56,8 @@ from "./pages/ResultPage";
 import Leaderboard
 from "./pages/Leaderboard";
 
+import SmartEditPage from "./admin/Smartquestionedit";
+
 export default function App() {
 
   return (

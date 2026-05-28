@@ -128,21 +128,7 @@ function QuestionEditor({
       />
 
       {/* HTML MODE */}
-      {globalHtmlMode ? (
-        <div className="se-question-scroll">
-          <textarea
-            className="se-html-editor se-question-html"
-            value={htmlBuffer}
-            readOnly={readOnly}
-            onChange={(e) => {
-              const val = e.target.value;
-              setHtmlBuffer(val);
-              onChange(val);
-            }}
-            placeholder="Write HTML..."
-          />
-        </div>
-      ) : (
+     
         /* VISUAL MODE */
         <div className="se-question-scroll">
           <div
@@ -282,7 +268,9 @@ export default function SmartEditPage() {
   const [errors, setErrors] = useState({});
   const [isNew, setIsNew] = useState(false);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
-  const [globalHtmlMode, setGlobalHtmlMode] = useState(false);
+  
+  const [showHtmlModal, setShowHtmlModal] = useState(false);
+  const [htmlCode, setHtmlCode] = useState("");
 
   /* =========================================================
      FIREBASE
@@ -494,8 +482,77 @@ export default function SmartEditPage() {
   );
 
   const isEditable = isEditingQuestion || isNew;
+  const isEditable = isEditingQuestion || isNew;
 
-  return (
+/* =========================================================
+   HTML TO VISUAL PARSER
+========================================================= */
+
+function applyHtmlToVisual(html) {
+
+  setHtmlCode(html);
+
+  const parser = new DOMParser();
+
+  const doc = parser.parseFromString(
+    html,
+    "text/html"
+  );
+
+  const bodyHtml = doc.body.innerHTML;
+
+  setQuestionHtml(bodyHtml);
+
+  /* QUESTION */
+  const h1 = doc.querySelector("h1");
+
+  if (h1) {
+    setQuestionHtml(h1.outerHTML);
+  }
+
+  /* OPTIONS */
+  const paragraphs = doc.querySelectorAll("p");
+
+  if (paragraphs[0]) {
+    setOptionA(paragraphs[0].innerHTML);
+  }
+
+  if (paragraphs[1]) {
+    setOptionB(paragraphs[1].innerHTML);
+  }
+
+  if (paragraphs[2]) {
+    setOptionC(paragraphs[2].innerHTML);
+  }
+
+  if (paragraphs[3]) {
+    setOptionD(paragraphs[3].innerHTML);
+  }
+
+  /* EXPLANATION */
+  const explanationNode =
+    doc.querySelector(".explanation");
+
+  if (explanationNode) {
+    setExplanation(
+      explanationNode.innerHTML
+    );
+  }
+
+  /* DIFFICULTY */
+  const difficultyNode =
+    doc.querySelector("[data-difficulty]");
+
+  if (difficultyNode) {
+    setDifficulty(
+      difficultyNode.getAttribute(
+        "data-difficulty"
+      )
+    );
+  }
+}
+
+return (
     <AdminLayout>
       <div className="page">
         {/* HEADER */}
@@ -610,7 +667,9 @@ export default function SmartEditPage() {
     <button
       type="button"
       className={`se-segment-btn ${!globalHtmlMode ? "active" : ""}`}
-      onClick={() => setGlobalHtmlMode(false)}
+      onClick={() => {
+  setShowHtmlModal(false);
+}}
     >
       Visual
     </button>
@@ -618,7 +677,20 @@ export default function SmartEditPage() {
     <button
       type="button"
       className={`se-segment-btn ${globalHtmlMode ? "active" : ""}`}
-      onClick={() => setGlobalHtmlMode(true)}
+      onClick={() => {
+  setHtmlCode(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+${questionHtml || ""}
+</body>
+</html>
+`);
+  setShowHtmlModal(true);
+}}
     >
       HTML
     </button>
@@ -744,7 +816,46 @@ export default function SmartEditPage() {
             </div>
           </div>
         </div>
+</div>
+
+{/* HTML MODAL */}
+{showHtmlModal && (
+  <div className="se-html-modal-overlay">
+
+    <div className="se-html-modal">
+
+      <div className="se-html-modal-header">
+
+        <h2>HTML Editor</h2>
+
+        <button
+          type="button"
+          className="se-toolbar-btn"
+          onClick={() =>
+            setShowHtmlModal(false)
+          }
+        >
+          Close
+        </button>
+
       </div>
-    </AdminLayout>
-  );
+
+      <textarea
+        className="se-html-popup-editor"
+        value={htmlCode}
+        onChange={(e) => {
+          const val = e.target.value;
+
+          setHtmlCode(val);
+
+          applyHtmlToVisual(val);
+        }}
+      />
+
+    </div>
+
+  </div>
+)}
+
+</AdminLayout>
 }

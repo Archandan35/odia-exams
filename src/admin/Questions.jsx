@@ -614,7 +614,7 @@ value={st.id}
           
           <button
             className="smart-edit-btn"
-            onClick={() => navigate("/admin/smart-edit")}
+            onClick={() => navigate("/admin/Smartquestionedit")}
           >
             ✏ Smart Edit
           </button>

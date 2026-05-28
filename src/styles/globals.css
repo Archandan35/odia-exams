@@ -2445,10 +2445,11 @@ table tr:hover{
 }
 
 .se-main-scroll-area{
-  max-height:calc(100vh - 140px);
+  height:calc(100vh - 140px);
   overflow-y:auto;
   overflow-x:hidden;
-  padding-right:4px;
+  padding-right:6px;
+  min-height:0;
 }
 
 .se-editable.readonly{
@@ -2458,4 +2459,50 @@ table tr:hover{
 
 .se-editable.readonly:hover{
   border-color:#475569;
+}
+
+
+.se-html-modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.72);
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.se-html-modal{
+  width:80%;
+  height:80vh;
+  background:#0f172a;
+  border:1px solid #334155;
+  border-radius:22px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.se-html-modal-header{
+  height:70px;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid #1e293b;
+}
+
+.se-html-popup-editor{
+  flex:1;
+  width:100%;
+  background:#020617;
+  color:#f8fafc;
+  border:none;
+  outline:none;
+  resize:none;
+  padding:24px;
+  font-size:15px;
+  font-family:monospace;
+  line-height:1.8;
 }

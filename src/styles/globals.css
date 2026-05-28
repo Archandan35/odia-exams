@@ -1273,12 +1273,18 @@ table tr:hover{
   border:1px solid var(--se-card);
   border-radius:22px;
   padding:18px;
+
   display:flex;
   flex-direction:column;
   gap:16px;
+
   width:100%;
   min-width:0;
+
   overflow:hidden;
+
+  height:100%;
+  min-height:0;
 }
 
 /* Editor top bar */

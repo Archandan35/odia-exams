@@ -1390,7 +1390,7 @@ table tr:hover{
   line-height:1.8;
   word-break:break-word;
   min-height:100px;
-  max-height:500px;
+  max-height:none;
   overflow-y:visible;
   resize:vertical;
   outline:none;
@@ -1398,7 +1398,10 @@ table tr:hover{
   height:auto;
 }
 
-.se-editable img{ max-width:100%; border-radius:12px; }
+.se-editable img{ 
+   max-width:100%; 
+   border-radius:12px;
+}
 
 .se-question-html{
   width:100%;
@@ -1433,7 +1436,12 @@ table tr:hover{
 .se-html-editor--explanation{ min-height:180px; }
 
 /* View */
-.se-view-question-box{ position:relative; border-radius:18px; overflow:hidden; }
+.se-view-question-box{
+  position:relative;
+  border-radius:18px;
+  overflow:visible;
+  width:100%;
+}
 
 .se-readonly-badge{
   position:absolute;

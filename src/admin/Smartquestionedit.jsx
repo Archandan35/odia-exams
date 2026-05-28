@@ -122,6 +122,7 @@ function QuestionEditor({
       {/* SINGLE ROW HEADER TOOLBOX */}
       <div className="se-editor-top-bar">
         <div className="se-left-controls">
+           </div>
 
         {!readOnly && (
           <div className="se-editor-toolbar se-toolbar-scroll">

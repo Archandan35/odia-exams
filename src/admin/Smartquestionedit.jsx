@@ -420,7 +420,7 @@ export default function SmartEditPage() {
 
         {/* ANALYTICS */}
 
-        <div className="review-analytics-strip">
+        <div className="se-review-analytics-strip">
 
           <div className="analytics-mini-card">
             <span>Question</span>

@@ -977,7 +977,9 @@ table tr:hover{
   border:1px solid #1e293b;
   border-radius:20px;
   padding:26px;
-  overflow:visible;
+  overflow-y:auto;
+  flex:1;
+  min-height:0;
 }
 
 .review-question-header{

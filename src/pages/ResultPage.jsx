@@ -219,9 +219,10 @@ export default function ResultPage() {
               <div className="review-question-badge">
                 Q.{currentQuestion + 1}
               </div>
-              <div className="review-question-text">
-                {current?.question}
-              </div>
+              <div
+                className="review-question-text"
+                dangerouslySetInnerHTML={{ __html: current?.question || "" }}
+              />
             </div>
 
             <div className="review-options">

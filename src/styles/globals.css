@@ -1141,13 +1141,13 @@ table tr:hover{
   border:1px solid #1e293b;
   border-radius:20px;
   padding:18px;
-  position:relative;
+  position:sticky;
+  top:20px;
   display:flex;
   flex-direction:column;
   overflow:hidden;
-  height:100%;
-  min-height:0;
-}
+  height:calc(100vh - 60px);
+
 
 .review-sidebar h3{
   font-size:22px;

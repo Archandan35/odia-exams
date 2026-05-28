@@ -63,6 +63,8 @@ export default function Questions() {
 
   const optionLabels = ["A","B","C","D"];
 
+  const navigate = useNavigate();
+
   /* SUBJECTS */
 
   useEffect(()=>{
@@ -607,7 +609,15 @@ value={st.id}
 
             )
           }
+          
+          <button
+            className="smart-edit-btn"
+            onClick={() => navigate("/admin/smart-edit")}
+          >
+            ✏ Smart Edit
+          </button>
 
+          
           <button
             className="add-question-btn"
             onClick={()=>setShowPopup(true)}

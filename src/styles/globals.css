@@ -2387,8 +2387,9 @@ table tr:hover{
 }
 
 .se-option-hover.se-option-editable:hover{
-  border-color:var(--blue-500);
-  background:#172033;
+border-color:var(--blue-400);
+background:var(--blue-50);
+box-shadow:var(--shadow-sm);
 }
 
 .se-option-card.se-option-correct{

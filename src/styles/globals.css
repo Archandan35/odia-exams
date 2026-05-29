@@ -2951,20 +2951,27 @@ table tr:hover{
 .ph-header{
   flex-shrink:0;
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 16px;
-  height:60px;
+  flex-direction:column;
+  padding:10px 16px 10px;
   background:linear-gradient(135deg,#0f2044 0%,#1a3a6e 100%);
   border-bottom:2px solid #2563eb;
   z-index:100;
   box-shadow:0 2px 12px rgba(0,0,0,0.35);
+  gap:6px;
+}
+
+/* Row 1: exam name */
+.ph-header-row1{
+  display:flex;
+  align-items:center;
+  width:100%;
 }
 
 .ph-title-wrap{
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  flex:1;
 }
 
 .ph-title{
@@ -2974,16 +2981,56 @@ table tr:hover{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  max-width:60vw;
   line-height:1.2;
+}
+
+/* Row 2: pause | gap | timer */
+.ph-header-row2{
+  display:flex;
+  align-items:center;
+  width:100%;
 }
 
 .ph-subtitle{
   font-size:11px;
   color:#93c5fd;
   font-weight:500;
-  margin-top:2px;
   letter-spacing:0.3px;
+}
+
+.ph-pause-btn{
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:8px;
+  padding:5px 12px;
+  color:#cbd5e1;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.3px;
+  cursor:pointer;
+  transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.ph-pause-btn:hover{
+  background:rgba(255,255,255,0.18);
+  color:#fff;
+  opacity:1;
+  transform:none;
+}
+
+.ph-pause-btn svg{
+  width:14px;
+  height:14px;
+  flex-shrink:0;
+}
+
+.ph-header-spacer{
+  flex:1;
 }
 
 .ph-timer{
@@ -3185,38 +3232,99 @@ table tr:hover{
   font-weight:600;
 }
 
-/* --- Nav Footer (Prev / Next) --- */
+/* --- Nav Footer (two rows) --- */
 .ph-nav-footer{
   flex-shrink:0;
   display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 14px;
+  flex-direction:column;
+  gap:0;
   background:#ffffff;
   border-top:1px solid #e2e8f0;
   box-shadow:0 -2px 10px rgba(0,0,0,0.06);
 }
 
+/* Row 1: Review + Bookmark */
+.ph-nav-row1{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 14px 4px;
+}
+
+/* Row 2: Prev + Save&Next + Submit */
+.ph-nav-row2{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:4px 14px 10px;
+}
+
 .ph-nav-btn{
-  flex:1;
   height:46px;
   border-radius:12px;
-  font-size:14px;
+  font-size:13px;
   font-weight:700;
   border:none;
   cursor:pointer;
   transition:all 0.2s;
   letter-spacing:0.2px;
   -webkit-tap-highlight-color:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
 }
 
 .ph-nav-btn:active{
   transform:scale(0.97);
 }
 
+/* Row-1 action btns: Review and Bookmark */
+.ph-btn-review{
+  flex:1;
+  background:#fff7ed;
+  color:#c2410c;
+  border:1.5px solid #fed7aa;
+  font-size:12.5px;
+}
+
+.ph-btn-review:hover{
+  background:#ffedd5;
+  opacity:1;
+  transform:none;
+}
+
+.ph-btn-review.active{
+  background:#fff7ed;
+  border-color:#f97316;
+  color:#ea580c;
+}
+
+.ph-btn-bookmark{
+  flex:1;
+  background:#f0fdf4;
+  color:#15803d;
+  border:1.5px solid #bbf7d0;
+  font-size:12.5px;
+}
+
+.ph-btn-bookmark:hover{
+  background:#dcfce7;
+  opacity:1;
+  transform:none;
+}
+
+.ph-btn-bookmark.active{
+  background:#f0fdf4;
+  border-color:#22c55e;
+  color:#16a34a;
+}
+
 .ph-btn-prev{
+  flex:1;
   background:#e9eef5;
   color:#475569;
+  font-size:13px;
 }
 
 .ph-btn-prev:hover{
@@ -3230,12 +3338,26 @@ table tr:hover{
   background:linear-gradient(135deg,#1d4ed8,#2563eb);
   color:#fff;
   box-shadow:0 4px 14px rgba(37,99,235,0.35);
+  font-size:13px;
 }
 
 .ph-btn-next:hover{
   opacity:0.92;
   transform:translateY(-1px);
   box-shadow:0 6px 18px rgba(37,99,235,0.4);
+}
+
+.ph-btn-submit-footer{
+  flex:1;
+  background:linear-gradient(135deg,#15803d,#16a34a);
+  color:#fff;
+  font-size:12.5px;
+  box-shadow:0 3px 10px rgba(22,163,74,0.3);
+}
+
+.ph-btn-submit-footer:hover{
+  opacity:0.92;
+  transform:translateY(-1px);
 }
 
 .ph-btn-menu{
@@ -3257,6 +3379,39 @@ table tr:hover{
   background:#1a3a6e;
   opacity:1;
   transform:none;
+}
+
+/* --- Floating Sidebar Toggle (FAB) --- */
+.ph-fab-menu{
+  position:fixed;
+  bottom:110px;
+  right:14px;
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  background:#0f2044;
+  color:#93c5fd;
+  font-size:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border:2px solid #2563eb;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  z-index:500;
+  cursor:pointer;
+  transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.ph-fab-menu:hover{
+  background:#1a3a6e;
+  opacity:1;
+  transform:scale(1.05);
+}
+
+.ph-fab-menu:active{
+  transform:scale(0.95);
 }
 
 /* --- Loading State --- */
@@ -3379,10 +3534,11 @@ table tr:hover{
 }
 
 .ph-stat-value{
-  font-size:18px;
-  font-weight:800;
+  font-size:26px;
+  font-weight:900;
   color:#fff;
   line-height:1;
+  letter-spacing:-0.5px;
 }
 
 .ph-stat-box.green .ph-stat-value{ color:#4ade80; }
@@ -3511,18 +3667,23 @@ table tr:hover{
   gap:8px;
 }
 
+/* Paper + Instructions in a row */
+.ph-sidebar-footer-row{
+  display:flex;
+  gap:8px;
+}
+
 .ph-footer-btn{
-  width:100%;
   height:44px;
   border-radius:11px;
-  font-size:14px;
+  font-size:13px;
   font-weight:700;
   border:none;
   cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:6px;
   transition:all 0.2s;
   -webkit-tap-highlight-color:transparent;
   letter-spacing:0.2px;
@@ -3537,32 +3698,29 @@ table tr:hover{
   transform:scale(0.97);
 }
 
-.ph-footer-btn.paper{
-  background:#f1f5f9;
-  color:#334155;
-  border:1.5px solid #e2e8f0;
-}
-
-.ph-footer-btn.paper:hover{
-  background:#e2e8f0;
-  opacity:1;
-}
-
+/* paper and instructions share equal width in the row */
+.ph-footer-btn.paper,
 .ph-footer-btn.instructions{
+  flex:1;
   background:#f1f5f9;
   color:#334155;
   border:1.5px solid #e2e8f0;
+  font-size:12px;
 }
 
+.ph-footer-btn.paper:hover,
 .ph-footer-btn.instructions:hover{
   background:#e2e8f0;
   opacity:1;
 }
 
+/* submit is full-width standalone */
 .ph-footer-btn.submit{
+  width:100%;
   background:linear-gradient(135deg,#15803d,#16a34a);
   color:#fff;
   box-shadow:0 4px 14px rgba(22,163,74,0.35);
+  font-size:14px;
 }
 
 .ph-footer-btn.submit:hover{

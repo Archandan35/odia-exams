@@ -1617,8 +1617,10 @@ table tr:hover{
 
 /* Main card */
 .se-review-question-card{
-  background:var(--se-bg);
-  border:1px solid var(--se-card);
+  
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
   border-radius:22px;
   padding:18px;
   display:flex;
@@ -1737,7 +1739,7 @@ table tr:hover{
 .se-explanation-view{
   width:100%;
   padding:16px;
-  background:#111827;
+  background:#f1f5f9;
   border:1px solid #334155;
   border-radius:14px;
   line-height:1.8;

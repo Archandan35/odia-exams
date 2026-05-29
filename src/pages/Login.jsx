@@ -39,11 +39,10 @@ export default function Login() {
             <span>🎓</span> Exam Portal
           </div>
           <h1>
-            Welcome<br />
-            UGC NET – ODIA<br />
-            Aspirant
+            Welcome Back, Champion! 🎉
           </h1>
-          <p className="auth-subtitle">Best of luck for your exam.</p>
+          <p className="auth-tagline">Crack UGC NET – Odia with Confidence</p>
+          <p className="auth-subtitle">Learn • Practice • Succeed</p>
         </div>
 
         {/* Email */}

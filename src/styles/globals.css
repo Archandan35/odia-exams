@@ -2220,6 +2220,9 @@ table tr:hover{
   padding:4px;
   flex-shrink:0;
   height:38px;
+  border: 1.5px solid var(--border-blue);
+  background: #fff;
+  color: var(--blue-700);
 }
 
 .se-segment-btn{
@@ -2227,7 +2230,7 @@ table tr:hover{
   padding:0 var(--sp-5);
   border-radius:var(--radius-full);
   background:transparent;
-  color:#cbd5e1;
+  color:var(--blue-700);
   font-weight:700;
   font-size:0.85rem;
   transition:all var(--se-transition);
@@ -2253,12 +2256,12 @@ table tr:hover{
   height:38px;
   padding:0 var(--sp-4);
   border-radius:var(--radius-md);
-  background:#1e293b;
-  border:1px solid #334155;
-  color:#e2e8f0;
   font-weight:700;
   transition:all var(--transition-fast);
   box-shadow:none;
+  border: 1.5px solid var(--border-blue);
+  background: #fff;
+  color: var(--blue-700);
 }
 
 .se-toolbar-btn:hover{

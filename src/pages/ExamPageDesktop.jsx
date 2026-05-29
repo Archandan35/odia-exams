@@ -1,20 +1,66 @@
-import { useEffect, useState } from "react";
+import useExamEngine
+from "../hooks/useExamEngine";
 
-import { useParams, useNavigate } from "react-router-dom";
+export default function ExamPageDesktop() {
 
-import {
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+  const {
 
-import { db, auth } from "../firebase/config";
+    loading,
 
-  export default function ExamPageDesktop() {
+    questions,
 
-  
+    examData,
+
+    currentQuestion,
+    setCurrentQuestion,
+
+    answers,
+    visited,
+    review,
+    bookmarks,
+
+    currentQ,
+    selectedOpt,
+
+    selectOption,
+    handleNext,
+    handlePrev,
+
+    clearResponse,
+    toggleReview,
+    toggleBookmark,
+
+    submitExam,
+
+    timeLeft,
+    cheatCount,
+
+    formatTime,
+
+    setVisited
+
+  } = useExamEngine();
+
+  if (loading) {
+
+    return (
+      <div className="page">
+        <h2>Loading Exam...</h2>
+      </div>
+    );
+
+  }
+
+  if (!currentQ) {
+
+    return (
+      <div className="page">
+        <h2>No Questions Found!</h2>
+      </div>
+    );
+
+  }
+
   return (
 
     <div className="exam-layout">

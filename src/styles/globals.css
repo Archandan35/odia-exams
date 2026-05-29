@@ -2952,7 +2952,7 @@ table tr:hover{
   flex-shrink:0;
   display:flex;
   flex-direction:column;
-  padding:14px 16px 12px;
+  padding:20px 16px 20px;
   background:linear-gradient(135deg,#0f2044 0%,#1a3a6e 100%);
   border-bottom:2px solid #2563eb;
   z-index:100;
@@ -2964,6 +2964,8 @@ table tr:hover{
 .ph-header-row1{
   display:flex;
   align-items:center;
+  justify-content: space-evenly;
+  min-height: 120px
   width:100%;
 }
 
@@ -2975,13 +2977,13 @@ table tr:hover{
 }
 
 .ph-title{
-  font-size:17px;
+  font-size:20px;
   font-weight:800;
   color:#f0f6ff;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  line-height:1.25;
+  line-height:2.5;
   letter-spacing:0.2px;
 }
 
@@ -3652,7 +3654,7 @@ table tr:hover{
   display:flex;
   align-items:center;
   gap:6px;
-  font-size:11px;
+  font-size:15px;
   color:#475569;
   font-weight:500;
 }
@@ -3816,7 +3818,7 @@ table tr:hover{
   border:1.5px solid rgba(234,179,8,0.45);
   border-radius:8px;
   padding:5px 11px;
-  margin-left:10px;
+  margin-left:20px;
   flex-shrink:0;
 }
 
@@ -3835,7 +3837,7 @@ table tr:hover{
 
 /* --- Current Question stat box highlight --- */
 .ph-stat-box-current{
-  grid-column:span 2;
+  grid-column:auto;
   background:rgba(37,99,235,0.18) !important;
   border-color:rgba(96,165,250,0.35) !important;
 }

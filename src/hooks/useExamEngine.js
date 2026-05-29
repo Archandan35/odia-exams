@@ -480,41 +480,17 @@ export default function useExamEngine() {
      UI
   ========================================= */
 
-  if (loading) {
+  
 
-    return (
-      <div className="page">
-        <h2>Loading Exam...</h2>
-      </div>
-    );
+ const currentQ =
+  questions[currentQuestion] || null;
 
-  }
+ const selectedOpt =
+  currentQ
+    ? answers[currentQ.id]
+    : undefined;
 
-  if (questions.length === 0) {
-
-    return (
-      <div className="page">
-        <h2>No Questions Found!</h2>
-      </div>
-    );
-
-  }
-
-  const currentQ =
-    questions[currentQuestion];
-
-  const selectedOpt =
-    answers[currentQ.id];
-
-  if (!currentQ) {
-
-  return {
-    loading,
-    questions,
-    examData
-  };
-
-}
+  
 
 return {
 

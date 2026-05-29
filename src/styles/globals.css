@@ -169,6 +169,7 @@ button:hover{
   justify-content:center;
   align-items:center;
   min-height:100vh;
+  min-height:100dvh;
   width:100%;
   padding:16px;
   background:#020617;
@@ -274,6 +275,14 @@ button:hover{
   color:#64748b;
   font-weight:500;
   letter-spacing:0.15px;
+}
+
+.auth-tagline{
+  font-size:14px;
+  font-weight:600;
+  color:#93c5fd;
+  margin-bottom:4px;
+  letter-spacing:0.2px;
 }
 
 /* --- Auth Form Fields --- */
@@ -2622,9 +2631,38 @@ table tr:hover{
 /* ---- ≤768px ---- */
 @media(max-width:768px){
   .page          { padding:12px; }
-  .auth-card     { width:100%; padding:32px 20px 28px; border-radius:22px; }
-  .auth-card h1  { font-size:26px; }
-  .auth-field input{ font-size:16px; } /* prevents iOS zoom on focus */
+  .auth-container{
+    padding:10px;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+  }
+  .auth-card     {
+    width:100%;
+    padding:20px 18px 16px;
+    border-radius:20px;
+    gap:0;
+    max-height:calc(100dvh - 20px);
+    overflow:hidden;
+  }
+  .auth-heading  { margin-bottom:12px; }
+  .auth-badge    { margin-bottom:8px; padding:4px 12px; font-size:10px; }
+  .auth-card h1  { font-size:20px; margin-bottom:4px; }
+  .auth-tagline  { font-size:12px; margin-bottom:2px; }
+  .auth-subtitle { font-size:11px; }
+  .auth-field    { margin-bottom:10px; gap:5px; }
+  .auth-field input{ font-size:16px; padding:11px 14px; } /* prevents iOS zoom on focus */
+  .auth-field label{ font-size:11px; }
+  .auth-btn      { padding:13px; font-size:15px; margin-top:4px; }
+  .auth-footer   { margin-top:10px; font-size:12px; }
+  .auth-divider  { margin:12px 0 0; }
+  .auth-quote    { padding:10px 14px; margin-top:12px; }
+  .auth-quote p  { font-size:11px; line-height:1.5; }
+  .auth-quote strong{ font-size:11px; }
+  .auth-dedication{ margin-top:8px; padding-top:8px; }
+  .auth-dedication p{ font-size:10px; }
   .header-actions{ width:100%; }
   .header-actions button{ flex:1; }
 

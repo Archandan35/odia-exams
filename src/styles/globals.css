@@ -2373,14 +2373,14 @@ table tr:hover{
   align-items:center;
   gap:var(--sp-3);
   padding:var(--sp-3) var(--sp-4);
-  border-radius:var(--radius);
   width:100%;
-  background:#111827;
-  border:1px solid #334155;
-  transition:all var(--transition-fast);
   position:relative;
   min-height:70px;
-  cursor:default;
+  border-radius:var(--radius-md);
+  cursor:pointer;
+  transition:all var(--transition-base);
+  border:1.5px solid var(--border-light);
+  background:#fff;
 }
 
 .se-option-hover.se-option-editable:hover{

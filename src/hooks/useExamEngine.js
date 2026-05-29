@@ -69,55 +69,55 @@ export default function useExamEngine() {
 
   useEffect(() => {
 
-    function handleVisibility() {
+  function handleVisibility() {
 
-      if (document.hidden) {
+    if (document.hidden) {
 
-        setCheatCount(prev => {
+      setCheatCount(prev => {
 
-          const next = prev + 1;
+        const next = prev + 1;
 
-          if (next >= 3) {
+        if (next >= 3) {
 
-            alert(
-              "Exam auto-submitted due to cheating."
-            );
+          alert(
+            "Exam auto-submitted due to cheating."
+          );
 
-            submitExam(true);
+          submitExam(true);
 
-          }
-          else {
+        } else {
 
-            alert(
-              `Warning ${next}/3 : Tab switching detected`
-            );
+          alert(
+            `Warning ${next}/3 : Tab switching detected`
+          );
 
-          }
+        }
 
-          return next;
+        return next;
 
-        });
-
-      }
+      });
 
     }
 
-    document.addEventListener(
+  }
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibility
+  );
+
+  return () => {
+
+    document.removeEventListener(
       "visibilitychange",
       handleVisibility
     );
 
-    return () => {
+  };
 
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
+}, []);
 
-    };
-
-  }, []);
-
+  
   /* =========================================
      LOAD EXAM
   ========================================= */
@@ -291,10 +291,11 @@ export default function useExamEngine() {
 
   }
 
-  function selectOption(index) {
+ function selectOption(index) {
 
-    const qId =
-      questions[currentQuestion].id;
+  if (!currentQ) return;
+
+  const qId = currentQ.id;
 
     setAnswers(prev => ({
       ...prev,
@@ -339,44 +340,47 @@ export default function useExamEngine() {
 
   function clearResponse() {
 
-    const qId =
-      questions[currentQuestion].id;
+  if (!currentQ) return;
 
-    setAnswers(prev => {
+  const qId = currentQ.id;
 
-      const updated = { ...prev };
+  setAnswers(prev => {
 
-      delete updated[qId];
+    const updated = { ...prev };
 
-      return updated;
+    delete updated[qId];
 
-    });
+    return updated;
 
-  }
+  });
 
-  function toggleReview() {
+}
+  
+ function toggleReview() {
 
-    const qId =
-      questions[currentQuestion].id;
+  if (!currentQ) return;
 
-    setReview(prev => ({
-      ...prev,
-      [qId]: !prev[qId],
-    }));
+  const qId = currentQ.id;
 
-  }
+  setReview(prev => ({
+    ...prev,
+    [qId]: !prev[qId],
+  }));
 
+}
+  
   function toggleBookmark() {
 
-    const qId =
-      questions[currentQuestion].id;
+  if (!currentQ) return;
 
-    setBookmarks(prev => ({
-      ...prev,
-      [qId]: !prev[qId],
-    }));
+  const qId = currentQ.id;
 
-  }
+  setBookmarks(prev => ({
+    ...prev,
+    [qId]: !prev[qId],
+  }));
+
+}
 
   /* =========================================
      SUBMIT

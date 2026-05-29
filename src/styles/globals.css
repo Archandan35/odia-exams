@@ -2927,3 +2927,287 @@ table tr:hover{
   border-radius:18px;
   overflow:hidden;
 }
+
+
+/* =========================================
+   25. PHONE EXAM INTERFACE (ph-)
+========================================= */
+
+.ph-layout{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  background:#ffffff;
+  overflow:hidden;
+}
+
+.ph-topbar{
+  flex-shrink:0;
+  padding:12px;
+  background:#ffffff;
+  border-bottom:1px solid #e5e7eb;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.ph-title{
+  font-size:15px;
+  font-weight:700;
+  color:#111827;
+}
+
+.ph-timer{
+  font-size:15px;
+  font-weight:700;
+  color:#2563eb;
+}
+
+.ph-content{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+
+  background:#ffffff;
+  padding:14px;
+
+  -webkit-overflow-scrolling:touch;
+}
+
+.ph-question-card{
+  background:#ffffff;
+  color:#111827;
+}
+
+.ph-question-card h2,
+.ph-question-card p{
+  color:#111827;
+}
+
+.ph-options{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:20px;
+}
+
+.ph-option{
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  padding:14px;
+  background:#ffffff;
+}
+
+.ph-option.selected{
+  border-color:#2563eb;
+  background:#eff6ff;
+}
+
+.ph-actions{
+  flex-shrink:0;
+
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+
+  padding:10px;
+
+  background:#ffffff;
+  border-top:1px solid #e5e7eb;
+}
+
+.ph-actions button{
+  min-height:46px;
+}
+
+.ph-menu-btn{
+  position:fixed;
+
+  right:16px;
+  bottom:120px;
+
+  width:56px;
+  height:56px;
+
+  border-radius:12px;
+
+  background:#06b6d4;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:24px;
+  font-weight:700;
+
+  z-index:2000;
+
+  box-shadow:
+  0 8px 24px rgba(0,0,0,.25);
+}
+
+.ph-sidebar-overlay{
+  position:fixed;
+  inset:0;
+
+  background:rgba(0,0,0,.45);
+
+  opacity:0;
+  visibility:hidden;
+
+  transition:.25s;
+
+  z-index:3000;
+}
+
+.ph-sidebar-overlay.open{
+  opacity:1;
+  visibility:visible;
+}
+
+.ph-sidebar{
+  position:fixed;
+
+  top:0;
+  right:-100%;
+
+  width:82%;
+  max-width:360px;
+  height:100dvh;
+
+  background:#dff3fb;
+
+  transition:.25s ease;
+
+  z-index:4000;
+
+  display:flex;
+  flex-direction:column;
+}
+
+.ph-sidebar.open{
+  right:0;
+}
+
+.ph-sidebar-header{
+  flex-shrink:0;
+
+  padding:16px;
+
+  background:#081426;
+  color:white;
+}
+
+.ph-sidebar-title{
+  font-size:26px;
+  font-weight:700;
+  margin-bottom:12px;
+}
+
+.ph-legend{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.ph-legend-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  font-size:13px;
+}
+
+.ph-legend-badge{
+  width:34px;
+  height:34px;
+
+  border-radius:10px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:white;
+  font-weight:700;
+}
+
+.ph-sidebar-body{
+  flex:1;
+
+  overflow-y:auto;
+  overflow-x:hidden;
+
+  padding:16px;
+}
+
+.ph-section-title{
+  color:#111827;
+  font-size:24px;
+  font-weight:700;
+  margin-bottom:14px;
+}
+
+.ph-palette-grid{
+  display:grid;
+
+  grid-template-columns:
+  repeat(4,minmax(0,1fr));
+
+  gap:12px;
+
+  align-content:start;
+}
+
+.ph-palette-btn{
+  height:58px;
+
+  border-radius:14px;
+
+  font-size:18px;
+  font-weight:700;
+
+  background:#475569;
+}
+
+.ph-palette-btn.answered{
+  background:#16a34a;
+}
+
+.ph-palette-btn.marked{
+  background:#9333ea;
+}
+
+.ph-palette-btn.not-answered{
+  background:#dc2626;
+}
+
+.ph-palette-btn.current{
+  border:3px solid #60a5fa;
+}
+
+.ph-sidebar-footer{
+  flex-shrink:0;
+
+  padding:14px;
+
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+
+  border-top:1px solid #cbd5e1;
+}
+
+.ph-sidebar-footer button{
+  width:100%;
+}
+
+@media(min-width:769px){
+
+  .ph-layout{
+    display:none;
+  }
+
+}

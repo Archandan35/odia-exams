@@ -9,8 +9,12 @@ from "./ExamPagePhone";
 
 export default function ExamPage() {
 
-  const [isMobile,setIsMobile] =
-    useState(window.innerWidth <= 768);
+  const [isMobile] =
+ useState(
+   /Android|iPhone|iPad|iPod/i.test(
+     navigator.userAgent
+   )
+ );
 
   useEffect(() => {
 
@@ -21,11 +25,6 @@ export default function ExamPage() {
       );
 
     };
-
-    window.addEventListener(
-      "resize",
-      resize
-    );
 
     return () =>
       window.removeEventListener(

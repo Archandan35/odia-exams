@@ -1,4 +1,26 @@
-const { examId } = useParams();
+  import { useEffect, useState } from "react";
+
+import {
+  useParams,
+  useNavigate
+} from "react-router-dom";
+
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  getDoc
+} from "firebase/firestore";
+
+import {
+  db,
+  auth
+} from "../firebase/config";
+
+export default function useExamEngine() {
+  
+  const { examId } = useParams();
 
   const navigate = useNavigate();
 
@@ -484,10 +506,22 @@ const { examId } = useParams();
   const selectedOpt =
     answers[currentQ.id];
 
+  if (!currentQ) {
+
+  return {
+    loading,
+    questions,
+    examData
+  };
+
+}
 
 return {
+
   loading,
+
   questions,
+
   examData,
 
   currentQuestion,
@@ -497,6 +531,9 @@ return {
   visited,
   review,
   bookmarks,
+
+  currentQ,
+  selectedOpt,
 
   selectOption,
   handleNext,
@@ -511,5 +548,9 @@ return {
   timeLeft,
   cheatCount,
 
-  formatTime
+  formatTime,
+
+  setVisited
+
 };
+  }

@@ -39,7 +39,7 @@ export default function Login() {
             <span>🎓</span> Exam Portal
           </div>
           <h1>
-            Welcome Back, Champion! 🎉
+            Welcome Back,<br />Champion! 🎉
           </h1>
           <p className="auth-tagline">Crack UGC NET – Odia with Confidence</p>
           <p className="auth-subtitle">Learn • Practice • Succeed</p>

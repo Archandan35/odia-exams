@@ -1148,7 +1148,6 @@ table tr:hover{
   display:flex;
   gap:var(--sp-4);
   margin-bottom:var(--sp-5);
-  flex-wrap:wrap;
 }
 
 .filter-bar input{ max-width:420px; }
@@ -2951,7 +2950,7 @@ table tr:hover{
   display:flex;
   align-items:center;
   gap:var(--sp-3);
-  flex-wrap:wrap;
+  margin-bottom: var(--sp-5);
 }
 
 .inline-filters select{ min-width:220px; height:48px; }
@@ -5132,7 +5131,7 @@ table tr:hover{
 }
 
 .ph-stat-box-current{
-  grid-column:span 2;
+  grid-column:auto;
   background:rgba(37,99,235,0.18) !important;
   border-color:rgba(96,165,250,0.35) !important;
 }

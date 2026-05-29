@@ -83,7 +83,7 @@ export default function ExamPageDesktop() {
 
           </div>
 
-          <div style={{ textAlign:"right" }}>
+       <div className="topbar-right">
 
             <h2>
               ⏳ {formatTime(timeLeft)}

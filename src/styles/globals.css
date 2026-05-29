@@ -2440,7 +2440,7 @@ box-shadow:var(--shadow-sm);
 .se-opt-input{
   min-height:46px;
   padding:var(--sp-3) var(--sp-4);
-  background:transparent;
+  background:var(--text-secondary);
   border:none;
   outline:none;
   color:white;

@@ -3076,8 +3076,8 @@ table tr:hover{
   top:0;
   right:-100%;
 
-  width:82%;
-  max-width:360px;
+  width:90%;
+  max-width:420px;
   height:100dvh;
 
   background:#dff3fb;
@@ -3139,7 +3139,7 @@ table tr:hover{
 
 .ph-sidebar-body{
   flex:1;
-
+  padding-bottom:20px;
   overflow-y:auto;
   overflow-x:hidden;
 
@@ -3166,7 +3166,7 @@ table tr:hover{
 
 .ph-palette-btn{
   height:58px;
-
+aspect-ratio:1;
   border-radius:14px;
 
   font-size:18px;

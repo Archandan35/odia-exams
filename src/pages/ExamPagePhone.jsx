@@ -66,7 +66,7 @@ export default function ExamPagePhone() {
 
   return (
 
-    <div className="ph-page">
+    <div className="ph-layout">
 
       {/* HEADER */}
 
@@ -94,7 +94,7 @@ export default function ExamPagePhone() {
 
       {/* QUESTION AREA */}
 
-      <div className="ph-question-scroll">
+      <div className="ph-content">
 
         <div className="ph-question-card">
 
@@ -182,10 +182,10 @@ export default function ExamPagePhone() {
 
       <div
         className={
-          sidebarOpen
-            ? "ph-sidebar ph-sidebar-open"
-            : "ph-sidebar"
-        }
+           sidebarOpen
+           ? "ph-sidebar open"
+           : "ph-sidebar"
+          }
       >
 
         <div className="ph-sidebar-header">
@@ -235,7 +235,7 @@ export default function ExamPagePhone() {
 
         </div>
 
-        <div className="ph-palette">
+        <div className="ph-palette-grid">
 
           {questions.map(
             (q, index) => {
@@ -339,58 +339,35 @@ export default function ExamPagePhone() {
 
       </div>
 
-      {/* ACTION ROW */}
+      {/* MOBILE ACTIONS */}
 
-      <div className="ph-action-row">
+<div className="ph-actions">
 
-        <button
-          onClick={toggleReview}
-        >
-          Review
-        </button>
+  <button onClick={toggleReview}>
+    Review
+  </button>
 
-        <button
-          onClick={clearResponse}
-        >
-          Clear
-        </button>
+  <button onClick={clearResponse}>
+    Clear Response
+  </button>
 
-      </div>
+  <button onClick={toggleBookmark}>
+    Bookmark
+  </button>
 
-      {/* BOTTOM BAR */}
+  <button onClick={handlePrev}>
+    Prev
+  </button>
 
-      <div className="ph-bottom-bar">
+  <button onClick={handleNext}>
+    Save & Next
+  </button>
 
-        <button
-          onClick={toggleBookmark}
-        >
-          Bookmark
-        </button>
+  <button
+    className="submit-btn"
+    onClick={() => submitExam(false)}
+  >
+    Submit
+  </button>
 
-        <button
-          onClick={handlePrev}
-        >
-          Prev
-        </button>
-
-        <button
-          onClick={handleNext}
-        >
-          Save & Next
-        </button>
-
-        <button
-          onClick={() =>
-            submitExam(false)
-          }
-        >
-          Submit
-        </button>
-
-      </div>
-
-    </div>
-
-  );
-
-}
+</div>

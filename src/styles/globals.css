@@ -2412,7 +2412,7 @@ box-shadow:var(--shadow-sm);
 .se-option-letter{
   font-size:1rem;
   font-weight:700;
-  color:#60a5fa;
+  color:#fff;
   flex-shrink:0;
   min-width:32px;
   display:flex;

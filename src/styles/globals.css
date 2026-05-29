@@ -212,11 +212,11 @@ button:hover{
   position:relative;
   z-index:1;
   width:100%;
-  max-width:460px;
+  max-width:520px;
   background:rgba(15,23,42,0.88);
   backdrop-filter:blur(20px);
   -webkit-backdrop-filter:blur(20px);
-  padding:40px 28px 32px;
+  padding:44px 36px 36px;
   border-radius:26px;
   border:1px solid rgba(51,65,85,0.65);
   display:flex;
@@ -236,7 +236,7 @@ button:hover{
 
 /* --- Auth Heading Block --- */
 .auth-heading{
-  margin-bottom:28px;
+  margin-bottom:32px;
   text-align:center;
 }
 
@@ -259,29 +259,29 @@ button:hover{
 .auth-badge span{ font-size:14px; }
 
 .auth-card h1{
-  font-size:clamp(26px,7vw,34px);
+  font-size:clamp(30px,4vw,40px);
   font-weight:800;
   letter-spacing:-0.5px;
   background:linear-gradient(135deg,#f8fafc 40%,#93c5fd 100%);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
-  line-height:1.2;
-  margin-bottom:8px;
+  line-height:1.25;
+  margin-bottom:10px;
 }
 
 .auth-subtitle{
-  font-size:13px;
+  font-size:15px;
   color:#64748b;
   font-weight:500;
   letter-spacing:0.15px;
 }
 
 .auth-tagline{
-  font-size:14px;
+  font-size:16px;
   font-weight:600;
   color:#93c5fd;
-  margin-bottom:4px;
+  margin-bottom:6px;
   letter-spacing:0.2px;
 }
 
@@ -294,7 +294,7 @@ button:hover{
 }
 
 .auth-field label{
-  font-size:12px;
+  font-size:13px;
   font-weight:600;
   letter-spacing:0.5px;
   text-transform:uppercase;
@@ -303,12 +303,12 @@ button:hover{
 
 .auth-field input{
   width:100%;
-  padding:14px 16px;
+  padding:15px 18px;
   background:rgba(30,41,59,0.75);
   border:1px solid rgba(51,65,85,0.8);
   border-radius:14px;
   color:#f8fafc;
-  font-size:15px;
+  font-size:16px;
   font-family:inherit;
   transition:border-color 0.2s, box-shadow 0.2s;
   outline:none;
@@ -326,8 +326,8 @@ button:hover{
 /* --- Auth Submit Button --- */
 .auth-btn{
   width:100%;
-  padding:15px;
-  margin-top:8px;
+  padding:17px;
+  margin-top:10px;
   border-radius:14px;
   background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%);
   color:#fff;
@@ -2631,38 +2631,51 @@ table tr:hover{
 /* ---- ≤768px ---- */
 @media(max-width:768px){
   .page          { padding:12px; }
+
+  /* Lock page scroll when on auth screen */
+  html:has(.auth-container),
+  body:has(.auth-container){
+    overflow:hidden;
+    height:100%;
+    height:100dvh;
+  }
+
   .auth-container{
-    padding:10px;
+    position:fixed;
+    inset:0;
+    padding:12px;
     justify-content:center;
     align-items:center;
-    height:100vh;
-    height:100dvh;
     overflow:hidden;
   }
-  .auth-card     {
+  .auth-card{
     width:100%;
-    padding:20px 18px 16px;
+    max-width:100%;
+    padding:22px 18px 16px;
     border-radius:20px;
     gap:0;
-    max-height:calc(100dvh - 20px);
+    /* let it shrink to fit, never overflow */
+    max-height:calc(100dvh - 24px);
     overflow:hidden;
+    display:flex;
+    flex-direction:column;
   }
-  .auth-heading  { margin-bottom:12px; }
+  .auth-heading  { margin-bottom:10px; }
   .auth-badge    { margin-bottom:8px; padding:4px 12px; font-size:10px; }
-  .auth-card h1  { font-size:20px; margin-bottom:4px; }
-  .auth-tagline  { font-size:12px; margin-bottom:2px; }
-  .auth-subtitle { font-size:11px; }
+  .auth-card h1  { font-size:22px; margin-bottom:4px; line-height:1.25; }
+  .auth-tagline  { font-size:13px; margin-bottom:2px; }
+  .auth-subtitle { font-size:12px; }
   .auth-field    { margin-bottom:10px; gap:5px; }
-  .auth-field input{ font-size:16px; padding:11px 14px; } /* prevents iOS zoom on focus */
+  .auth-field input{ font-size:16px; padding:12px 14px; } /* 16px prevents iOS zoom */
   .auth-field label{ font-size:11px; }
   .auth-btn      { padding:13px; font-size:15px; margin-top:4px; }
   .auth-footer   { margin-top:10px; font-size:12px; }
-  .auth-divider  { margin:12px 0 0; }
-  .auth-quote    { padding:10px 14px; margin-top:12px; }
+  .auth-divider  { margin:10px 0 0; }
+  .auth-quote    { padding:10px 14px; margin-top:10px; }
   .auth-quote p  { font-size:11px; line-height:1.5; }
   .auth-quote strong{ font-size:11px; }
   .auth-dedication{ margin-top:8px; padding-top:8px; }
-  .auth-dedication p{ font-size:10px; }
+  .auth-dedication p{ font-size:10px; line-height:1.5; }
   .header-actions{ width:100%; }
   .header-actions button{ flex:1; }
 

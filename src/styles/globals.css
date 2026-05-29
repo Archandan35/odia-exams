@@ -2472,12 +2472,14 @@ table tr:hover{
   height:42px;
   padding:0 var(--sp-5);
   border-radius:var(--radius);
-  background:#1e293b;
+  background:#var(--grad-primary);
   border:1px solid #334155;
   color:white;
   font-weight:700;
   cursor:default;
   box-shadow:none;
+  margin-top: 20px;
+
 }
 
 .se-difficulty-btn.se-editable-mode{ cursor:pointer; }

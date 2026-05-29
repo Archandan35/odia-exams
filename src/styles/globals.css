@@ -612,6 +612,9 @@ button:hover{
   color:#cbd5e1;
 }
 
+.topbar-right{
+  text-align:right;
+}
 
 /* =========================================
    9. PAGE HEADER

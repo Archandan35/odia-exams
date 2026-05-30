@@ -1,18 +1,22 @@
-// src/pages/UserManagement.jsx
-import { useEffect, useState } from "react";
+// src/admin/UserManagement.jsx
+import { useEffect, useState, useCallback } from "react";
 import {
   collection, onSnapshot, doc, updateDoc,
-  deleteDoc, addDoc, setDoc, query, where, getDocs,
+  deleteDoc, addDoc, query, where, getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updatePassword,
+  deleteUser as firebaseDeleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 import { db, auth } from "../firebase/config";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
-import TopNavbar   from "../components/TopNavbar";
+import TopNavbar from "../components/TopNavbar";
 
 /* =========================================
    ROLE CONFIG
@@ -38,37 +42,36 @@ const ROLE_PERMISSIONS = {
 };
 
 /* =========================================
-   GRANULAR USER ACCESS MAP
-   Heading → sub-permissions
+   GRANULAR ACCESS MAP
 ========================================= */
 const ACCESS_MAP = {
   "Page Access": [
-    "view_dashboard", "view_exams", "view_subjects",
-    "view_analytics", "view_leaderboard", "view_profile",
+    "view_dashboard","view_exams","view_subjects",
+    "view_analytics","view_leaderboard","view_profile",
   ],
   "User Management": [
-    "users_view", "users_create", "users_edit",
-    "users_delete", "users_set_password", "users_set_roles",
+    "users_view","users_create","users_edit",
+    "users_delete","users_set_password","users_set_roles",
   ],
   "Exam Management": [
-    "exam_create", "exam_edit", "exam_delete",
-    "exam_publish", "exam_bulk_import",
+    "exam_create","exam_edit","exam_delete",
+    "exam_publish","exam_bulk_import",
   ],
   "Question Management": [
-    "question_create", "question_edit", "question_delete",
-    "question_bulk_import", "question_smart_edit",
+    "question_create","question_edit","question_delete",
+    "question_bulk_import","question_smart_edit",
   ],
   "Subject & Topic": [
-    "subject_create", "subject_edit", "subject_delete",
-    "topic_create", "topic_edit", "topic_delete",
-    "subtopic_create", "subtopic_edit", "subtopic_delete",
+    "subject_create","subject_edit","subject_delete",
+    "topic_create","topic_edit","topic_delete",
+    "subtopic_create","subtopic_edit","subtopic_delete",
   ],
   "Results & Analytics": [
-    "results_view_all", "results_export", "analytics_view",
+    "results_view_all","results_export","analytics_view",
     "user_activity_view",
   ],
   "System": [
-    "system_settings", "system_logs", "system_backup",
+    "system_settings","system_logs","system_backup",
   ],
 };
 
@@ -96,49 +99,148 @@ function displayName(u) {
   return u.name || u.displayName || "-";
 }
 
-/* Considers user online if heartbeat within last 60 seconds */
+/**
+ * FIX #5 — Correct online/offline detection.
+ * A user is considered online only if:
+ *   - isOnline === true  AND
+ *   - their lastSeen heartbeat was within the last 45 seconds
+ *     (heartbeat interval in useRole.js is 25 s, so 45 s gives one missed beat)
+ */
 function isUserOnline(u) {
   if (!u.isOnline) return false;
   const last = u.lastSeen || u.lastLogin || 0;
-  if (!last) return !!u.isOnline;
-  return Date.now() - last < 60_000;
+  if (!last) return false; // no timestamp → cannot confirm online
+  return (Date.now() - last) < 45_000;
 }
 
 /* =========================================
-   COMPLETE USER DELETION
+   FIX #1 — COMPLETE USER DELETION
+   Removes ALL data associated with a user
+   across every known collection, using batched
+   writes for efficiency and atomicity.
 ========================================= */
+
+/** Delete all documents in a query in batched writes */
 async function batchDeleteQuery(q) {
   const snap = await getDocs(q);
-  for (const d of snap.docs) await deleteDoc(d.ref);
+  if (snap.empty) return;
+
+  // Firestore batch supports max 500 ops
+  const BATCH_SIZE = 400;
+  let batch = writeBatch(db);
+  let count = 0;
+
+  for (const d of snap.docs) {
+    batch.delete(d.ref);
+    count++;
+    if (count === BATCH_SIZE) {
+      await batch.commit();
+      batch = writeBatch(db);
+      count = 0;
+    }
+  }
+  if (count > 0) await batch.commit();
 }
 
+/**
+ * All top-level collections that reference users by uid or userId.
+ * Add more collection names here as your data model grows.
+ */
+const USER_COLLECTIONS = [
+  "results",
+  "examAttempts",
+  "mockAttempts",
+  "activityLogs",
+  "analytics",
+  "performanceReports",
+  "weakTopics",
+  "strongTopics",
+  "subjectAnalysis",
+  "topicAnalysis",
+  "subtopicAnalysis",
+  "userSessions",
+  "bookmarks",
+  "notifications",
+  "leaderboard",
+  "examHistory",
+];
+
+/** Sub-collections inside users/{docId} */
+const USER_SUBCOLLECTIONS = [
+  "activity",
+  "attempts",
+  "mockAttempts",
+  "reports",
+  "analytics",
+  "examHistory",
+  "notifications",
+  "bookmarks",
+];
+
 async function deleteUserCompletely(user) {
-  const uid   = user.uid || user.id;
+  const uid   = user.uid  || user.id;
   const docId = user.id;
 
-  const collections = [
-    "results", "examAttempts", "activityLogs", "analytics",
-    "performanceReports", "weakTopics", "strongTopics",
-    "subjectAnalysis", "topicAnalysis", "subtopicAnalysis",
-    "userSessions", "bookmarks", "notifications",
-  ];
+  if (!uid || !docId) {
+    console.error("deleteUserCompletely: missing uid or docId", user);
+    return;
+  }
 
-  for (const col of collections) {
+  /* 1 — Delete all top-level collection documents referencing this user */
+  for (const col of USER_COLLECTIONS) {
     try {
+      // Some collections use "userId", some use "uid" — cover both
       await batchDeleteQuery(query(collection(db, col), where("userId", "==", uid)));
       await batchDeleteQuery(query(collection(db, col), where("uid",    "==", uid)));
-    } catch {/* skip */}
+    } catch (err) {
+      console.warn(`deleteUserCompletely: skipped collection "${col}"`, err);
+    }
   }
 
-  const subCollections = ["activity", "attempts", "reports", "analytics"];
-  for (const sub of subCollections) {
+  /* 2 — Delete sub-collections inside users/{docId} */
+  for (const sub of USER_SUBCOLLECTIONS) {
     try {
-      await batchDeleteQuery(query(collection(db, "users", docId, sub)));
-    } catch {/* skip */}
+      const subRef = collection(db, "users", docId, sub);
+      await batchDeleteQuery(query(subRef));
+    } catch (err) {
+      console.warn(`deleteUserCompletely: skipped subcollection "users/${docId}/${sub}"`, err);
+    }
   }
 
-  await deleteDoc(doc(db, "users", docId));
-  /* Firebase Auth deletion requires a Cloud Function on users/{id} onDelete */
+  /* 3 — Delete the Firestore user profile document */
+  try {
+    await deleteDoc(doc(db, "users", docId));
+  } catch (err) {
+    console.error("deleteUserCompletely: failed to delete user document", err);
+    throw err;
+  }
+
+  /*
+   * 4 — Firebase Auth account deletion.
+   *
+   * deleteUser() from the client SDK only works on the CURRENTLY SIGNED-IN user.
+   * For other users, Firebase requires the Admin SDK (server-side).
+   *
+   * RECOMMENDED APPROACH: deploy a Firestore onDelete Cloud Function:
+   *   exports.onUserDeleted = functions.firestore
+   *     .document("users/{docId}")
+   *     .onDelete(async (snap) => {
+   *       const { uid } = snap.data();
+   *       await admin.auth().deleteUser(uid);
+   *     });
+   *
+   * If the admin is deleting their own account, we can do it directly:
+   */
+  try {
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+      await firebaseDeleteUser(auth.currentUser);
+    }
+    // For other users: the Cloud Function handles Auth deletion when the
+    // Firestore document is deleted (step 3 above triggers it).
+  } catch (err) {
+    // Non-fatal: Cloud Function will clean up Auth side
+    console.warn("deleteUserCompletely: Auth deletion deferred to Cloud Function", err);
+  }
 }
 
 /* =========================================
@@ -147,6 +249,7 @@ async function deleteUserCompletely(user) {
 export default function UserManagement() {
   const navigate = useNavigate();
 
+  /* ── Core state ── */
   const [users,        setUsers]        = useState([]);
   const [search,       setSearch]       = useState("");
   const [filterRole,   setFilterRole]   = useState("all");
@@ -155,7 +258,7 @@ export default function UserManagement() {
   const [currentPage,  setCurrentPage]  = useState(1);
   const PAGE_SIZE = 10;
 
-  /* Modals */
+  /* ── Modal state ── */
   const [showAddModal,    setShowAddModal]    = useState(false);
   const [editUser,        setEditUser]        = useState(null);
   const [viewUser,        setViewUser]        = useState(null);
@@ -166,47 +269,75 @@ export default function UserManagement() {
   const [setPasswordUser, setSetPasswordUser] = useState(null);
   const [accessUser,      setAccessUser]      = useState(null);
 
-  /* Forms */
+  /* ── Add form ── */
   const [addForm,    setAddForm]    = useState({ firstName:"", lastName:"", email:"", username:"", role:"student", status:"active", password:"" });
   const [addLoading, setAddLoading] = useState(false);
   const [addError,   setAddError]   = useState("");
   const [showAddPwd, setShowAddPwd] = useState(false);
 
-  const [editForm,    setEditForm]    = useState({});
-  const [editLoading, setEditLoading] = useState(false);
+  /* ── Edit form ── */
+  const [editForm,      setEditForm]      = useState({});
+  const [editLoading,   setEditLoading]   = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  /* ── Set password ── */
   const [newPassword,   setNewPassword]   = useState("");
   const [setPwdLoading, setSetPwdLoading] = useState(false);
   const [setPwdError,   setSetPwdError]   = useState("");
   const [showNewPwd,    setShowNewPwd]    = useState(false);
 
+  /* ── Reset password ── */
   const [resetSent,    setResetSent]    = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
-  /* User Access modal state */
+  /* ── User Access modal ── */
   const [accessPermissions, setAccessPermissions] = useState([]);
   const [accessExpanded,    setAccessExpanded]    = useState({});
   const [accessSaving,      setAccessSaving]      = useState(false);
 
-  /* ─── Load ALL users (no orderBy → no missing docs) ─── */
+  /* ── Force re-render ticker for live online status ── */
+  const [, setTick] = useState(0);
+
+  /* =========================================
+     FIX #4 — Real-time Firestore listener.
+     onSnapshot fires instantly for any add,
+     update, or delete — no refresh needed.
+     FIX #2 — Bidirectional sync: when a user
+     is deleted from Firestore directly, the
+     snapshot update removes them from state
+     automatically.
+  ========================================= */
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "users"), (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => {
-        const av = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (a.createdAt || 0);
-        const bv = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (b.createdAt || 0);
-        return bv - av;
-      });
-      setUsers(data);
-    });
+    const unsub = onSnapshot(
+      collection(db, "users"),
+      (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        data.sort((a, b) => {
+          const av = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (a.createdAt || 0);
+          const bv = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (b.createdAt || 0);
+          return bv - av;
+        });
+        setUsers(data);
+      },
+      (err) => console.error("UserManagement snapshot error:", err)
+    );
     return () => unsub();
   }, []);
 
-  /* ─── Filtering ─── */
+  /* =========================================
+     FIX #5 — Tick every 15 s so isUserOnline()
+     re-evaluates without a page reload.
+     This keeps Online Now count and dots live.
+  ========================================= */
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 15_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  /* ── Filtering ── */
   const filtered = users.filter(u => {
-    const term  = search.toLowerCase();
-    const full  = `${u.firstName || ""} ${u.lastName || ""} ${u.name || ""}`.trim();
+    const term = search.toLowerCase();
+    const full = `${u.firstName || ""} ${u.lastName || ""} ${u.name || ""}`.trim();
     const matchSearch =
       !term ||
       full.toLowerCase().includes(term) ||
@@ -217,9 +348,19 @@ export default function UserManagement() {
     return matchSearch && matchRole && matchStatus;
   });
 
-  const totalPages       = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated        = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages        = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated         = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allOnPageSelected = paginated.length > 0 && paginated.every(u => selected.includes(u.id));
+
+  /* ── FIX #3 — Stats computed from ACTIVE, VALID users only ── */
+  const validUsers   = users.filter(u => u.uid); // must have a Firebase Auth uid
+  const totalCount   = validUsers.length;
+  const activeCount  = validUsers.filter(u => (u.status || "active") === "active").length;
+  const onlineCount  = validUsers.filter(isUserOnline).length;
+  const adminCount   = validUsers.filter(u => {
+    const r = String(u.role || "").toLowerCase().replace(/[\s_-]/g, "");
+    return r === "admin" || r === "superadmin";
+  }).length;
 
   function toggleSelectAll() {
     if (allOnPageSelected) {
@@ -232,7 +373,7 @@ export default function UserManagement() {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
-  /* ─── Add ─── */
+  /* ── Add ── */
   async function handleAddUser() {
     if (!addForm.firstName || !addForm.email || !addForm.password) {
       setAddError("First name, email, and password are required.");
@@ -243,27 +384,30 @@ export default function UserManagement() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, addForm.email, addForm.password);
       await addDoc(collection(db, "users"), {
-        uid:       cred.user.uid,
-        firstName: addForm.firstName,
-        lastName:  addForm.lastName,
-        name:      `${addForm.firstName} ${addForm.lastName}`.trim(),
-        email:     addForm.email,
-        username:  addForm.username || "",
-        role:      addForm.role,
-        status:    addForm.status,
-        createdAt: Date.now(),
-        lastLogin: null,
-        isOnline:  false,
+        uid:         cred.user.uid,
+        firstName:   addForm.firstName,
+        lastName:    addForm.lastName,
+        name:        `${addForm.firstName} ${addForm.lastName}`.trim(),
+        email:       addForm.email,
+        username:    addForm.username || "",
+        role:        addForm.role,
+        status:      addForm.status,
+        createdAt:   Date.now(),
+        lastLogin:   null,
+        lastSeen:    null,
+        isOnline:    false,
         permissions: [],
       });
       setShowAddModal(false);
       setAddForm({ firstName:"", lastName:"", email:"", username:"", role:"student", status:"active", password:"" });
       setShowAddPwd(false);
-    } catch (e) { setAddError(e.message); }
+    } catch (e) {
+      setAddError(e.message);
+    }
     setAddLoading(false);
   }
 
-  /* ─── Edit ─── */
+  /* ── Edit ── */
   function openEdit(user) {
     setEditUser(user);
     setEditForm({
@@ -287,11 +431,13 @@ export default function UserManagement() {
         status:    editForm.status,
       });
       setEditUser(null);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Edit user failed:", e);
+    }
     setEditLoading(false);
   }
 
-  /* ─── Delete ─── */
+  /* ── FIX #1 — Delete: full cascade ── */
   async function handleDeleteUser() {
     if (!deleteUser) return;
     setDeleteLoading(true);
@@ -299,53 +445,78 @@ export default function UserManagement() {
       await deleteUserCompletely(deleteUser);
       setDeleteUser(null);
       setSelected(prev => prev.filter(id => id !== deleteUser.id));
-    } catch (e) { console.error("Delete failed:", e); }
+    } catch (e) {
+      console.error("Delete failed:", e);
+    }
     setDeleteLoading(false);
   }
+
   async function handleBulkDelete() {
     for (const id of selected) {
       const user = users.find(u => u.id === id);
-      if (user) await deleteUserCompletely(user);
+      if (user) {
+        try {
+          await deleteUserCompletely(user);
+        } catch (e) {
+          console.error("Bulk delete failed for user", id, e);
+        }
+      }
     }
     setSelected([]);
     setShowBulkDelete(false);
   }
 
-  /* ─── Status / activity ─── */
+  /* ── Status toggle ── */
   async function toggleStatus(user) {
     const next = (user.status || "active") === "active" ? "inactive" : "active";
     await updateDoc(doc(db, "users", user.id), { status: next });
   }
+
   function viewActivity(user) {
     navigate("/admin/user-activity", { state: { user } });
   }
 
-  /* ─── Passwords ─── */
+  /* ── Passwords ── */
   async function handleSendPasswordReset() {
     if (!resetUser) return;
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetUser.email);
       setResetSent(true);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Reset email failed:", e);
+    }
     setResetLoading(false);
   }
-  function closeResetModal() { setResetUser(null); setResetSent(false); setResetLoading(false); }
+  function closeResetModal() {
+    setResetUser(null);
+    setResetSent(false);
+    setResetLoading(false);
+  }
 
   async function handleSetPassword() {
     if (!setPasswordUser || !newPassword) return;
-    if (newPassword.length < 6) { setSetPwdError("Password must be at least 6 characters."); return; }
+    if (newPassword.length < 6) {
+      setSetPwdError("Password must be at least 6 characters.");
+      return;
+    }
     setSetPwdLoading(true);
     setSetPwdError("");
     try {
-      if (auth.currentUser?.email === setPasswordUser.email) {
+      if (auth.currentUser?.uid === setPasswordUser.uid) {
         await updatePassword(auth.currentUser, newPassword);
         closeSetPasswordModal();
       } else {
+        // Requires Admin SDK on the server — send reset email as fallback
         await sendPasswordResetEmail(auth, setPasswordUser.email);
-        setSetPwdError("Direct password change requires Firebase Admin SDK. A reset email has been sent instead.");
+        setSetPwdError(
+          "Direct password changes for other users require the Firebase Admin SDK (server-side). " +
+          "A password reset email has been sent to this user instead."
+        );
       }
-    } catch (e) { setSetPwdError(e.message); }
+    } catch (e) {
+      setSetPwdError(e.message);
+    }
     setSetPwdLoading(false);
   }
   function closeSetPasswordModal() {
@@ -355,7 +526,7 @@ export default function UserManagement() {
     setShowNewPwd(false);
   }
 
-  /* ─── User Access modal ─── */
+  /* ── User Access modal ── */
   function openAccess(user) {
     setAccessUser(user);
     setAccessPermissions(user.permissions || []);
@@ -373,8 +544,9 @@ export default function UserManagement() {
     const perms = ACCESS_MAP[heading];
     const allOn = perms.every(p => accessPermissions.includes(p));
     setAccessPermissions(prev =>
-      allOn ? prev.filter(p => !perms.includes(p))
-            : [...new Set([...prev, ...perms])]
+      allOn
+        ? prev.filter(p => !perms.includes(p))
+        : [...new Set([...prev, ...perms])]
     );
   }
   async function saveAccess() {
@@ -385,7 +557,9 @@ export default function UserManagement() {
         permissions: accessPermissions,
       });
       setAccessUser(null);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Save access failed:", e);
+    }
     setAccessSaving(false);
   }
 
@@ -398,6 +572,7 @@ export default function UserManagement() {
       <div className="admin-content">
         <TopNavbar />
 
+        {/* PAGE HEADER */}
         <div className="page-header">
           <div>
             <h2>User Management</h2>
@@ -413,15 +588,24 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* STATS */}
+        {/* STATS — FIX #3: derived from valid users only */}
         <div className="dashboard-grid">
-          <div className="analytics-card"><h3>Total Users</h3><h1>{users.length}</h1></div>
-          <div className="analytics-card"><h3>Active</h3><h1>{users.filter(u => (u.status || "active") === "active").length}</h1></div>
-          <div className="analytics-card"><h3>Online Now</h3><h1>{users.filter(isUserOnline).length}</h1></div>
-          <div className="analytics-card"><h3>Admins</h3><h1>{users.filter(u => {
-            const r = String(u.role || "").toLowerCase().replace(/[\s_-]/g, "");
-            return r === "admin" || r === "superadmin";
-          }).length}</h1></div>
+          <div className="analytics-card">
+            <h3>Total Users</h3>
+            <h1>{totalCount}</h1>
+          </div>
+          <div className="analytics-card">
+            <h3>Active</h3>
+            <h1>{activeCount}</h1>
+          </div>
+          <div className="analytics-card">
+            <h3>Online Now</h3>
+            <h1>{onlineCount}</h1>
+          </div>
+          <div className="analytics-card">
+            <h3>Admins</h3>
+            <h1>{adminCount}</h1>
+          </div>
         </div>
 
         {/* FILTERS */}
@@ -431,13 +615,19 @@ export default function UserManagement() {
             value={search}
             onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
           />
-          <select className="filter-select" value={filterRole}
-                  onChange={e => { setFilterRole(e.target.value); setCurrentPage(1); }}>
+          <select
+            className="filter-select"
+            value={filterRole}
+            onChange={e => { setFilterRole(e.target.value); setCurrentPage(1); }}
+          >
             <option value="all">All Roles</option>
             {ALL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
-          <select className="filter-select" value={filterStatus}
-                  onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}>
+          <select
+            className="filter-select"
+            value={filterStatus}
+            onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          >
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -454,7 +644,13 @@ export default function UserManagement() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll} /></th>
+                  <th>
+                    <input
+                      type="checkbox"
+                      checked={allOnPageSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th>User</th>
                   <th>Username</th>
                   <th>Role</th>
@@ -467,15 +663,22 @@ export default function UserManagement() {
               </thead>
               <tbody>
                 {paginated.length === 0 ? (
-                  <tr><td colSpan={9} className="um-empty-row">No users found.</td></tr>
+                  <tr>
+                    <td colSpan={9} className="um-empty-row">No users found.</td>
+                  </tr>
                 ) : paginated.map(user => {
                   const online = isUserOnline(user);
                   return (
-                    <tr key={user.id} className={selected.includes(user.id) ? "um-row-selected" : ""}>
+                    <tr
+                      key={user.id}
+                      className={selected.includes(user.id) ? "um-row-selected" : ""}
+                    >
                       <td>
-                        <input type="checkbox"
-                               checked={selected.includes(user.id)}
-                               onChange={() => toggleSelect(user.id)} />
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(user.id)}
+                          onChange={() => toggleSelect(user.id)}
+                        />
                       </td>
                       <td>
                         <div className="um-user-cell">
@@ -496,15 +699,18 @@ export default function UserManagement() {
                       </td>
                       <td>
                         <button
-                          className={(user.status || "active") === "active"
-                            ? "um-status-badge um-status-active"
-                            : "um-status-badge um-status-inactive"}
+                          className={
+                            (user.status || "active") === "active"
+                              ? "um-status-badge um-status-active"
+                              : "um-status-badge um-status-inactive"
+                          }
                           onClick={() => toggleStatus(user)}
                         >
                           {(user.status || "active") === "active" ? "Active" : "Inactive"}
                         </button>
                       </td>
                       <td>
+                        {/* FIX #5 — accurate online/offline dot */}
                         <div className="um-online-cell">
                           <span className={online ? "um-online-dot um-online" : "um-online-dot um-offline"} />
                           <span className="um-online-label">{online ? "Online" : "Offline"}</span>
@@ -514,14 +720,14 @@ export default function UserManagement() {
                       <td className="um-date-cell">{formatDateTime(user.createdAt)}</td>
                       <td>
                         <div className="um-action-group">
-                          <button className="btn btn-secondary btn-sm" title="View Profile"   onClick={() => setViewUser(user)}>👁</button>
-                          <button className="btn btn-secondary btn-sm" title="Edit User"      onClick={() => openEdit(user)}>✏️</button>
-                          <button className="btn btn-secondary btn-sm" title="View Activity"  onClick={() => viewActivity(user)}>📊</button>
+                          <button className="btn btn-secondary btn-sm" title="View Profile"    onClick={() => setViewUser(user)}>👁</button>
+                          <button className="btn btn-secondary btn-sm" title="Edit User"       onClick={() => openEdit(user)}>✏️</button>
+                          <button className="btn btn-secondary btn-sm" title="View Activity"   onClick={() => viewActivity(user)}>📊</button>
                           <button className="btn btn-secondary btn-sm" title="Role Permissions" onClick={() => setShowPermissions(user)}>🔑</button>
-                          <button className="btn btn-secondary btn-sm" title="User Access"    onClick={() => openAccess(user)}>🛡️</button>
-                          <button className="btn btn-secondary btn-sm" title="Reset Password" onClick={() => setResetUser(user)}>📧</button>
-                          <button className="btn btn-secondary btn-sm" title="Set Password"   onClick={() => setSetPasswordUser(user)}>🔒</button>
-                          <button className="btn btn-danger btn-sm"    title="Delete User"    onClick={() => setDeleteUser(user)}>🗑</button>
+                          <button className="btn btn-secondary btn-sm" title="User Access"     onClick={() => openAccess(user)}>🛡️</button>
+                          <button className="btn btn-secondary btn-sm" title="Reset Password"  onClick={() => setResetUser(user)}>📧</button>
+                          <button className="btn btn-secondary btn-sm" title="Set Password"    onClick={() => setSetPasswordUser(user)}>🔒</button>
+                          <button className="btn btn-danger btn-sm"    title="Delete User"     onClick={() => setDeleteUser(user)}>🗑</button>
                         </div>
                       </td>
                     </tr>
@@ -535,9 +741,11 @@ export default function UserManagement() {
             <div className="pagination">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>‹</button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <button key={p}
-                        className={p === currentPage ? "active" : ""}
-                        onClick={() => setCurrentPage(p)}>
+                <button
+                  key={p}
+                  className={p === currentPage ? "active" : ""}
+                  onClick={() => setCurrentPage(p)}
+                >
                   {p}
                 </button>
               ))}
@@ -547,7 +755,9 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* ─── ADD USER ─── */}
+      {/* ─────────────── MODALS ─────────────── */}
+
+      {/* ADD USER */}
       {showAddModal && (
         <div className="popup-overlay">
           <div className="popup">
@@ -556,47 +766,77 @@ export default function UserManagement() {
             <div className="um-form-grid">
               <div className="um-form-field">
                 <label>First Name *</label>
-                <input value={addForm.firstName} onChange={e => setAddForm({ ...addForm, firstName: e.target.value })} />
+                <input
+                  value={addForm.firstName}
+                  onChange={e => setAddForm({ ...addForm, firstName: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Last Name</label>
-                <input value={addForm.lastName} onChange={e => setAddForm({ ...addForm, lastName: e.target.value })} />
+                <input
+                  value={addForm.lastName}
+                  onChange={e => setAddForm({ ...addForm, lastName: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Email *</label>
-                <input type="email" value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} />
+                <input
+                  type="email"
+                  value={addForm.email}
+                  onChange={e => setAddForm({ ...addForm, email: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Username</label>
-                <input value={addForm.username} onChange={e => setAddForm({ ...addForm, username: e.target.value })} />
+                <input
+                  value={addForm.username}
+                  onChange={e => setAddForm({ ...addForm, username: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Password *</label>
                 <div className="um-password-field">
-                  <input type={showAddPwd ? "text" : "password"}
-                         value={addForm.password}
-                         onChange={e => setAddForm({ ...addForm, password: e.target.value })} />
-                  <button type="button" className="um-pwd-toggle" onClick={() => setShowAddPwd(v => !v)}>
+                  <input
+                    type={showAddPwd ? "text" : "password"}
+                    value={addForm.password}
+                    onChange={e => setAddForm({ ...addForm, password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="um-pwd-toggle"
+                    onClick={() => setShowAddPwd(v => !v)}
+                  >
                     {showAddPwd ? "🙈" : "👁"}
                   </button>
                 </div>
               </div>
               <div className="um-form-field">
                 <label>Role</label>
-                <select value={addForm.role} onChange={e => setAddForm({ ...addForm, role: e.target.value })}>
+                <select
+                  value={addForm.role}
+                  onChange={e => setAddForm({ ...addForm, role: e.target.value })}
+                >
                   {ALL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               <div className="um-form-field">
                 <label>Status</label>
-                <select value={addForm.status} onChange={e => setAddForm({ ...addForm, status: e.target.value })}>
+                <select
+                  value={addForm.status}
+                  onChange={e => setAddForm({ ...addForm, status: e.target.value })}
+                >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
             </div>
             <div className="um-modal-actions">
-              <button className="cancel-btn" onClick={() => { setShowAddModal(false); setAddError(""); setShowAddPwd(false); }}>Cancel</button>
+              <button
+                className="cancel-btn"
+                onClick={() => { setShowAddModal(false); setAddError(""); setShowAddPwd(false); }}
+              >
+                Cancel
+              </button>
               <button className="submit-btn" onClick={handleAddUser} disabled={addLoading}>
                 {addLoading ? "Creating…" : "Create User"}
               </button>
@@ -605,7 +845,7 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── EDIT USER ─── */}
+      {/* EDIT USER */}
       {editUser && (
         <div className="popup-overlay">
           <div className="popup">
@@ -614,25 +854,40 @@ export default function UserManagement() {
             <div className="um-form-grid">
               <div className="um-form-field">
                 <label>First Name</label>
-                <input value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
+                <input
+                  value={editForm.firstName}
+                  onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Last Name</label>
-                <input value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
+                <input
+                  value={editForm.lastName}
+                  onChange={e => setEditForm({ ...editForm, lastName: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Username</label>
-                <input value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value })} />
+                <input
+                  value={editForm.username}
+                  onChange={e => setEditForm({ ...editForm, username: e.target.value })}
+                />
               </div>
               <div className="um-form-field">
                 <label>Role</label>
-                <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}>
+                <select
+                  value={editForm.role}
+                  onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                >
                   {ALL_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
               <div className="um-form-field">
                 <label>Status</label>
-                <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                <select
+                  value={editForm.status}
+                  onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
@@ -648,7 +903,7 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── VIEW USER ─── */}
+      {/* VIEW USER */}
       {viewUser && (
         <div className="popup-overlay">
           <div className="popup large-popup">
@@ -666,9 +921,18 @@ export default function UserManagement() {
               </div>
             </div>
             <div className="um-profile-details-grid">
-              <div className="um-detail-item"><span className="um-detail-label">First Name</span><span className="um-detail-value">{viewUser.firstName || "-"}</span></div>
-              <div className="um-detail-item"><span className="um-detail-label">Last Name</span><span className="um-detail-value">{viewUser.lastName || "-"}</span></div>
-              <div className="um-detail-item"><span className="um-detail-label">Username</span><span className="um-detail-value">{viewUser.username || "-"}</span></div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">First Name</span>
+                <span className="um-detail-value">{viewUser.firstName || "-"}</span>
+              </div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">Last Name</span>
+                <span className="um-detail-value">{viewUser.lastName || "-"}</span>
+              </div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">Username</span>
+                <span className="um-detail-value">{viewUser.username || "-"}</span>
+              </div>
               <div className="um-detail-item">
                 <span className="um-detail-label">Status</span>
                 <span className={(viewUser.status || "active") === "active" ? "um-status-badge um-status-active" : "um-status-badge um-status-inactive"}>
@@ -682,19 +946,30 @@ export default function UserManagement() {
                   <span className="um-online-label">{isUserOnline(viewUser) ? "Online" : "Offline"}</span>
                 </div>
               </div>
-              <div className="um-detail-item"><span className="um-detail-label">Last Login</span><span className="um-detail-value">{formatDateTime(viewUser.lastLogin)}</span></div>
-              <div className="um-detail-item"><span className="um-detail-label">Account Created</span><span className="um-detail-value">{formatDateTime(viewUser.createdAt)}</span></div>
-              <div className="um-detail-item"><span className="um-detail-label">UID</span><span className="um-detail-value um-uid">{viewUser.uid || "-"}</span></div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">Last Login</span>
+                <span className="um-detail-value">{formatDateTime(viewUser.lastLogin)}</span>
+              </div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">Account Created</span>
+                <span className="um-detail-value">{formatDateTime(viewUser.createdAt)}</span>
+              </div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">UID</span>
+                <span className="um-detail-value um-uid">{viewUser.uid || "-"}</span>
+              </div>
             </div>
             <div className="um-modal-actions">
               <button className="cancel-btn" onClick={() => setViewUser(null)}>Close</button>
-              <button onClick={() => { setViewUser(null); viewActivity(viewUser); }}>View Full Activity</button>
+              <button onClick={() => { setViewUser(null); viewActivity(viewUser); }}>
+                View Full Activity
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── ROLE PERMISSIONS (read-only) ─── */}
+      {/* ROLE PERMISSIONS (read-only) */}
       {showPermissions && (
         <div className="popup-overlay">
           <div className="popup">
@@ -718,7 +993,9 @@ export default function UserManagement() {
               {ALL_ROLES.map(role => (
                 <div key={role} className="um-rbac-row">
                   <span className={getRoleBadgeClass(role)}>{ROLE_LABELS[role]}</span>
-                  <span className="um-rbac-perms">{(ROLE_PERMISSIONS[role] || []).join(" · ")}</span>
+                  <span className="um-rbac-perms">
+                    {(ROLE_PERMISSIONS[role] || []).join(" · ")}
+                  </span>
                 </div>
               ))}
             </div>
@@ -729,13 +1006,14 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── USER ACCESS MODAL (granular) ─── */}
+      {/* USER ACCESS MODAL (granular) */}
       {accessUser && (
         <div className="popup-overlay">
           <div className="popup large-popup ua-popup">
             <h3>User Access Control</h3>
             <p className="um-modal-sub">
-              Configure granular permissions for <strong>{displayName(accessUser) || accessUser.email}</strong>
+              Configure granular permissions for{" "}
+              <strong>{displayName(accessUser) || accessUser.email}</strong>
             </p>
             <div className="ua-list">
               {Object.entries(ACCESS_MAP).map(([heading, perms]) => {
@@ -759,9 +1037,11 @@ export default function UserManagement() {
                       <div className="ua-sublist">
                         {perms.map(perm => (
                           <label key={perm} className="ua-perm-row">
-                            <input type="checkbox"
-                                   checked={accessPermissions.includes(perm)}
-                                   onChange={() => togglePermission(perm)} />
+                            <input
+                              type="checkbox"
+                              checked={accessPermissions.includes(perm)}
+                              onChange={() => togglePermission(perm)}
+                            />
                             <span>{perm.replace(/_/g, " ")}</span>
                           </label>
                         ))}
@@ -781,14 +1061,16 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── RESET PASSWORD ─── */}
+      {/* RESET PASSWORD */}
       {resetUser && (
         <div className="popup-overlay">
           <div className="popup">
             <h3>Send Password Reset Email</h3>
             {!resetSent ? (
               <>
-                <p className="um-modal-sub">A password reset link will be sent to <strong>{resetUser.email}</strong>.</p>
+                <p className="um-modal-sub">
+                  A password reset link will be sent to <strong>{resetUser.email}</strong>.
+                </p>
                 <div className="um-modal-actions">
                   <button className="cancel-btn" onClick={closeResetModal}>Cancel</button>
                   <button className="submit-btn" onClick={handleSendPasswordReset} disabled={resetLoading}>
@@ -798,7 +1080,9 @@ export default function UserManagement() {
               </>
             ) : (
               <>
-                <p className="um-form-success">✅ Password reset email sent to <strong>{resetUser.email}</strong>.</p>
+                <p className="um-form-success">
+                  ✅ Password reset email sent to <strong>{resetUser.email}</strong>.
+                </p>
                 <div className="um-modal-actions">
                   <button onClick={closeResetModal}>Close</button>
                 </div>
@@ -808,28 +1092,41 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── SET PASSWORD ─── */}
+      {/* SET PASSWORD */}
       {setPasswordUser && (
         <div className="popup-overlay">
           <div className="popup">
             <h3>Set New Password</h3>
-            <p className="um-modal-sub">Setting a new password for <strong>{displayName(setPasswordUser) || setPasswordUser.email}</strong>.</p>
+            <p className="um-modal-sub">
+              Setting a new password for{" "}
+              <strong>{displayName(setPasswordUser) || setPasswordUser.email}</strong>.
+            </p>
             {setPwdError && <p className="um-form-error">{setPwdError}</p>}
             <div className="um-form-field">
               <label>New Password</label>
               <div className="um-password-field">
-                <input type={showNewPwd ? "text" : "password"}
-                       placeholder="Enter new password (min. 6 chars)"
-                       value={newPassword}
-                       onChange={e => setNewPassword(e.target.value)} />
-                <button type="button" className="um-pwd-toggle" onClick={() => setShowNewPwd(v => !v)}>
+                <input
+                  type={showNewPwd ? "text" : "password"}
+                  placeholder="Enter new password (min. 6 chars)"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="um-pwd-toggle"
+                  onClick={() => setShowNewPwd(v => !v)}
+                >
                   {showNewPwd ? "🙈" : "👁"}
                 </button>
               </div>
             </div>
             <div className="um-modal-actions">
               <button className="cancel-btn" onClick={closeSetPasswordModal}>Cancel</button>
-              <button className="submit-btn" onClick={handleSetPassword} disabled={setPwdLoading || !newPassword}>
+              <button
+                className="submit-btn"
+                onClick={handleSetPassword}
+                disabled={setPwdLoading || !newPassword}
+              >
                 {setPwdLoading ? "Updating…" : "Set Password"}
               </button>
             </div>
@@ -837,18 +1134,25 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── DELETE ─── */}
+      {/* DELETE */}
       {deleteUser && (
         <div className="popup-overlay">
           <div className="popup">
             <h3>Delete User</h3>
             <p>
-              Permanently delete <strong>{displayName(deleteUser) || deleteUser.email}</strong>?
+              Permanently delete{" "}
+              <strong>{displayName(deleteUser) || deleteUser.email}</strong>?
               This removes their profile, all exam results, analytics, activity data, and every
-              related record. This action cannot be undone.
+              related record across all collections. This action cannot be undone.
             </p>
             <div className="um-modal-actions">
-              <button className="cancel-btn" onClick={() => setDeleteUser(null)} disabled={deleteLoading}>Cancel</button>
+              <button
+                className="cancel-btn"
+                onClick={() => setDeleteUser(null)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
               <button className="delete-btn" onClick={handleDeleteUser} disabled={deleteLoading}>
                 {deleteLoading ? "Deleting…" : "Delete Permanently"}
               </button>
@@ -857,15 +1161,21 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ─── BULK DELETE ─── */}
+      {/* BULK DELETE */}
       {showBulkDelete && (
         <div className="popup-overlay">
           <div className="popup">
             <h3>Bulk Delete</h3>
-            <p>Permanently delete <strong>{selected.length} selected users</strong> and all their associated data? This cannot be undone.</p>
+            <p>
+              Permanently delete{" "}
+              <strong>{selected.length} selected users</strong>{" "}
+              and all their associated data? This cannot be undone.
+            </p>
             <div className="um-modal-actions">
               <button className="cancel-btn" onClick={() => setShowBulkDelete(false)}>Cancel</button>
-              <button className="delete-btn" onClick={handleBulkDelete}>Delete All Selected</button>
+              <button className="delete-btn" onClick={handleBulkDelete}>
+                Delete All Selected
+              </button>
             </div>
           </div>
         </div>

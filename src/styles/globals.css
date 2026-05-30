@@ -4833,6 +4833,8 @@ table tr:hover {
   max-height:55vh;
   overflow-y:auto;
   padding-right:var(--sp-2);
+  min-height: fit-content;
+  overflow: scroll;
 }
 
 .ua-group {
@@ -4842,6 +4844,8 @@ table tr:hover {
   overflow:hidden;
   transition:all var(--transition-base);
   box-shadow:var(--shadow-xs);
+  max-height: 863px;
+   overflow: scroll;
 }
 .ua-group:hover {
   border-color:var(--blue-400);

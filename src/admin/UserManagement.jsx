@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, query, orderBy } from "firebase/firestore";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  collection, onSnapshot, doc, updateDoc,
+  deleteDoc, addDoc, query, orderBy
+} from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updatePassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import { db, auth } from "../firebase/config";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
@@ -9,15 +17,14 @@ import AdminSidebar from "../components/AdminSidebar";
    RBAC PERMISSIONS MAP
 ========================================= */
 const ROLE_PERMISSIONS = {
-  "super-admin": ["manage_users", "manage_roles", "manage_exams", "manage_questions", "view_results", "manage_subjects", "delete_users", "bulk_operations"],
-  "admin":       ["manage_users", "manage_exams", "manage_questions", "view_results", "manage_subjects"],
-  "moderator":   ["manage_questions", "view_results", "manage_subjects"],
-  "teacher":     ["manage_questions", "view_results"],
+  "super-admin": ["manage_users","manage_roles","manage_exams","manage_questions","view_results","manage_subjects","delete_users","bulk_operations"],
+  "admin":       ["manage_users","manage_exams","manage_questions","view_results","manage_subjects"],
+  "moderator":   ["manage_questions","view_results","manage_subjects"],
+  "teacher":     ["manage_questions","view_results"],
   "student":     ["view_results"],
 };
 
-const ALL_ROLES = ["super-admin", "admin", "moderator", "teacher", "student"];
-
+const ALL_ROLES  = ["super-admin","admin","moderator","teacher","student"];
 const ROLE_LABELS = {
   "super-admin": "Super Admin",
   "admin":       "Admin",
@@ -37,9 +44,9 @@ function getRoleBadgeClass(role) {
   return map[role] || "role-badge role-badge--student";
 }
 
-function formatDateTime(timestamp) {
-  if (!timestamp) return "-";
-  return new Date(timestamp).toLocaleString();
+function formatDateTime(ts) {
+  if (!ts) return "-";
+  return new Date(ts).toLocaleString();
 }
 
 export default function UserManagement() {
@@ -48,43 +55,79 @@ export default function UserManagement() {
   /* =========================================
      STATE
   ========================================= */
-  const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [selected, setSelected] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [users,         setUsers]         = useState([]);
+  const [search,        setSearch]        = useState("");
+  const [filterRole,    setFilterRole]    = useState("all");
+  const [filterStatus,  setFilterStatus]  = useState("all");
+  const [selected,      setSelected]      = useState([]);
+  const [currentPage,   setCurrentPage]   = useState(1);
   const PAGE_SIZE = 10;
 
   // Modals
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [viewUser, setViewUser] = useState(null);
-  const [deleteUser, setDeleteUser] = useState(null);
-  const [resetUser, setResetUser] = useState(null);
-  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [showAddModal,    setShowAddModal]    = useState(false);
+  const [editUser,        setEditUser]        = useState(null);
+  const [viewUser,        setViewUser]        = useState(null);
+  const [deleteUser,      setDeleteUser]      = useState(null);
+  const [resetUser,       setResetUser]       = useState(null);
+  const [showBulkDelete,  setShowBulkDelete]  = useState(false);
   const [showPermissions, setShowPermissions] = useState(null);
+  const [setPasswordUser, setSetPasswordUser] = useState(null);
 
   // Add user form
-  const [addForm, setAddForm] = useState({ name: "", email: "", username: "", role: "student", status: "active", password: "" });
+  const [addForm,    setAddForm]    = useState({ name:"", email:"", username:"", role:"student", status:"active", password:"" });
   const [addLoading, setAddLoading] = useState(false);
-  const [addError, setAddError] = useState("");
+  const [addError,   setAddError]   = useState("");
+  const [showAddPwd, setShowAddPwd] = useState(false);
 
   // Edit form
-  const [editForm, setEditForm] = useState({});
+  const [editForm,    setEditForm]    = useState({});
   const [editLoading, setEditLoading] = useState(false);
 
+  // Manual set-password form
+  const [newPassword,    setNewPassword]    = useState("");
+  const [setPwdLoading,  setSetPwdLoading]  = useState(false);
+  const [setPwdError,    setSetPwdError]    = useState("");
+  const [showNewPwd,     setShowNewPwd]     = useState(false);
+
+  // Reset password feedback
+  const [resetSent,    setResetSent]    = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
   /* =========================================
-     LOAD USERS
+     LOAD ALL USERS FROM FIRESTORE
+     Uses onSnapshot on the full "users" collection
+     so pre-existing Firestore users are included.
   ========================================= */
   useEffect(() => {
-    const unsub = onSnapshot(
-      query(collection(db, "users"), orderBy("createdAt", "desc")),
-      (snap) => {
-        setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      }
-    );
-    return () => unsub();
+    // Try ordered query; fallback to unordered if index missing
+    let unsub;
+    try {
+      unsub = onSnapshot(
+        query(collection(db, "users"), orderBy("createdAt", "desc")),
+        (snap) => setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        () => {
+          // Fallback: no ordering (index may not exist)
+          unsub = onSnapshot(
+            collection(db, "users"),
+            (snap) => {
+              const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+              data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              setUsers(data);
+            }
+          );
+        }
+      );
+    } catch {
+      unsub = onSnapshot(
+        collection(db, "users"),
+        (snap) => {
+          const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          setUsers(data);
+        }
+      );
+    }
+    return () => unsub && unsub();
   }, []);
 
   /* =========================================
@@ -103,7 +146,7 @@ export default function UserManagement() {
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginated  = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   /* =========================================
      SELECTION
@@ -123,7 +166,7 @@ export default function UserManagement() {
   }
 
   /* =========================================
-     ADD USER
+     ADD USER (with Show/Hide password)
   ========================================= */
   async function handleAddUser() {
     if (!addForm.name || !addForm.email || !addForm.password) {
@@ -135,18 +178,19 @@ export default function UserManagement() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, addForm.email, addForm.password);
       await addDoc(collection(db, "users"), {
-        uid: cred.user.uid,
-        name: addForm.name,
-        email: addForm.email,
-        username: addForm.username || "",
-        role: addForm.role,
-        status: addForm.status,
+        uid:       cred.user.uid,
+        name:      addForm.name,
+        email:     addForm.email,
+        username:  addForm.username || "",
+        role:      addForm.role,
+        status:    addForm.status,
         createdAt: Date.now(),
         lastLogin: null,
-        isOnline: false,
+        isOnline:  false,
       });
       setShowAddModal(false);
-      setAddForm({ name: "", email: "", username: "", role: "student", status: "active", password: "" });
+      setAddForm({ name:"", email:"", username:"", role:"student", status:"active", password:"" });
+      setShowAddPwd(false);
     } catch (e) {
       setAddError(e.message);
     }
@@ -166,10 +210,10 @@ export default function UserManagement() {
     setEditLoading(true);
     try {
       await updateDoc(doc(db, "users", editUser.id), {
-        name: editForm.name,
+        name:     editForm.name,
         username: editForm.username,
-        role: editForm.role,
-        status: editForm.status,
+        role:     editForm.role,
+        status:   editForm.status,
       });
       setEditUser(null);
     } catch (e) {
@@ -208,10 +252,76 @@ export default function UserManagement() {
   }
 
   /* =========================================
-     NAVIGATE TO ACTIVITY (Profile page)
+     NAVIGATE TO ACTIVITY
   ========================================= */
   function viewActivity(user) {
     navigate("/admin/user-activity", { state: { user } });
+  }
+
+  /* =========================================
+     SEND PASSWORD RESET EMAIL
+  ========================================= */
+  async function handleSendPasswordReset() {
+    if (!resetUser) return;
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetUser.email);
+      setResetSent(true);
+    } catch (e) {
+      console.error(e);
+    }
+    setResetLoading(false);
+  }
+
+  function closeResetModal() {
+    setResetUser(null);
+    setResetSent(false);
+    setResetLoading(false);
+  }
+
+  /* =========================================
+     MANUALLY SET PASSWORD
+     Note: Firebase Admin SDK is needed for
+     server-side password updates. Client-side
+     updatePassword() requires the user to be
+     recently signed in. We attempt it and show
+     an appropriate message to the admin.
+  ========================================= */
+  async function handleSetPassword() {
+    if (!setPasswordUser || !newPassword) return;
+    if (newPassword.length < 6) {
+      setSetPwdError("Password must be at least 6 characters.");
+      return;
+    }
+    setSetPwdLoading(true);
+    setSetPwdError("");
+    try {
+      // This only works if the target user is the currently signed-in user.
+      // For full admin password management, use Firebase Admin SDK on the backend.
+      if (auth.currentUser?.email === setPasswordUser.email) {
+        await updatePassword(auth.currentUser, newPassword);
+        setSetPasswordUser(null);
+        setNewPassword("");
+        setShowNewPwd(false);
+      } else {
+        // For other users, send them a reset email instead and inform admin
+        await sendPasswordResetEmail(auth, setPasswordUser.email);
+        setSetPwdError(
+          "Direct password change requires Firebase Admin SDK (server-side). " +
+          "A password reset email has been sent to the user instead."
+        );
+      }
+    } catch (e) {
+      setSetPwdError(e.message);
+    }
+    setSetPwdLoading(false);
+  }
+
+  function closeSetPasswordModal() {
+    setSetPasswordUser(null);
+    setNewPassword("");
+    setSetPwdError("");
+    setShowNewPwd(false);
   }
 
   /* =========================================
@@ -324,7 +434,6 @@ export default function UserManagement() {
                   paginated.map((user) => (
                     <tr key={user.id} className={selected.includes(user.id) ? "um-row-selected" : ""}>
 
-                      {/* CHECKBOX */}
                       <td>
                         <input
                           type="checkbox"
@@ -333,7 +442,6 @@ export default function UserManagement() {
                         />
                       </td>
 
-                      {/* USER INFO */}
                       <td>
                         <div className="um-user-cell">
                           <div className="avatar um-avatar-sm">
@@ -346,17 +454,14 @@ export default function UserManagement() {
                         </div>
                       </td>
 
-                      {/* USERNAME */}
                       <td>{user.username || "-"}</td>
 
-                      {/* ROLE */}
                       <td>
                         <span className={getRoleBadgeClass(user.role)}>
                           {ROLE_LABELS[user.role] || user.role || "-"}
                         </span>
                       </td>
 
-                      {/* STATUS */}
                       <td>
                         <button
                           className={user.status === "active" ? "um-status-badge um-status-active" : "um-status-badge um-status-inactive"}
@@ -366,63 +471,23 @@ export default function UserManagement() {
                         </button>
                       </td>
 
-                      {/* ONLINE INDICATOR */}
                       <td>
                         <span className={user.isOnline ? "um-online-dot um-online" : "um-online-dot um-offline"} />
                         <span className="um-online-label">{user.isOnline ? "Online" : "Offline"}</span>
                       </td>
 
-                      {/* LAST LOGIN */}
                       <td className="um-date-cell">{formatDateTime(user.lastLogin)}</td>
-
-                      {/* JOINED */}
                       <td className="um-date-cell">{formatDateTime(user.createdAt)}</td>
 
-                      {/* ACTIONS */}
                       <td>
                         <div className="um-action-group">
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="View Profile"
-                            onClick={() => setViewUser(user)}
-                          >
-                            👁
-                          </button>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="Edit User"
-                            onClick={() => openEdit(user)}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="View Activity"
-                            onClick={() => viewActivity(user)}
-                          >
-                            📊
-                          </button>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="Permissions"
-                            onClick={() => setShowPermissions(user)}
-                          >
-                            🔑
-                          </button>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            title="Reset Password"
-                            onClick={() => setResetUser(user)}
-                          >
-                            🔒
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            title="Delete User"
-                            onClick={() => setDeleteUser(user)}
-                          >
-                            🗑
-                          </button>
+                          <button className="btn btn-secondary btn-sm" title="View Profile"   onClick={() => setViewUser(user)}>👁</button>
+                          <button className="btn btn-secondary btn-sm" title="Edit User"      onClick={() => openEdit(user)}>✏️</button>
+                          <button className="btn btn-secondary btn-sm" title="View Activity"  onClick={() => viewActivity(user)}>📊</button>
+                          <button className="btn btn-secondary btn-sm" title="Permissions"    onClick={() => setShowPermissions(user)}>🔑</button>
+                          <button className="btn btn-secondary btn-sm" title="Reset Password" onClick={() => setResetUser(user)}>📧</button>
+                          <button className="btn btn-secondary btn-sm" title="Set Password"   onClick={() => setSetPasswordUser(user)}>🔒</button>
+                          <button className="btn btn-danger btn-sm"    title="Delete User"    onClick={() => setDeleteUser(user)}>🗑</button>
                         </div>
                       </td>
                     </tr>
@@ -432,7 +497,6 @@ export default function UserManagement() {
             </table>
           </div>
 
-          {/* PAGINATION */}
           {totalPages > 1 && (
             <div className="pagination">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>‹</button>
@@ -489,12 +553,22 @@ export default function UserManagement() {
               </div>
               <div className="um-form-field">
                 <label>Password *</label>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={addForm.password}
-                  onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                />
+                <div className="um-password-field">
+                  <input
+                    type={showAddPwd ? "text" : "password"}
+                    placeholder="Password"
+                    value={addForm.password}
+                    onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="um-pwd-toggle"
+                    onClick={() => setShowAddPwd((v) => !v)}
+                    title={showAddPwd ? "Hide password" : "Show password"}
+                  >
+                    {showAddPwd ? "🙈" : "👁"}
+                  </button>
+                </div>
               </div>
               <div className="um-form-field">
                 <label>Role</label>
@@ -512,7 +586,7 @@ export default function UserManagement() {
             </div>
 
             <div className="um-modal-actions">
-              <button className="cancel-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
+              <button className="cancel-btn" onClick={() => { setShowAddModal(false); setAddError(""); setShowAddPwd(false); }}>Cancel</button>
               <button className="submit-btn" onClick={handleAddUser} disabled={addLoading}>
                 {addLoading ? "Creating…" : "Create User"}
               </button>
@@ -674,27 +748,76 @@ export default function UserManagement() {
       )}
 
       {/* =============================================
-          MODAL: RESET PASSWORD
+          MODAL: SEND PASSWORD RESET EMAIL
       ============================================= */}
       {resetUser && (
         <div className="popup-overlay">
           <div className="popup">
-            <h3>Reset Password</h3>
+            <h3>Send Password Reset Email</h3>
+            {!resetSent ? (
+              <>
+                <p className="um-modal-sub">
+                  A password reset link will be sent to <strong>{resetUser.email}</strong>.
+                </p>
+                <p>The user will receive a Firebase Auth email with instructions to reset their password.</p>
+                <div className="um-modal-actions">
+                  <button className="cancel-btn" onClick={closeResetModal}>Cancel</button>
+                  <button className="submit-btn" onClick={handleSendPasswordReset} disabled={resetLoading}>
+                    {resetLoading ? "Sending…" : "Send Reset Email"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="um-form-success">
+                  ✅ Password reset email sent successfully to <strong>{resetUser.email}</strong>.
+                </p>
+                <div className="um-modal-actions">
+                  <button onClick={closeResetModal}>Close</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =============================================
+          MODAL: MANUALLY SET PASSWORD
+      ============================================= */}
+      {setPasswordUser && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h3>Set New Password</h3>
             <p className="um-modal-sub">
-              A password reset email will be sent to <strong>{resetUser.email}</strong>.
+              Setting a new password for <strong>{setPasswordUser.name || setPasswordUser.email}</strong>.
             </p>
-            <p>This action will trigger Firebase Auth to send a reset link to the user's registered email address.</p>
+
+            {setPwdError && <p className="um-form-error">{setPwdError}</p>}
+
+            <div className="um-form-field">
+              <label>New Password</label>
+              <div className="um-password-field">
+                <input
+                  type={showNewPwd ? "text" : "password"}
+                  placeholder="Enter new password (min. 6 chars)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="um-pwd-toggle"
+                  onClick={() => setShowNewPwd((v) => !v)}
+                  title={showNewPwd ? "Hide password" : "Show password"}
+                >
+                  {showNewPwd ? "🙈" : "👁"}
+                </button>
+              </div>
+            </div>
+
             <div className="um-modal-actions">
-              <button className="cancel-btn" onClick={() => setResetUser(null)}>Cancel</button>
-              <button
-                className="submit-btn"
-                onClick={async () => {
-                  const { sendPasswordResetEmail } = await import("firebase/auth");
-                  await sendPasswordResetEmail(auth, resetUser.email);
-                  setResetUser(null);
-                }}
-              >
-                Send Reset Email
+              <button className="cancel-btn" onClick={closeSetPasswordModal}>Cancel</button>
+              <button className="submit-btn" onClick={handleSetPassword} disabled={setPwdLoading || !newPassword}>
+                {setPwdLoading ? "Updating…" : "Set Password"}
               </button>
             </div>
           </div>

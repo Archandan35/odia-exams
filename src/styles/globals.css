@@ -2057,7 +2057,19 @@ table tr:hover{
   color:#7f1d1d;
 }
 
-.review-legend-counter.unanswered{
+.review-legend-counter.answered{
+  background:#dbeafe;
+  border:1.5px solid #2563eb;
+  color:#1e3a8a;
+}
+
+.review-legend-counter.review{
+  background:#f3e8ff;
+  border:1.5px solid #7c3aed;
+  color:#581c87;
+}
+
+.review-legend-counter.not-visited{
   background:#f1f5f9;
   border:1.5px solid #cbd5e1;
   color:#475569;
@@ -2108,7 +2120,8 @@ table tr:hover{
 }
 .review-palette-correct{ background:#dcfce7 !important; border-color:#16a34a; color:#14532d; }
 .review-palette-wrong{ background:#fee2e2 !important; border-color:#dc2626; color:#7f1d1d; }
-.review-palette-unanswered{ background:#f1f5f9 !important; border-color:#cbd5e1; color:#64748b; }
+.review-palette-review{ background:#f3e8ff !important; border-color:#7c3aed; color:#581c87; }
+.review-palette-not-visited{ background:#f1f5f9 !important; border-color:#cbd5e1; color:#64748b; }
 
 .question-review-card{
   background:var(--surface-card);

@@ -298,21 +298,18 @@ export default function ResultPage() {
               </span>
               Wrong
             </div>
-            
             <div className="review-legend-item">
               <span className="review-legend-counter review">
                 {questions.filter(q => getQuestionStatus(q) === "review").length}
               </span>
               Review
             </div>
-            
             <div className="review-legend-item">
               <span className="review-legend-counter answered">
                 {questions.filter(q => { const s = getQuestionStatus(q); return s === "correct" || s === "wrong"; }).length}
               </span>
               Answered
             </div>
-            
             <div className="review-legend-item">
               <span className="review-legend-counter not-visited">
                 {questions.filter(q => getQuestionStatus(q) === "not-visited").length}

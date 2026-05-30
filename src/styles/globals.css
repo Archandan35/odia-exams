@@ -4649,7 +4649,7 @@ table tr:hover { background:var(--blue-50); transition:background var(--transiti
 
   .um-form-grid             { grid-template-columns:1fr; }
   .um-profile-details-grid  { grid-template-columns:1fr; }
-  .um-action-group          { flex-wrap:nowrap; }
+  .um-action-group          { flex-wrap:wrap; }
   .um-identity-dates        { margin-left:0; }
 
   .activity-table-wrapper   { max-height:400px; }

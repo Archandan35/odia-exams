@@ -30,7 +30,7 @@ return(
 <div className="nav-left">
 
 <h2>
-Odia Exam Portal
+Sravya Technologies
 </h2>
 
 </div>

@@ -2551,6 +2551,7 @@ table tr:hover{
   font-weight:700;
   color:#60a5fa;
   font-family:var(--font-display);
+  margin-top: 15px;
 }
 
 .se-difficulty-row{ display:flex; gap:var(--sp-2); flex-wrap:wrap; }

@@ -851,7 +851,7 @@ button:hover{
 
 .topbar-right{ text-align:right; }
 .topbar-right h2{
-  color:#fde68a;
+  color:#ffffff;
   font-size:1.3rem;
   font-family:var(--font-mono);
   letter-spacing:0.03em;
@@ -1368,7 +1368,7 @@ table tr:hover{
 
 .question-text-main{
   flex:1;
-  font-size:1rem;
+  font-size:1.25rem;
   font-weight:500;
   line-height:1.75;
   color:var(--text-primary);
@@ -1435,7 +1435,7 @@ table tr:hover{
 
 .option-value{
   flex:1;
-  font-size:0.92rem;
+  font-size:1.25rem;
   font-weight:500;
   line-height:1.55;
   word-break:break-word;

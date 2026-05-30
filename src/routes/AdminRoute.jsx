@@ -1,102 +1,42 @@
-import {
-useEffect,
-useState,
-} from "react";
+import { useEffect, useState } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { Navigate } from "react-router-dom";
+import { db, auth } from "../firebase/config";
 
-import {
-Navigate,
-} from "react-router-dom";
+/* =========================================
+   AdminRoute
+   Grants access to: admin, super-admin
+   Redirects students/others to /dashboard
+========================================= */
+export default function AdminRoute({ children }) {
+  const [status, setStatus] = useState("loading"); // "loading" | "allowed" | "denied"
 
-import {
-auth,
-db,
-} from "../firebase/config";
+  useEffect(() => {
+    if (!auth.currentUser) {
+      setStatus("denied");
+      return;
+    }
 
-import {
-collection,
-query,
-where,
-getDocs,
-} from "firebase/firestore";
+    const q = query(
+      collection(db, "users"),
+      where("uid", "==", auth.currentUser.uid)
+    );
 
-export default function AdminRoute({
-children,
-}) {
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const role = snap.docs[0].data().role || "student";
+        setStatus(role === "admin" || role === "super-admin" ? "allowed" : "denied");
+      } else {
+        // No user doc — check if this is the original admin account
+        // by falling back to auth claim or denying access
+        setStatus("denied");
+      }
+    });
 
-const [loading,setLoading] =
-useState(true);
+    return () => unsub();
+  }, []);
 
-const [isAdmin,setIsAdmin] =
-useState(false);
-
-useEffect(()=>{
-
-async function checkAdmin(){
-
-if(!auth.currentUser){
-
-setLoading(false);
-
-return;
-
-}
-
-const q = query(
-collection(db,"users"),
-where(
-"uid",
-"==",
-auth.currentUser.uid
-)
-);
-
-const snapshot =
-await getDocs(q);
-
-if(!snapshot.empty){
-
-const user =
-snapshot.docs[0].data();
-
-if(
-user.role ===
-"admin"
-){
-
-setIsAdmin(true);
-
-}
-
-}
-
-setLoading(false);
-
-}
-
-checkAdmin();
-
-},[]);
-
-if(loading){
-
-return(
-
-<div className="page">
-
-<h2>
-Checking Admin...
-</h2>
-
-</div>
-
-);
-
-}
-
-return isAdmin
-?
-children
-:
-<Navigate to="/" />;
-
+  if (status === "loading") return null;
+  if (status === "denied")  return <Navigate to="/dashboard" replace />;
+  return children;
 }

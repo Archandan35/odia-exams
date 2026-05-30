@@ -5101,7 +5101,7 @@ table tr:hover {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--grad-primary);
+  background: linear-gradient(0deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
   color: #fff;
 }
 

@@ -40,7 +40,7 @@ export default function AdminSidebar() {
     <div className="sidebar">
 
       <div className="logo">
-        Odia Exam
+       Sravya Technologies
         <br />
         Admin
       </div>

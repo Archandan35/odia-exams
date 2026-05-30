@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Navigate } from "react-router-dom";
 import { db, auth } from "../firebase/config";
+import { isAdminRole } from "../hooks/useRole";
 
 /* =========================================
    AdminRoute
-   Grants access to: admin, super-admin
+   Grants access to: admin, super-admin, superadmin
    Redirects students/others to /dashboard
 ========================================= */
 export default function AdminRoute({ children }) {
@@ -25,10 +26,8 @@ export default function AdminRoute({ children }) {
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
         const role = snap.docs[0].data().role || "student";
-        setStatus(role === "admin" || role === "super-admin" ? "allowed" : "denied");
+        setStatus(isAdminRole(role) ? "allowed" : "denied");
       } else {
-        // No user doc — check if this is the original admin account
-        // by falling back to auth claim or denying access
         setStatus("denied");
       }
     });

@@ -5,11 +5,13 @@ import { db, auth } from "../firebase/config";
 /* =========================================
    ROLE HELPER
    Centralised role check used across the app.
-   isAdmin = admin | super-admin
+   isAdmin = admin | super-admin | superadmin
    isStudent = student (default fallback)
 ========================================= */
 export function isAdminRole(role) {
-  return role === "admin" || role === "super-admin";
+  if (!role) return false;
+  const r = role.toLowerCase().replace("-", "");
+  return r === "admin" || r === "superadmin";
 }
 
 export function useRole() {

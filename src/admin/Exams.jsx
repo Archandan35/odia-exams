@@ -327,23 +327,26 @@ export default function Exams(){
           </div>
         </div>
 
-        <div className="filter-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          
-          {/* Master Select All Filter Checkbox wrapper */}
-          {filteredAndSortedExams.length > 0 && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', marginRight: '8px' }}>
+        {/* --- Select All Checkbox — above filter bar, left-aligned --- */}
+        {filteredAndSortedExams.length > 0 && (
+          <div className="exam-select-all-bar">
+            <label className="exam-select-all-label">
               <input
                 type="checkbox"
                 checked={isAllVisibleSelected}
                 onChange={handleSelectAllToggle}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
               <strong>Select All Visible</strong>
             </label>
-          )}
+          </div>
+        )}
+
+        {/* --- Filter Bar --- */}
+        <div className="se-filter-bar">
 
           {/* Mock Type Dropdown */}
           <select
+            className="se-select"
             value={selectedMockType}
             onChange={(e)=>{
               setSelectedMockType(e.target.value);
@@ -357,6 +360,7 @@ export default function Exams(){
 
           {/* Sorting Option Dropdown */}
           <select
+            className="se-select"
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
           >
@@ -367,6 +371,7 @@ export default function Exams(){
 
           {/* Subject Dropdown */}
           <select
+            className="se-select"
             value={selectedSubject}
             onChange={(e)=> setSelectedSubject(e.target.value)}
           >
@@ -380,6 +385,7 @@ export default function Exams(){
 
           {/* Topic Dropdown */}
           <select
+            className="se-select"
             value={selectedTopic}
             onChange={(e)=> setSelectedTopic(e.target.value)}
           >
@@ -394,6 +400,7 @@ export default function Exams(){
           {/* Sub Topic Dropdown */}
           {selectedMockType !== "full" && (
             <select
+              className="se-select"
               value={selectedSubTopic}
               onChange={(e)=> setSelectedSubTopic(e.target.value)}
             >
@@ -407,33 +414,15 @@ export default function Exams(){
           )}
         </div>
 
-        {/* --- Bulk Actions Banner Container Panel --- */}
+        {/* --- Bulk Actions Panel --- */}
         {selectedExamIds.size > 0 && (
-          <div className="bulk-actions-panel" style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'between',
-            justifyContent: 'space-between'
-          }}>
-            <span style={{ color: '#e63946', fontWeight: '600' }}>
+          <div className="bulk-actions-panel">
+            <span className="bulk-actions-count">
               {selectedExamIds.size} mock test{selectedExamIds.size > 1 ? 's' : ''} selected
             </span>
-            <button 
+            <button
+              className="bulk-action-btn bulk-danger"
               onClick={handleBulkDelete}
-              style={{
-                backgroundColor: '#dc3545',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
             >
               Delete Selected Mocks
             </button>
@@ -442,13 +431,13 @@ export default function Exams(){
 
         <div className="exam-grid">
           {filteredAndSortedExams.map((exam)=>(
-            <div key={exam.id} className="exam-card" style={{ position: 'relative' }}>
+            <div key={exam.id} className="exam-card">
 
               {editingExamId === exam.id ? (
                 // --- EDITING MODE FORM ---
                 <form onSubmit={(e) => handleUpdate(e, exam.id)} className="edit-exam-form">
                   <h3>Edit Exam</h3>
-                  
+
                   <label>Exam Name:</label>
                   <input
                     type="text"
@@ -526,7 +515,7 @@ export default function Exams(){
                     onChange={handleEditFormChange}
                   />
 
-                  <div className="exam-actions" style={{ marginTop: '15px' }}>
+                  <div className="exam-actions">
                     <button type="submit" className="save-btn">Save</button>
                     <button type="button" className="cancel-btn" onClick={() => setEditingExamId(null)}>
                       Cancel
@@ -536,16 +525,16 @@ export default function Exams(){
               ) : (
                 // --- VIEW MODE ---
                 <>
-                  <div className="exam-card-badge-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    
-                    {/* Individual Row Select Checkbox Input Control element */}
+                  {/* Individual card checkbox */}
+                  <div className="exam-card-checkbox">
                     <input
                       type="checkbox"
                       checked={selectedExamIds.has(exam.id)}
                       onChange={() => handleSelectExam(exam.id)}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer', zIndex: 2 }}
                     />
+                  </div>
 
+                  <div className="exam-card-badge-row">
                     <div
                       className={`exam-badge ${
                         (exam.mockType || "sectional") === "full"

@@ -283,16 +283,22 @@ export default function ResultPage() {
           <h3>Questions</h3>
           <div className="review-legend">
             <div className="review-legend-item">
-              <div className="review-dot review-palette-correct"></div>
+              <span className="review-legend-counter correct">
+                {questions.filter(q => getQuestionStatus(q) === "correct").length}
+              </span>
               Correct
             </div>
             <div className="review-legend-item">
-              <div className="review-dot review-palette-wrong"></div>
-              Incorrect
+              <span className="review-legend-counter wrong">
+                {questions.filter(q => getQuestionStatus(q) === "wrong").length}
+              </span>
+              Wrong
             </div>
             <div className="review-legend-item">
-              <div className="review-dot review-palette-unanswered"></div>
-              Unanswered
+              <span className="review-legend-counter unanswered">
+                {questions.filter(q => getQuestionStatus(q) === "unanswered").length}
+              </span>
+              Skipped
             </div>
           </div>
 

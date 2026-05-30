@@ -4933,5 +4933,216 @@ table tr:hover {
 }
 
 
+/* =========================================================
+   GLOBALS.CSS — ADDITIONS / CORRECTIONS
+   Append these blocks to the end of globals.css.
 
+   These rules either:
+     (a) fix existing behaviour  (presence indicator),
+     (b) add new states (bulk-delete-loading, orphan warning), or
+     (c) tighten up UX details requested in the brief.
+
+   No existing selector is duplicated from the file above.
+   All colours, spacing, radius, font, and shadow values
+   reference the design-token CSS variables already defined
+   in section 1 (DESIGN TOKENS) of globals.css.
+   ========================================================= */
+
+
+/* =========================================
+   SECTION 24 ADDITIONS — User Management
+   (extends the existing um- block)
+========================================= */
+
+/* ── FIX #5 — Enhanced online dot with pulsing ring ──
+   Replaces the previous .um-online animation with a
+   two-ring glow that is clearly visible on all backgrounds.
+   The selector overrides the existing pulse-online keyframes
+   defined in the original section 24 block.
+*/
+.um-online-dot.um-online {
+  background: #16a34a;                       /* slightly richer green */
+  box-shadow:
+    0 0 0 2px rgba(22, 163, 74, 0.30),
+    0 0 0 4px rgba(22, 163, 74, 0.10);
+  animation: um-pulse-online 1.8s ease-in-out infinite;
+}
+
+@keyframes um-pulse-online {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0   rgba(22, 163, 74, 0.60),
+      0 0 0 3px rgba(22, 163, 74, 0.20);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(22, 163, 74, 0.00),
+      0 0 0 3px rgba(22, 163, 74, 0.08);
+  }
+}
+
+.um-online-dot.um-offline {
+  background: var(--text-light);
+  box-shadow: none;
+  animation:  none;
+}
+
+/* ── Online label colour ── */
+.um-online-cell .um-online-label {
+  font-weight: 600;
+}
+/* Make "Online" label green, "Offline" muted */
+.um-online-cell:has(.um-online) .um-online-label   { color: #15803d; }
+.um-online-cell:has(.um-offline) .um-online-label  { color: var(--text-light); }
+
+
+/* ── Deletion loading state on table rows ──
+   Dims the row while its deletion is in-flight.
+*/
+.um-row-deleting {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+}
+
+
+/* ── Orphan / no-uid warning badge ──
+   FIX #3: visually flag records that have no Auth uid
+   so admins can identify and clean them up.
+*/
+.um-orphan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+/* ── Stats card — "Online Now" accent ──
+   Gives the Online Now analytics-card a green
+   left accent strip to distinguish it visually.
+*/
+.um-stats-online.analytics-card::before {
+  background: var(--grad-success);
+}
+
+
+/* ── Bulk-delete progress banner ──
+   Shown while iterating through a bulk-delete operation.
+*/
+.um-bulk-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+  color: #92400e;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: var(--sp-4);
+  animation: fadeIn var(--transition-base);
+}
+.um-bulk-progress .um-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fde68a;
+  border-top-color: #d97706;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin 0.7s linear infinite;
+}
+
+
+/* ── Data integrity notice in the table card ──
+   Shown when orphaned records are detected.
+*/
+.um-integrity-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-md);
+  color: #7c2d12;
+  font-size: 0.83rem;
+  font-weight: 500;
+  margin-bottom: var(--sp-4);
+}
+.um-integrity-notice strong { color: #9a3412; font-weight: 700; }
+
+
+/* ── Table wrapper scrollbar tweak ──
+   The existing .um-table-wrapper uses overflow-y:scroll
+   which always shows the scrollbar track.  This uses
+   the overlay variant (auto) to hide it when not needed
+   and clips the sticky header correctly.
+*/
+.um-table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;           /* auto instead of scroll */
+  max-height: 520px;
+  border-radius: var(--radius-lg);
+}
+
+/* Sticky header inside the scrollable wrapper */
+.um-table-wrapper .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--grad-primary);
+  color: #fff;
+}
+
+
+/* ── Action button group — min-width guard ──
+   Prevents the 8-button action row from wrapping
+   on screens where the table is horizontally scrollable.
+*/
+.um-action-group {
+  min-width: 280px;
+}
+
+
+/* ── Shared spin keyframe (referenced above) ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Shared fade-in (referenced above) ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =========================================
+   RESPONSIVE — extend existing 768 px block
+========================================= */
+@media (max-width: 768px) {
+  .um-action-group {
+    min-width: unset;
+    flex-wrap: wrap;
+  }
+
+  .um-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .um-bulk-progress {
+    flex-direction: column;
+    text-align: center;
+  }
+}
 

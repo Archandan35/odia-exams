@@ -6148,3 +6148,220 @@ table tr:hover{
     max-height: 400px;
   }
 }
+
+
+
+/* =========================================================
+   GLOBALS PATCH — append to end of globals.css
+   All selectors below are NEW and non-duplicate.
+   ========================================================= */
+
+/* =========================================
+   ONLINE PRESENCE — cell wrapper
+   Aligns dot + label in a flex row.
+   Used in UserManagement table & view modal.
+========================================= */
+.um-online-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* =========================================
+   ONLINE DOT — pulse animation when live
+   .um-online already sets background color;
+   this adds the animated ring.
+========================================= */
+.um-online-dot.um-online {
+  animation: pulse-online 2s ease-in-out infinite;
+}
+
+@keyframes pulse-online {
+  0%, 100% {
+    box-shadow: 0 0 0 0   rgba(34, 197, 94, 0.55),
+                0 0 0 2px rgba(34, 197, 94, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.0),
+                0 0 0 2px rgba(34, 197, 94, 0.15);
+  }
+}
+
+/* =========================================
+   USER MANAGEMENT — table wrapper
+   Horizontally scrollable on narrow screens.
+========================================= */
+.um-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+/* =========================================
+   USER MANAGEMENT — empty row
+========================================= */
+.um-empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--sp-8) !important;
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   USER MANAGEMENT — selected row highlight
+========================================= */
+.um-row-selected {
+  background: var(--blue-50) !important;
+}
+
+/* =========================================
+   USER MANAGEMENT — email sub-label in cell
+========================================= */
+.um-email {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* =========================================
+   USER MANAGEMENT — date cell
+========================================= */
+.um-date-cell {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* =========================================
+   USER MANAGEMENT — user cell (avatar + info)
+========================================= */
+.um-user-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.um-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* =========================================
+   USER MANAGEMENT — action button group
+========================================= */
+.um-action-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+}
+
+/* =========================================
+   USER MANAGEMENT — avatar sizes
+========================================= */
+.um-avatar-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 0.85rem;
+}
+
+.um-avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: 1.4rem;
+}
+
+/* =========================================
+   USER MANAGEMENT — form grid
+========================================= */
+.um-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.um-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.um-form-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+}
+
+/* =========================================
+   STATUS BADGE — toggle button in table
+========================================= */
+.um-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  box-shadow: none;
+}
+
+.um-status-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.um-status-active:hover {
+  opacity: 0.8;
+  transform: none;
+  box-shadow: none;
+}
+
+.um-status-inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.um-status-inactive:hover {
+  opacity: 0.8;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================================
+   COUNT BADGE — beside section heading
+========================================= */
+.um-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 900px) {
+  .um-form-grid            { grid-template-columns: 1fr; }
+  .um-profile-details-grid { grid-template-columns: 1fr; }
+  .um-action-group         { flex-wrap: wrap; }
+}
+
+@media (max-width: 600px) {
+  .um-profile-header  { flex-direction: column; align-items: flex-start; }
+  .um-modal-actions   { flex-direction: column-reverse; }
+  .um-modal-actions button { width: 100%; }
+}

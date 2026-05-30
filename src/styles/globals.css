@@ -1626,7 +1626,7 @@ table tr:hover{
   gap:var(--sp-5);
   align-items:stretch;
   margin-top:var(--sp-5);
-  padding:var(--sp-6) var(--sp-8);
+  padding:0rem;
   height:calc(100vh - 240px);
   min-height:500px;
 }

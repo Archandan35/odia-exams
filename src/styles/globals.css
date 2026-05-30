@@ -1103,7 +1103,7 @@ td{
 td strong{ color:var(--text-primary); }
 
 table tr:hover{
-  background:var(--blue-50);
+  background:#8a94a3;
   transition:background var(--transition-fast);
 }
 

@@ -3781,7 +3781,7 @@ table tr:hover {
   display:flex;
   align-items:center;
   gap:var(--sp-1);
-  flex-wrap:wrap;
+  flex-wrap:nowrap !important;
 }
 
 .um-empty-row {

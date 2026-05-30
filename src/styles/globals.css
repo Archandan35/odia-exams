@@ -5513,3 +5513,464 @@ table tr:hover{
 @media(min-width:769px){
   .ph-layout{ display:none; }
 }
+/* =========================================
+   USER MANAGEMENT — um- namespace
+   Append to end of globals.css
+   All new classes; none duplicate existing ones.
+   Reuses: .admin-layout, .admin-content, .page-header,
+   .header-actions, .dashboard-grid, .analytics-card,
+   .filter-grid, .filter-select, .table-card, .data-table,
+   .pagination, .popup-overlay, .popup, .large-popup,
+   .btn, .btn-sm, .btn-secondary, .btn-danger,
+   .cancel-btn, .delete-btn, .edit-btn, .submit-btn,
+   .glass-card, .charts-grid, .chart-card, .avatar
+========================================= */
+
+/* =========================================
+   ROLE BADGES
+========================================= */
+.role-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:3px 10px;
+  border-radius:var(--radius-full);
+  font-size:0.72rem;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+.role-badge--superadmin{
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  color:#fff;
+}
+.role-badge--admin{
+  background:var(--grad-primary);
+  color:#fff;
+}
+.role-badge--moderator{
+  background:var(--grad-accent);
+  color:#fff;
+}
+.role-badge--teacher{
+  background:var(--grad-success);
+  color:#fff;
+}
+.role-badge--student{
+  background:#e2e8f0;
+  color:var(--text-secondary);
+}
+
+/* =========================================
+   STATUS BADGE (toggle button style)
+========================================= */
+.um-status-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 12px;
+  border-radius:var(--radius-full);
+  font-size:0.72rem;
+  font-weight:700;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  cursor:pointer;
+  border:none;
+  transition:all var(--transition-fast);
+  box-shadow:none;
+}
+.um-status-active{
+  background:#dcfce7;
+  color:#15803d;
+}
+.um-status-active:hover{
+  background:#bbf7d0;
+  transform:none;
+  box-shadow:none;
+}
+.um-status-inactive{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+.um-status-inactive:hover{
+  background:#fecaca;
+  transform:none;
+  box-shadow:none;
+}
+
+/* =========================================
+   ONLINE INDICATOR
+========================================= */
+.um-online-dot{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-right:5px;
+  vertical-align:middle;
+  flex-shrink:0;
+}
+.um-online{
+  background:#22c55e;
+  box-shadow:0 0 0 2px rgba(34,197,94,0.3);
+}
+.um-offline{
+  background:#94a3b8;
+}
+.um-online-label{
+  font-size:0.82rem;
+  color:var(--text-muted);
+  vertical-align:middle;
+}
+
+/* =========================================
+   TABLE HEADER ROW
+========================================= */
+.um-table-title{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-3);
+  margin-bottom:var(--sp-5);
+  font-size:1.1rem;
+  font-weight:700;
+  color:var(--text-primary);
+  font-family:var(--font-display);
+}
+
+.um-count-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--blue-100);
+  color:var(--blue-800);
+  border-radius:var(--radius-full);
+  padding:2px 10px;
+  font-size:0.78rem;
+  font-weight:700;
+  font-family:var(--font-display);
+}
+
+/* =========================================
+   TABLE WRAPPER (horizontal scroll)
+========================================= */
+.um-table-wrapper{
+  overflow-x:auto;
+  border-radius:var(--radius-lg);
+}
+
+/* =========================================
+   SELECTED ROW HIGHLIGHT
+========================================= */
+.data-table tbody tr.um-row-selected{
+  background:var(--blue-50);
+}
+.data-table tbody tr.um-row-selected:hover{
+  background:var(--blue-100);
+}
+
+/* =========================================
+   USER CELL (avatar + info)
+========================================= */
+.um-user-cell{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-3);
+}
+
+.um-user-info{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.um-email{
+  font-size:0.78rem;
+  color:var(--text-muted);
+}
+
+/* =========================================
+   AVATAR SIZE VARIANTS
+========================================= */
+.um-avatar-sm{
+  width:34px;
+  height:34px;
+  font-size:0.85rem;
+  flex-shrink:0;
+}
+
+.um-avatar-lg{
+  width:56px;
+  height:56px;
+  font-size:1.35rem;
+  flex-shrink:0;
+}
+
+/* =========================================
+   DATE CELL
+========================================= */
+.um-date-cell{
+  font-size:0.8rem;
+  color:var(--text-muted);
+  white-space:nowrap;
+}
+
+/* =========================================
+   ACTION BUTTON GROUP
+========================================= */
+.um-action-group{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-1);
+  flex-wrap:nowrap;
+}
+
+/* =========================================
+   EMPTY TABLE ROW
+========================================= */
+.um-empty-row{
+  text-align:center;
+  color:var(--text-muted);
+  font-style:italic;
+  padding:var(--sp-10) !important;
+}
+
+.um-empty-msg{
+  color:var(--text-muted);
+  font-style:italic;
+  margin-top:var(--sp-5);
+  text-align:center;
+}
+
+/* =========================================
+   MODAL FORM
+========================================= */
+.um-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:var(--sp-4);
+}
+
+.um-form-field{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.um-form-field label{
+  font-size:0.83rem;
+  font-weight:600;
+  color:var(--text-secondary);
+  font-family:var(--font-display);
+}
+
+.um-form-error{
+  background:#fff1f2;
+  border:1px solid #fecaca;
+  border-radius:var(--radius-sm);
+  padding:var(--sp-3) var(--sp-4);
+  color:#b91c1c;
+  font-size:0.85rem;
+  font-weight:500;
+}
+
+.um-modal-sub{
+  color:var(--text-muted);
+  font-size:0.875rem;
+  margin-top:calc(var(--sp-2) * -1);
+}
+
+.um-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:var(--sp-3);
+  margin-top:var(--sp-2);
+}
+
+/* =========================================
+   PROFILE HEADER (view modal + activity page)
+========================================= */
+.um-profile-header{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-5);
+  margin-bottom:var(--sp-5);
+  flex-wrap:wrap;
+}
+
+.um-profile-info{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+  flex:1;
+}
+
+.um-profile-info h2{
+  font-size:1.35rem;
+  font-weight:800;
+  color:var(--text-primary);
+  font-family:var(--font-display);
+  margin:0;
+}
+
+.um-profile-info p{
+  font-size:0.875rem;
+  color:var(--text-muted);
+  margin:0;
+}
+
+/* =========================================
+   PROFILE DETAILS GRID (view modal)
+========================================= */
+.um-profile-details-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:var(--sp-4);
+  padding:var(--sp-5);
+  background:var(--blue-50);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border-blue);
+  margin-bottom:var(--sp-4);
+}
+
+.um-detail-item{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-1);
+}
+
+.um-detail-label{
+  font-size:0.72rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--text-muted);
+  font-family:var(--font-display);
+}
+
+.um-detail-value{
+  font-size:0.88rem;
+  color:var(--text-primary);
+  font-weight:500;
+}
+
+.um-uid{
+  font-family:var(--font-mono);
+  font-size:0.72rem;
+  word-break:break-all;
+}
+
+/* =========================================
+   PERMISSIONS MODAL
+========================================= */
+.um-permissions-list{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+  background:var(--blue-50);
+  border:1px solid var(--border-blue);
+  border-radius:var(--radius-md);
+  padding:var(--sp-4);
+  margin-bottom:var(--sp-5);
+}
+
+.um-permission-item{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-3);
+  font-size:0.875rem;
+  color:var(--text-secondary);
+  text-transform:capitalize;
+}
+
+.um-perm-check{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#dcfce7;
+  color:#15803d;
+  font-size:0.72rem;
+  font-weight:800;
+  flex-shrink:0;
+}
+
+.um-rbac-grid{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.um-rbac-grid h4{
+  font-size:0.88rem;
+  font-weight:700;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-family:var(--font-display);
+  border-bottom:1px solid var(--border-light);
+  padding-bottom:var(--sp-2);
+}
+
+.um-rbac-row{
+  display:flex;
+  align-items:flex-start;
+  gap:var(--sp-3);
+  font-size:0.82rem;
+}
+
+.um-rbac-perms{
+  color:var(--text-muted);
+  flex:1;
+  text-transform:capitalize;
+  line-height:1.5;
+}
+
+/* =========================================
+   USER IDENTITY CARD (activity page)
+========================================= */
+.um-identity-card{
+  margin-bottom:var(--sp-6);
+}
+
+.um-identity-meta{
+  display:flex;
+  align-items:center;
+  gap:var(--sp-3);
+  flex-wrap:wrap;
+  margin-top:var(--sp-2);
+}
+
+.um-identity-dates{
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+  margin-left:auto;
+}
+
+.um-identity-dates p{
+  font-size:0.83rem;
+  color:var(--text-muted);
+}
+
+.um-identity-dates strong{
+  color:var(--text-primary);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media(max-width:900px){
+  .um-form-grid{ grid-template-columns:1fr; }
+  .um-profile-details-grid{ grid-template-columns:1fr; }
+  .um-action-group{ flex-wrap:wrap; }
+  .um-identity-dates{ margin-left:0; }
+}
+
+@media(max-width:600px){
+  .um-profile-header{ flex-direction:column; align-items:flex-start; }
+  .um-modal-actions{ flex-direction:column-reverse; }
+  .um-modal-actions button{ width:100%; }
+}

@@ -5146,3 +5146,199 @@ table tr:hover {
   }
 }
 
+
+/* =========================================
+   28. USER MANAGEMENT — NEW ADDITIONS
+   Phone field, Toast, Refresh enhancements
+========================================= */
+
+/* Phone input row */
+.um-phone-field {
+  display:flex;
+  align-items:center;
+  border:1.5px solid var(--border-blue);
+  border-radius:var(--radius-md);
+  overflow:hidden;
+  background:#fff;
+  transition:border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.um-phone-field:focus-within {
+  border-color:var(--blue-500);
+  box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+.um-phone-prefix {
+  padding:0 var(--sp-3);
+  height:42px;
+  display:flex;
+  align-items:center;
+  background:var(--blue-50);
+  border-right:1.5px solid var(--border-blue);
+  font-size:0.88rem;
+  font-weight:700;
+  color:var(--blue-700);
+  font-family:var(--font-display);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.um-phone-field input {
+  border:none !important;
+  box-shadow:none !important;
+  outline:none !important;
+  flex:1;
+  padding:var(--sp-2) var(--sp-3);
+  font-size:0.9rem;
+  color:var(--text-primary);
+  background:transparent;
+  font-family:var(--font-body);
+}
+
+/* Toast notification */
+.um-toast {
+  position:fixed;
+  bottom:var(--sp-8);
+  right:var(--sp-8);
+  z-index:9999;
+  padding:var(--sp-3) var(--sp-5);
+  border-radius:var(--radius-lg);
+  font-size:0.92rem;
+  font-weight:600;
+  font-family:var(--font-display);
+  box-shadow:0 8px 28px rgba(0,0,0,0.18);
+  animation:toastIn 0.25s ease;
+  max-width:380px;
+  pointer-events:none;
+}
+.um-toast--success {
+  background:var(--grad-success);
+  color:#fff;
+}
+.um-toast--error {
+  background:var(--grad-danger);
+  color:#fff;
+}
+@keyframes toastIn {
+  from { opacity:0; transform:translateY(16px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0)    scale(1); }
+}
+
+/* =========================================
+   29. AUTH — NEW ADDITIONS
+   Multi-identifier, Forgot Password, Eye icon
+========================================= */
+
+/* Error message on login */
+.auth-error {
+  background:#fff1f2;
+  border:1px solid #fecaca;
+  border-left:3px solid var(--danger);
+  border-radius:var(--radius-md);
+  padding:var(--sp-3) var(--sp-4);
+  color:#b91c1c;
+  font-size:0.85rem;
+  font-weight:500;
+  margin-bottom:var(--sp-4);
+}
+
+/* Password field with eye toggle on login */
+.auth-pwd-field {
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.auth-pwd-field input {
+  width:100%;
+  padding-right:48px;
+  padding:var(--sp-3) 48px var(--sp-3) var(--sp-4);
+  background:rgba(255,255,255,0.9);
+  border:1.5px solid var(--border-blue);
+  border-radius:var(--radius-md);
+  color:var(--text-primary);
+  font-size:0.93rem;
+  font-family:var(--font-body);
+  transition:all var(--transition-fast);
+  outline:none;
+  -webkit-appearance:none;
+  appearance:none;
+  box-shadow:var(--shadow-inset);
+}
+.auth-pwd-field input:focus {
+  border-color:var(--blue-500);
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,0.13),var(--shadow-inset);
+}
+.auth-pwd-toggle {
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:1rem;
+  padding:0;
+  line-height:1;
+  color:var(--text-muted);
+  transition:color var(--transition-fast);
+}
+.auth-pwd-toggle:hover { color:var(--blue-600); }
+
+/* Forgot password row */
+.auth-forgot-row {
+  display:flex;
+  justify-content:flex-end;
+  margin-top:var(--sp-2);
+}
+.auth-forgot-link {
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:0.82rem;
+  font-weight:600;
+  color:var(--blue-600);
+  padding:0;
+  font-family:var(--font-body);
+  transition:color var(--transition-fast);
+}
+.auth-forgot-link:hover { color:var(--blue-800); text-decoration:underline; }
+
+/* Back to sign-in link */
+.auth-back-link {
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:0.875rem;
+  font-weight:600;
+  color:var(--blue-600);
+  padding:0;
+  font-family:var(--font-body);
+  transition:color var(--transition-fast);
+  display:inline-flex;
+  align-items:center;
+  gap:var(--sp-1);
+}
+.auth-back-link:hover { color:var(--blue-800); }
+
+/* Success box in forgot password */
+.auth-success-box {
+  background:var(--grad-success);
+  border-radius:var(--radius-lg);
+  padding:var(--sp-5) var(--sp-6);
+  text-align:center;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:var(--sp-2);
+  margin:var(--sp-4) 0;
+}
+.auth-success-icon { font-size:2rem; }
+.auth-success-box p {
+  font-size:0.9rem;
+  font-weight:600;
+  color:#fff;
+  margin:0;
+}
+.auth-success-sub {
+  font-size:0.8rem !important;
+  opacity:0.85;
+}

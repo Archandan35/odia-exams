@@ -513,12 +513,14 @@ export default function UserManagement() {
       username:  user.username  || "",
       role:      user.role      || "student",
       status:    user.status    || "active",
+      phone:     (user.phone || "").replace(/^\+91/, ""),
     });
   }
   async function handleEditUser() {
     if (!editUser) return;
     setEditLoading(true);
     try {
+      const phoneDigits = (editForm.phone || "").replace(/\D/g, "").slice(0, 10);
       await updateDoc(doc(db, "users", editUser.id), {
         firstName: editForm.firstName,
         lastName:  editForm.lastName,
@@ -526,6 +528,7 @@ export default function UserManagement() {
         username:  editForm.username,
         role:      editForm.role,
         status:    editForm.status,
+        phone:     phoneDigits ? `+91${phoneDigits}` : "",
       });
       setEditUser(null);
     } catch (e) {
@@ -690,11 +693,14 @@ export default function UserManagement() {
             <p>Manage registered users, roles, permissions, and account status</p>
           </div>
           <div className="header-actions">
-            {selected.length > 0 && (
-              <button className="delete-btn" onClick={() => setShowBulkDelete(true)}>
-                🗑 Delete Selected ({selected.length})
-              </button>
-            )}
+            <button
+              className="delete-btn um-bulk-delete-btn"
+              onClick={() => setShowBulkDelete(true)}
+              disabled={selected.length === 0}
+              title={selected.length === 0 ? "Select users from the table to bulk delete" : `Delete ${selected.length} selected user(s)`}
+            >
+              🗑 Delete Selected{selected.length > 0 ? ` (${selected.length})` : ""}
+            </button>
             <button
               className="btn btn-secondary"
               onClick={handleRefresh}
@@ -1014,6 +1020,22 @@ export default function UserManagement() {
                   value={editForm.username}
                   onChange={e => setEditForm({ ...editForm, username: e.target.value })}
                 />
+              </div>
+              <div className="um-form-field">
+                <label>Phone Number</label>
+                <div className="um-phone-field">
+                  <span className="um-phone-prefix">+91</span>
+                  <input
+                    type="tel"
+                    placeholder="9876543210"
+                    maxLength={10}
+                    value={editForm.phone || ""}
+                    onChange={e => {
+                      const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                      setEditForm({ ...editForm, phone: v });
+                    }}
+                  />
+                </div>
               </div>
               <div className="um-form-field">
                 <label>Role</label>

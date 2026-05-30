@@ -1075,11 +1075,8 @@ button:hover{
 }
 
 table{
-  width:50%;
+  width:100%;
   border-collapse:collapse;
-  background:#acb1b9 !important;
-  resize: both;
-  overflow: hidden;
 }
 
 th{

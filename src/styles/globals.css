@@ -4253,7 +4253,7 @@ table tr:hover { background:var(--blue-50); transition:background var(--transiti
 
 .mock-generator-grid {
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   gap:var(--sp-4);
 }
 

@@ -94,15 +94,19 @@ export default function ResultPage() {
 
   function getQuestionStatus(q) {
     const answer = result.answers?.[q.id];
-    let cIndex = 0;
+    const isMarked = result.marked?.[q.id] || result.markedForReview?.[q.id] || false;
+    const isVisited = result.visited?.[q.id] || answer !== undefined || isMarked;
 
+    let cIndex = 0;
     if (typeof q.correctAnswer === "number") {
       cIndex = q.correctAnswer;
     } else if (typeof q.correctAnswer === "string") {
       cIndex = ANSWER_MAP[q.correctAnswer?.trim()?.toUpperCase()] ?? 0;
     }
 
-    if (answer === undefined) return "unanswered";
+    if (!isVisited) return "not-visited";
+    if (isMarked) return "review";
+    if (answer === undefined) return "not-visited";
     if (answer === cIndex) return "correct";
     return "wrong";
   }
@@ -295,10 +299,22 @@ export default function ResultPage() {
               Wrong
             </div>
             <div className="review-legend-item">
-              <span className="review-legend-counter unanswered">
-                {questions.filter(q => getQuestionStatus(q) === "unanswered").length}
+              <span className="review-legend-counter answered">
+                {questions.filter(q => { const s = getQuestionStatus(q); return s === "correct" || s === "wrong"; }).length}
               </span>
-              Skipped
+              Answered
+            </div>
+            <div className="review-legend-item">
+              <span className="review-legend-counter review">
+                {questions.filter(q => getQuestionStatus(q) === "review").length}
+              </span>
+              Review
+            </div>
+            <div className="review-legend-item">
+              <span className="review-legend-counter not-visited">
+                {questions.filter(q => getQuestionStatus(q) === "not-visited").length}
+              </span>
+              Not Visited
             </div>
           </div>
 
@@ -313,7 +329,8 @@ export default function ResultPage() {
                   className={`review-palette-btn ${
                     status === "correct" ? "review-palette-correct" : ""
                   } ${status === "wrong" ? "review-palette-wrong" : ""} ${
-                    status === "unanswered" ? "review-palette-unanswered" : ""
+                    status === "review" ? "review-palette-review" : ""
+                  } ${status === "not-visited" ? "review-palette-not-visited" : ""
                   } ${currentQuestion === index ? "review-current" : ""}`}
                 >
                   {index + 1}

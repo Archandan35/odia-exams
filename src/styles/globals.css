@@ -2014,7 +2014,7 @@ table tr:hover{
 .review-legend{
   display:flex;
   flex-wrap:wrap;
-  gap:var(--sp-3);
+  gap:var(--sp-2);
   margin-bottom:var(--sp-4);
 }
 
@@ -2022,15 +2022,45 @@ table tr:hover{
   display:flex;
   align-items:center;
   gap:var(--sp-2);
-  font-size:0.9375rem;
+  font-size:0.72rem;
+  font-weight:700;
+  font-family:var(--font-display);
   color:var(--text-secondary);
-  font-weight:500;
+  letter-spacing:0.02em;
+  text-transform:uppercase;
 }
 
-.review-dot{
-  width:12px;
-  height:12px;
-  border-radius:50%;
+.review-legend-counter{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:28px;
+  height:28px;
+  border-radius:var(--radius-sm);
+  font-size:0.88rem;
+  font-weight:800;
+  font-family:var(--font-display);
+  padding:0 var(--sp-2);
+  box-shadow:var(--shadow-xs);
+  letter-spacing:0;
+}
+
+.review-legend-counter.correct{
+  background:#dcfce7;
+  border:1.5px solid #16a34a;
+  color:#14532d;
+}
+
+.review-legend-counter.wrong{
+  background:#fee2e2;
+  border:1.5px solid #dc2626;
+  color:#7f1d1d;
+}
+
+.review-legend-counter.unanswered{
+  background:#f1f5f9;
+  border:1.5px solid #cbd5e1;
+  color:#475569;
 }
 
 .review-palette{

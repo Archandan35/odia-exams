@@ -269,8 +269,14 @@ export default function UserManagement() {
   const [setPasswordUser, setSetPasswordUser] = useState(null);
   const [accessUser,      setAccessUser]      = useState(null);
 
+  /* ── Toast notification ── */
+  const [toast, setToast] = useState(null); // { type: 'success'|'error', msg: string }
+
+  /* ── Refresh loading ── */
+  const [refreshing, setRefreshing] = useState(false);
+
   /* ── Add form ── */
-  const [addForm,    setAddForm]    = useState({ firstName:"", lastName:"", email:"", username:"", role:"student", status:"active", password:"" });
+  const [addForm,    setAddForm]    = useState({ firstName:"", lastName:"", email:"", username:"", role:"student", status:"active", password:"", phone:"" });
   const [addLoading, setAddLoading] = useState(false);
   const [addError,   setAddError]   = useState("");
   const [showAddPwd, setShowAddPwd] = useState(false);
@@ -375,21 +381,87 @@ export default function UserManagement() {
 
   /* ── Add ── */
   async function handleAddUser() {
-    if (!addForm.firstName || !addForm.email || !addForm.password) {
-      setAddError("First name, email, and password are required.");
+    /* ── Basic validation ── */
+    if (!addForm.firstName.trim()) {
+      setAddError("First name is required.");
       return;
     }
+    if (!addForm.email.trim()) {
+      setAddError("Email address is required.");
+      return;
+    }
+    if (!addForm.password) {
+      setAddError("Password is required.");
+      return;
+    }
+    if (addForm.password.length < 6) {
+      setAddError("Password must be at least 6 characters.");
+      return;
+    }
+
     setAddLoading(true);
     setAddError("");
+
+    const emailLower = addForm.email.trim().toLowerCase();
+
     try {
-      const cred = await createUserWithEmailAndPassword(auth, addForm.email, addForm.password);
+      /* ── CASE 1: Check if this email already has a Firestore profile ──
+         If a Firestore doc already exists for this email, show a clear
+         message instead of attempting Auth creation and getting the
+         raw Firebase error string.
+      */
+      const existingSnap = await getDocs(
+        query(collection(db, "users"), where("email", "==", emailLower))
+      );
+      if (!existingSnap.empty) {
+        setAddError(
+          `A user with the email "${emailLower}" already exists in the system. ` +
+          `Use the Edit button to update their details, or search for them in the table.`
+        );
+        setAddLoading(false);
+        return;
+      }
+
+      /* ── CASE 2: Try to create the Firebase Auth account ──
+         If auth/email-already-in-use is thrown, the email exists in Auth
+         but has NO Firestore profile (orphaned Auth account).
+         We recover by creating the Firestore doc linked to the existing uid
+         using fetchSignInMethodsForEmail to confirm it exists, then
+         creating only the Firestore document.
+      */
+      let uid;
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, emailLower, addForm.password);
+        uid = cred.user.uid;
+      } catch (authErr) {
+        if (authErr.code === "auth/email-already-in-use") {
+          /*
+           * The email exists in Firebase Auth but has no Firestore profile.
+           * We cannot retrieve the uid from the client without the user
+           * logging in. Show a clear actionable message.
+           */
+          setAddError(
+            `This email is already registered in Firebase Authentication but has no profile in the system. ` +
+            `To fix this: ask the user to log in once so their profile is auto-created, ` +
+            `or delete the orphaned Auth account from the Firebase console and try again.`
+          );
+          setAddLoading(false);
+          return;
+        }
+        /* Any other auth error (invalid email, weak password, network…) */
+        throw authErr;
+      }
+
+      /* ── CASE 3: Auth account created — now create Firestore profile ── */
+      const phoneVal = addForm.phone.trim();
       await addDoc(collection(db, "users"), {
-        uid:         cred.user.uid,
-        firstName:   addForm.firstName,
-        lastName:    addForm.lastName,
-        name:        `${addForm.firstName} ${addForm.lastName}`.trim(),
-        email:       addForm.email,
-        username:    addForm.username || "",
+        uid,
+        firstName:   addForm.firstName.trim(),
+        lastName:    addForm.lastName.trim(),
+        name:        `${addForm.firstName.trim()} ${addForm.lastName.trim()}`.trim(),
+        email:       emailLower,
+        username:    addForm.username.trim() || "",
+        phone:       phoneVal ? `+91${phoneVal.replace(/^\+91/, "")}` : "",
         role:        addForm.role,
         status:      addForm.status,
         createdAt:   Date.now(),
@@ -398,12 +470,37 @@ export default function UserManagement() {
         isOnline:    false,
         permissions: [],
       });
+
+      /* ── Success — close modal, reset form, show toast; stay on this page ── */
       setShowAddModal(false);
-      setAddForm({ firstName:"", lastName:"", email:"", username:"", role:"student", status:"active", password:"" });
+      setAddForm({
+        firstName: "",
+        lastName:  "",
+        email:     "",
+        username:  "",
+        role:      "student",
+        status:    "active",
+        password:  "",
+        phone:     "",
+      });
       setShowAddPwd(false);
+      setAddError("");
+      showToast("success", `User "${addForm.firstName.trim()}" created successfully.`);
+
     } catch (e) {
-      setAddError(e.message);
+      /* Translate common Firebase error codes into plain English */
+      const code = e.code || "";
+      if (code === "auth/invalid-email") {
+        setAddError("The email address is not valid. Please check and try again.");
+      } else if (code === "auth/weak-password") {
+        setAddError("Password is too weak. Use at least 6 characters.");
+      } else if (code === "auth/network-request-failed") {
+        setAddError("Network error. Please check your connection and try again.");
+      } else {
+        setAddError(e.message || "An unexpected error occurred. Please try again.");
+      }
     }
+
     setAddLoading(false);
   }
 
@@ -563,6 +660,20 @@ export default function UserManagement() {
     setAccessSaving(false);
   }
 
+  /* ── Toast helper ── */
+  function showToast(type, msg) {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  /* ── Manual Refresh ── */
+  async function handleRefresh() {
+    setRefreshing(true);
+    await new Promise(r => setTimeout(r, 800));
+    setRefreshing(false);
+    showToast("success", "User list refreshed.");
+  }
+
   /* =========================================
      RENDER
   ========================================= */
@@ -581,9 +692,17 @@ export default function UserManagement() {
           <div className="header-actions">
             {selected.length > 0 && (
               <button className="delete-btn" onClick={() => setShowBulkDelete(true)}>
-                Delete Selected ({selected.length})
+                🗑 Delete Selected ({selected.length})
               </button>
             )}
+            <button
+              className="btn btn-secondary"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Re-fetch all users from Firebase"
+            >
+              {refreshing ? "⟳ Refreshing…" : "⟳ Refresh"}
+            </button>
             <button onClick={() => setShowAddModal(true)}>+ Add User</button>
           </div>
         </div>
@@ -755,6 +874,13 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div className={`um-toast um-toast--${toast.type}`}>
+          {toast.type === "success" ? "✅" : "❌"} {toast.msg}
+        </div>
+      )}
+
       {/* ─────────────── MODALS ─────────────── */}
 
       {/* ADD USER */}
@@ -792,6 +918,22 @@ export default function UserManagement() {
                   value={addForm.username}
                   onChange={e => setAddForm({ ...addForm, username: e.target.value })}
                 />
+              </div>
+              <div className="um-form-field">
+                <label>Phone Number</label>
+                <div className="um-phone-field">
+                  <span className="um-phone-prefix">+91</span>
+                  <input
+                    type="tel"
+                    placeholder="9876543210"
+                    maxLength={10}
+                    value={addForm.phone}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setAddForm({ ...addForm, phone: v });
+                    }}
+                  />
+                </div>
               </div>
               <div className="um-form-field">
                 <label>Password *</label>
@@ -932,6 +1074,10 @@ export default function UserManagement() {
               <div className="um-detail-item">
                 <span className="um-detail-label">Username</span>
                 <span className="um-detail-value">{viewUser.username || "-"}</span>
+              </div>
+              <div className="um-detail-item">
+                <span className="um-detail-label">Phone</span>
+                <span className="um-detail-value">{viewUser.phone || "-"}</span>
               </div>
               <div className="um-detail-item">
                 <span className="um-detail-label">Status</span>

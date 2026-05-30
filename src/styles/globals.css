@@ -2286,7 +2286,7 @@ table tr:hover{
   width:100%;
   border-radius:var(--radius-lg);
   background:#111827;
-  border:1px solid #1e293b;
+  border-left: 5px solid var(--blue-500);
 }
 
 .se-editable,
@@ -4193,7 +4193,6 @@ table tr:hover{
 }
 
 .se-opt-display::before{
-  content:attr(data-letter);
   width:34px;
   height:34px;
   min-width:34px;

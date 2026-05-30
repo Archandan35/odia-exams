@@ -977,14 +977,17 @@ button:hover {
 /* =========================================
    13. TABLES
 ========================================= */
-.table-card { overflow:auto; }
+.table-card { 
+   overflow:auto; 
+   margin-top:30px;
+}
 
 table { width:100%; border-collapse:collapse; }
 
 th {
   padding:var(--sp-3) var(--sp-4);
   text-align:left;
-  background:var(--grad-primary);
+  background:linear-gradient(0deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
   color:rgba(255,255,255,0.92);
   font-size:0.78rem;
   font-weight:700;
@@ -1004,7 +1007,11 @@ td {
 td strong { color:var(--text-primary); }
 
 /* Unified hover (replaces the conflicting gray + blue rules) */
-table tr:hover { background:var(--blue-50); transition:background var(--transition-fast); }
+table tr:hover { 
+   background:var(--blue-50); 
+   transition:background var(--transition-fast); 
+
+}
 
 .data-table {
   width:100%;
@@ -1014,6 +1021,7 @@ table tr:hover { background:var(--blue-50); transition:background var(--transiti
   border-radius:var(--radius-lg);
   overflow:hidden;
   box-shadow:var(--shadow-card);
+  margin-top:20px;
 }
 .data-table thead { background:var(--grad-primary); }
 .data-table thead th { border:none; }
@@ -3748,6 +3756,8 @@ table tr:hover { background:var(--blue-50); transition:background var(--transiti
 .um-table-wrapper {
   overflow-x:auto;
   border-radius:var(--radius-lg);
+  max-height: 500px;
+  overflow-y: scroll;
 }
 
 .um-row-selected,

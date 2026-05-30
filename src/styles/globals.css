@@ -1737,7 +1737,7 @@ table tr:hover{
   flex-wrap:wrap;
   gap:var(--sp-3);
   margin-bottom:var(--sp-5);
-  padding:var(--sp-4) var(--sp-8);
+  padding:10px;
   background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 100%);
   border-bottom:2px solid var(--blue-700);
   border-radius:var(--radius-lg);
@@ -1748,7 +1748,7 @@ table tr:hover{
   background:rgba(255,255,255,0.10);
   border:1px solid rgba(255,255,255,0.18);
   border-radius:var(--radius-md);
-  padding:var(--sp-3) var(--sp-5);
+  padding:15px);
   text-align:center;
   min-width:90px;
   flex:1;
@@ -1822,7 +1822,7 @@ table tr:hover{
 }
 
 .review-question-text{
-  font-size:0.97rem;
+  font-size:1.35rem;
   font-weight:600;
   line-height:1.75;
   color:var(--text-primary);
@@ -1868,7 +1868,7 @@ table tr:hover{
 }
 
 .review-option-text{
-  font-size:0.9rem;
+  font-size:1.25rem;
   line-height:1.55;
   color:var(--text-secondary);
   flex:1;
@@ -1942,7 +1942,7 @@ table tr:hover{
 }
 
 .review-explanation p{
-  font-size:0.88rem;
+  font-size:1.25rem;
   line-height:1.65;
   color:var(--text-secondary);
 }
@@ -2022,7 +2022,7 @@ table tr:hover{
   display:flex;
   align-items:center;
   gap:var(--sp-2);
-  font-size:0.78rem;
+  font-size:0.9375rem;
   color:var(--text-secondary);
   font-weight:500;
 }
@@ -2042,6 +2042,7 @@ table tr:hover{
   padding-right:4px;
   flex:1;
   align-content:start;
+  padding:0.375rem;
 }
 
 .review-palette::-webkit-scrollbar{ width:6px; }

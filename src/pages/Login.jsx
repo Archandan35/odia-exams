@@ -168,7 +168,7 @@ export default function Login() {
         {/* Heading */}
         <div className="auth-heading">
           <div className="auth-badge">
-            <span>🎓</span> Exam Portal
+            <span>🎓</span> Sravya Technologies
           </div>
           <h1>
             Welcome Back<br />Champion! 🎉
@@ -255,7 +255,7 @@ export default function Login() {
         <div className="auth-dedication">
           <p>
             Built with passion. Dedicated with endless love to my{" "}
-            <span className="heart">💕</span> beloved wife, whose support
+            <span className="heart">💕</span> beloved wife <strong>Srabani</strong>, whose support
             inspires me for this milestone.
           </p>
         </div>

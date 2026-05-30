@@ -1075,9 +1075,9 @@ button:hover{
 }
 
 table{
-  width:100%;
+  width:50%;
   border-collapse:collapse;
-  background:transparent;
+  background:#acb1b9 !important;
 }
 
 th{

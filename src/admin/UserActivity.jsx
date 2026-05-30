@@ -1,47 +1,28 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/config";
 import AdminSidebar from "../components/AdminSidebar";
+import TopNavbar from "../components/TopNavbar";
 import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip,
+  BarChart, Bar, PieChart, Pie, Cell,
 } from "recharts";
 
-function formatDate(ts) {
-  if (!ts) return "-";
-  return new Date(ts).toLocaleDateString();
-}
+const PIE_COLORS = ["#059669", "#dc2626"];
 
-function formatDateTime(ts) {
-  if (!ts) return "-";
-  return new Date(ts).toLocaleString();
-}
-
-function formatTime(sec) {
-  if (!sec) return "0s";
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}m ${s}s`;
-}
+function formatDate(ts)     { if (!ts) return "-"; return new Date(ts).toLocaleDateString(); }
+function formatDateTime(ts) { if (!ts) return "-"; return new Date(ts).toLocaleString(); }
+function formatTime(sec)    { if (!sec) return "0s"; const m = Math.floor(sec / 60); const s = sec % 60; return `${m}m ${s}s`; }
 
 export default function UserActivity() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const user = location.state?.user;
+  const navigate  = useNavigate();
+  const user      = location.state?.user;
 
-  const [results, setResults] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [topics, setTopics] = useState([]);
+  const [results,   setResults]   = useState([]);
+  const [subjects,  setSubjects]  = useState([]);
+  const [topics,    setTopics]    = useState([]);
   const [subTopics, setSubTopics] = useState([]);
 
   /* =========================================
@@ -52,42 +33,47 @@ export default function UserActivity() {
   }, [user, navigate]);
 
   /* =========================================
-     LOAD DATA
+     LOAD RESULTS
+     Uses both uid and id fields to handle
+     users created via Firestore directly
+     (where uid may differ from doc id).
   ========================================= */
   useEffect(() => {
     if (!user) return;
+
+    // The userId stored in results may be the Firebase Auth uid
+    const userId = user.uid || user.id;
+
     const q = query(
       collection(db, "results"),
-      where("userId", "==", user.uid || user.id)
+      where("userId", "==", userId)
     );
+
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => b.createdAt - a.createdAt);
+      data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setResults(data);
     });
+
     return () => unsub();
   }, [user]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "subjects"), (snap) => {
-      setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(collection(db, "subjects"),  (snap) => setSubjects(snap.docs.map( (d) => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "topics"), (snap) => {
-      setTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(collection(db, "topics"),    (snap) => setTopics(snap.docs.map(   (d) => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "subtopics"), (snap) => {
-      setSubTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(collection(db, "subtopics"), (snap) => setSubTopics(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, []);
+
+  if (!user) return null;
 
   /* =========================================
      HELPERS
@@ -98,15 +84,15 @@ export default function UserActivity() {
      ANALYTICS
   ========================================= */
   const totalAttempts = results.length;
-  const avgAccuracy = results.length > 0
+  const avgAccuracy   = results.length > 0
     ? (results.reduce((a, b) => a + Number(b.accuracy), 0) / results.length).toFixed(2)
     : 0;
   const totalScore = results.reduce((a, b) => a + Number(b.score), 0);
-  const bestScore = results.length > 0 ? Math.max(...results.map((r) => Number(r.score))) : 0;
+  const bestScore  = results.length > 0 ? Math.max(...results.map((r) => Number(r.score))) : 0;
 
   const trendData = [...results].reverse().map((r, i) => ({
-    attempt: i + 1,
-    score: Number(r.score),
+    attempt:  i + 1,
+    score:    Number(r.score),
     accuracy: Number(r.accuracy),
   }));
 
@@ -114,7 +100,7 @@ export default function UserActivity() {
     results.reduce((acc, r) => {
       const name = getName(subjects, r.subject);
       if (!acc[name]) acc[name] = { subject: name, score: 0, attempts: 0 };
-      acc[name].score += Number(r.score);
+      acc[name].score    += Number(r.score);
       acc[name].attempts++;
       return acc;
     }, {})
@@ -125,9 +111,33 @@ export default function UserActivity() {
     { name: "Wrong",   value: results.reduce((a, b) => a + Number(b.wrong   || 0), 0) },
   ];
 
-  const PIE_COLORS = ["#059669", "#dc2626"];
+  /* =========================================
+     WEAK / STRONG
+  ========================================= */
+  function buildStats(keyFn) {
+    return Object.values(
+      results.reduce((acc, r) => {
+        const name = keyFn(r);
+        if (!acc[name]) acc[name] = { name, score: 0, attempts: 0 };
+        acc[name].score    += Number(r.score);
+        acc[name].attempts++;
+        return acc;
+      }, {})
+    );
+  }
 
-  if (!user) return null;
+  function getWeakStrong(data) {
+    if (data.length === 0) return { weak: "-", strong: "-" };
+    const sorted = [...data].sort((a, b) => (a.score / a.attempts) - (b.score / b.attempts));
+    return {
+      weak:   sorted[0]?.name || "-",
+      strong: sorted[sorted.length - 1]?.name || "-",
+    };
+  }
+
+  const { weak: weakSubject,  strong: strongSubject  } = getWeakStrong(buildStats((r) => getName(subjects,  r.subject)));
+  const { weak: weakTopic,    strong: strongTopic    } = getWeakStrong(buildStats((r) => getName(topics,    r.topicId)));
+  const { weak: weakSubTopic, strong: strongSubTopic } = getWeakStrong(buildStats((r) => getName(subTopics, r.subTopicId)));
 
   /* =========================================
      UI
@@ -137,6 +147,7 @@ export default function UserActivity() {
       <AdminSidebar />
 
       <div className="admin-content">
+        <TopNavbar />
 
         {/* PAGE HEADER */}
         <div className="page-header">
@@ -161,7 +172,7 @@ export default function UserActivity() {
               <h2>{user.name || "-"}</h2>
               <p>{user.email}</p>
               <div className="um-identity-meta">
-                <span className={`role-badge role-badge--${user.role}`}>
+                <span className={`role-badge role-badge--${(user.role || "student").replace("-", "")}`}>
                   {user.role || "student"}
                 </span>
                 <span className={user.status === "active" ? "um-status-badge um-status-active" : "um-status-badge um-status-inactive"}>
@@ -180,24 +191,22 @@ export default function UserActivity() {
           </div>
         </div>
 
-        {/* STATS */}
+        {/* TOP STATS */}
         <div className="dashboard-grid">
-          <div className="analytics-card">
-            <h3>Attempts</h3>
-            <h1>{totalAttempts}</h1>
-          </div>
-          <div className="analytics-card">
-            <h3>Avg Accuracy</h3>
-            <h1>{avgAccuracy}%</h1>
-          </div>
-          <div className="analytics-card">
-            <h3>Total Score</h3>
-            <h1>{totalScore}</h1>
-          </div>
-          <div className="analytics-card">
-            <h3>Best Score</h3>
-            <h1>{bestScore}</h1>
-          </div>
+          <div className="analytics-card"><h3>Attempts</h3><h1>{totalAttempts}</h1></div>
+          <div className="analytics-card"><h3>Avg Accuracy</h3><h1>{avgAccuracy}%</h1></div>
+          <div className="analytics-card"><h3>Total Score</h3><h1>{totalScore}</h1></div>
+          <div className="analytics-card"><h3>Best Score</h3><h1>{bestScore}</h1></div>
+        </div>
+
+        {/* AI INSIGHTS */}
+        <div className="dashboard-grid">
+          <div className="analytics-card"><h3>Weak Subject</h3><h2>{weakSubject}</h2></div>
+          <div className="analytics-card"><h3>Strong Subject</h3><h2>{strongSubject}</h2></div>
+          <div className="analytics-card"><h3>Weak Topic</h3><h2>{weakTopic}</h2></div>
+          <div className="analytics-card"><h3>Strong Topic</h3><h2>{strongTopic}</h2></div>
+          <div className="analytics-card"><h3>Weak SubTopic</h3><h2>{weakSubTopic}</h2></div>
+          <div className="analytics-card"><h3>Strong SubTopic</h3><h2>{strongSubTopic}</h2></div>
         </div>
 
         {/* CHARTS */}
@@ -209,7 +218,7 @@ export default function UserActivity() {
                 <XAxis dataKey="attempt" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="score"    stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
                 <Line type="monotone" dataKey="accuracy" stroke="#059669" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -270,13 +279,13 @@ export default function UserActivity() {
                   {results.map((r) => (
                     <tr key={r.id}>
                       <td>{formatDate(r.createdAt)}</td>
-                      <td>{getName(subjects, r.subject)}</td>
-                      <td>{getName(topics, r.topicId)}</td>
+                      <td>{getName(subjects,  r.subject)}</td>
+                      <td>{getName(topics,    r.topicId)}</td>
                       <td>{getName(subTopics, r.subTopicId)}</td>
-                      <td>{r.correct}</td>
-                      <td>{r.wrong}</td>
-                      <td>{r.score}</td>
-                      <td>{r.accuracy}%</td>
+                      <td>{r.correct  ?? "-"}</td>
+                      <td>{r.wrong    ?? "-"}</td>
+                      <td>{r.score    ?? "-"}</td>
+                      <td>{r.accuracy != null ? `${r.accuracy}%` : "-"}</td>
                       <td>{formatTime(r.timeTaken)}</td>
                       <td>{r.cheatCount || 0}</td>
                       <td>

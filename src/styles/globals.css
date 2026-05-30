@@ -5971,3 +5971,79 @@ table tr:hover{
   .um-modal-actions{ flex-direction:column-reverse; }
   .um-modal-actions button{ width:100%; }
 }
+
+/* =========================================
+   PASSWORD FIELD WRAPPER
+   Show/Hide toggle for password inputs
+========================================= */
+.um-password-field{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+
+.um-password-field input{
+  width:100%;
+  padding-right:44px;
+}
+
+.um-pwd-toggle{
+  position:absolute;
+  right:10px;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:4px;
+  font-size:1rem;
+  color:var(--text-muted);
+  cursor:pointer;
+  line-height:1;
+  transition:color var(--transition-fast);
+  transform:none !important;
+}
+
+.um-pwd-toggle:hover{
+  color:var(--blue-600);
+  transform:none !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+}
+
+/* =========================================
+   SUCCESS MESSAGE (modal feedback)
+========================================= */
+.um-form-success{
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  border-radius:var(--radius-sm);
+  padding:var(--sp-3) var(--sp-4);
+  color:#15803d;
+  font-size:0.875rem;
+  font-weight:500;
+}
+
+/* =========================================
+   TABLE ROW HOVER FIX
+   Override the global tr:hover gray with
+   the design-system blue-50 used by data-table
+========================================= */
+table tr:hover{
+  background:var(--blue-50);
+  transition:background var(--transition-fast);
+}
+
+/* Ensure data-table keeps its own hover */
+.data-table tbody tr:hover{
+  background:var(--blue-50);
+}
+
+/* =========================================
+   ROLE BADGE — super-admin variant
+   Covers the CSS class used in UserActivity
+   where role is passed without dashes
+========================================= */
+.role-badge--superadmin,
+.role-badge--super-admin{
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  color:#fff;
+}

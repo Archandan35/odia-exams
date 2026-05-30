@@ -6047,3 +6047,104 @@ table tr:hover{
   background:linear-gradient(135deg,#7c3aed,#9333ea);
   color:#fff;
 }
+
+
+/* =========================================================
+   GLOBALS ADDITIONS
+   Append these at the END of your existing globals.css.
+   All classes here are NEW — no duplicates with existing file.
+   ========================================================= */
+
+/* =========================================
+   SUPERADMIN role badge variant
+   (handles both "superadmin" and "super-admin")
+   Already in globals but ensuring both dash
+   variants are covered with full spec.
+========================================= */
+.role-badge--super-admin,
+.role-badge--superadmin {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* =========================================
+   ONLINE LABEL
+   Inline text next to the online dot
+========================================= */
+.um-online-label {
+  margin-left: var(--sp-1);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* =========================================
+   ACTIVITY TABLE — horizontally scrollable
+   wide table with many columns
+========================================= */
+.activity-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.activity-table-wrapper .data-table th {
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--grad-primary);
+  z-index: 2;
+}
+
+/* =========================================
+   FILTER GRID — 1-column variant for
+   single search bar in activity page
+========================================= */
+.filter-grid-single {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+/* =========================================
+   RESULT TABLE — scrollable body
+========================================= */
+.table-scroll-body {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+/* =========================================
+   ANALYTICS CARD — h2 variant
+   (used for best performer name etc.)
+========================================= */
+.analytics-card h2 {
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  font-weight: 700;
+  color: var(--blue-700);
+  margin: var(--sp-2) 0 var(--sp-1);
+  font-family: var(--font-display);
+  word-break: break-word;
+}
+
+/* =========================================
+   DASHBOARD STAT — small label below number
+   Already covered by analytics-card p
+   but ensure the color is muted
+========================================= */
+.analytics-card > p {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: var(--sp-1);
+}
+
+/* =========================================
+   PAGE RESPONSIVE: activity wide table
+========================================= */
+@media (max-width: 900px) {
+  .activity-table-wrapper {
+    max-height: 400px;
+  }
+}

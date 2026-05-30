@@ -5298,6 +5298,7 @@ table tr:hover {
   padding:0;
   font-family:var(--font-body);
   transition:color var(--transition-fast);
+  padding:10px;
 }
 .auth-forgot-link:hover { color:var(--blue-800); text-decoration:underline; }
 

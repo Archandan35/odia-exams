@@ -1078,6 +1078,8 @@ table{
   width:50%;
   border-collapse:collapse;
   background:#acb1b9 !important;
+  resize: both;
+  overflow: hidden;
 }
 
 th{
@@ -2359,6 +2361,8 @@ table tr:hover{
   font-family:var(--font-body);
   box-shadow:var(--shadow-xs);
   transition:border-color var(--transition-fast),box-shadow var(--transition-fast);
+  resize: vertical;
+  overflow: auto;
 }
 
 .se-editable img{

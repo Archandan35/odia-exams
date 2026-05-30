@@ -5316,6 +5316,7 @@ table tr:hover {
   display:inline-flex;
   align-items:center;
   gap:var(--sp-1);
+  padding:10px;
 }
 .auth-back-link:hover { color:var(--blue-800); }
 
